@@ -1,0 +1,726 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accounts Management{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .editable {
+        /* Removed cursor: pointer to indicate cells are not directly editable */
+    }
+
+    .editable:hover {
+        background-color: #f8f9fa;
+        position: relative;
+    }
+
+    /* Add style for when row is in edit mode */
+    .editing .editable {
+        cursor: text;
+    }
+
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h1>Dashboard</h1>
+            </div>
+            <div class="card-body">
+                <p>Welcome, {{ app.user.name is defined ? app.user.name : app.user.userIdentifier }}! You are logged in as {{ app.user.userIdentifier }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Panel with Navigation Links (Detached) -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Navigation</h4>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ path('app_users') }}" class="list-group-item list-group-item-action list-group-item-primary">
+                        <i class="fas fa-users"></i> Users Management
+                    </a>
+                    <a href="{{ path('app_accounts') }}" class="list-group-item list-group-item-action list-group-item-success active">
+                        <i class="fas fa-building"></i> Accounts Management
+                    </a>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ path('app_logout') }}" class="btn btn-danger w-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel for Content Display (Detached) -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Accounts List</h4>
+                <button type="button" class="btn btn-light" id="create-account-btn">
+                    <i class="fas fa-plus"></i> Create Account
+                </button>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Contact</th>
+                            <th>Priority</th>
+                            <th>Context</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Form row for creating new account -->
+                        <tr id="account-form-row" style="display: none;">
+                            <td><i>New</i></td>
+                            <td>
+                                <input type="text" class="form-control" id="account-name" name="name" placeholder="Name" required>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="account-contact" name="contact" placeholder="Contact" required>
+                            </td>
+                            <td>
+                                <select class="form-control" id="account-priority" name="priority" required>
+                                    <option value="Haute">High</option>
+                                    <option value="Moyenne">Medium</option>
+                                    <option value="Basse">Low</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="account-next-step" name="nextStep" placeholder="Next Step">
+                            </td>
+                            <td>
+                                <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
+                                <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                            </td>
+                        </tr>
+                        {% for account in accounts %}
+                            <tr class="account-row" data-account-id="{{ account.id }}" style="cursor: pointer;">
+                                <td>{{ account.id }}</td>
+                                <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
+                                <td class="editable" data-field="contact" data-account-id="{{ account.id }}">{{ account.contact }}</td>
+                                <td class="editable" data-field="priority" data-account-id="{{ account.id }}" data-type="select"
+                                    data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>{{ account.priority }}</td>
+                                <td class="editable" data-field="nextStep" data-account-id="{{ account.id }}">{{ account.nextStep }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-account-id="{{ account.id }}">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center">No accounts found</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Actions Table Section -->
+                <div id="actions-section" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">Account Actions</h4>
+                            <button type="button" class="btn btn-light" id="create-action-btn">
+                                <i class="fas fa-plus"></i> Create Action
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <table id="actions-table" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Type</th>
+                                            <th>Action</th>
+                                            <th>Next Step Date</th>
+                                            <th>Created At</th>
+                                            <th>Owner</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="actions-tbody">
+                                        <!-- Form row for creating new actions -->
+                                        <tr id="action-form-row" style="display: none;">
+                                            <td><i>New</i></td>
+                                            <td>
+                                                <select class="form-control" id="action-type" name="type" required>
+                                                    <option value="Appel">Appel</option>
+                                                    <option value="Email">Email</option>
+                                                    <option value="RDV">RDV</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
+                                            </td>
+                                            <td>
+                                                <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
+                                            </td>
+                                            <td>Now</td>
+                                            <td>
+                                                <select class="form-control" id="action-owner" name="owner" required>
+                                                    <option value="">Select Owner</option>
+                                                    <!-- Users will be loaded here -->
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
+                                                <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                                            </td>
+                                        </tr>
+                                        <!-- Actions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-actions-message" class="text-center" style="display: none;">
+                                <p>No actions found for this account</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action creation is now handled inline in the table -->
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all account rows
+        const accountRows = document.querySelectorAll('.account-row');
+        const actionsSection = document.getElementById('actions-section');
+        const actionsTbody = document.getElementById('actions-tbody');
+        const noActionsMessage = document.getElementById('no-actions-message');
+        const createActionBtn = document.getElementById('create-action-btn');
+
+        // Load users for the action owner dropdown
+        function loadUsers() {
+            fetch('/api/users')
+                .then(response => response.json())
+                .then(data => {
+                    const ownerSelect = document.getElementById('action-owner');
+                    // Clear existing options except the first one
+                    while (ownerSelect.options.length > 1) {
+                        ownerSelect.remove(1);
+                    }
+
+                    // Add users to dropdown
+                    data.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.name;
+                        ownerSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                });
+        }
+
+        // Load users when the page loads
+        loadUsers();
+
+        // Handle create account button click
+        const createAccountBtn = document.getElementById('create-account-btn');
+        const accountFormRow = document.getElementById('account-form-row');
+        const saveAccountBtn = document.getElementById('save-account-btn');
+        const cancelAccountBtn = document.getElementById('cancel-account-btn');
+
+        if (createAccountBtn) {
+            // Show the form row when Create Account button is clicked
+            createAccountBtn.addEventListener('click', function() {
+                // Show the form row
+                accountFormRow.style.display = 'table-row';
+
+                // Focus on the name input
+                document.getElementById('account-name').focus();
+            });
+
+            // Handle cancel button
+            cancelAccountBtn.addEventListener('click', function() {
+                // Hide the form row
+                accountFormRow.style.display = 'none';
+
+                // Reset form fields
+                document.getElementById('account-name').value = '';
+                document.getElementById('account-contact').value = '';
+                document.getElementById('account-priority').value = 'Haute';
+                document.getElementById('account-next-step').value = '';
+            });
+
+            // Handle save button
+            saveAccountBtn.addEventListener('click', function() {
+                // Validate required fields
+                const name = document.getElementById('account-name').value;
+                if (!name) {
+                    alert('Name is required');
+                    return;
+                }
+
+                const contact = document.getElementById('account-contact').value;
+                if (!contact) {
+                    alert('Contact is required');
+                    return;
+                }
+
+
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('name', document.getElementById('account-name').value);
+                formData.append('contact', document.getElementById('account-contact').value);
+                formData.append('priority', document.getElementById('account-priority').value);
+                formData.append('nextStep', document.getElementById('account-next-step').value);
+
+                // Send request to create account
+                fetch('/accounts/create-ajax', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide the form row
+                    accountFormRow.style.display = 'none';
+
+                    // Reset form fields
+                    document.getElementById('account-name').value = '';
+                    document.getElementById('account-contact').value = '';
+                    document.getElementById('account-priority').value = 'Haute';
+                    document.getElementById('account-next-step').value = '';
+
+                    // Add the new account to the table
+                    const row = document.createElement('tr');
+                    row.className = 'account-row';
+                    row.setAttribute('data-account-id', data.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${data.id}</td>
+                        <td class="editable" data-field="name" data-account-id="${data.id}">${data.name}</td>
+                        <td class="editable" data-field="contact" data-account-id="${data.id}">${data.contact}</td>
+                        <td class="editable" data-field="priority" data-account-id="${data.id}" data-type="select"
+                            data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
+                        <td class="editable" data-field="nextStep" data-account-id="${data.id}">${data.nextStep || ''}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-account-id="${data.id}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    // Add the new row after the form row
+                    if (accountFormRow.nextSibling) {
+                        accountFormRow.parentNode.insertBefore(row, accountFormRow.nextSibling);
+                    } else {
+                        accountFormRow.parentNode.appendChild(row);
+                    }
+
+                    // Attach event listeners to the new row
+                    row.addEventListener('click', function(e) {
+                        if (!e.target.closest('button')) {
+                            loadAccountActions(data.id);
+                        }
+                    });
+
+                    const editBtn = row.querySelector('.edit-row-btn');
+                    if (editBtn) {
+                        editBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            makeRowEditable(data.id);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error creating account:', error);
+                    alert('Error creating account. Please try again.');
+                });
+            });
+        }
+
+        // Get all editable cells
+        const editableCells = document.querySelectorAll('.editable');
+
+        // Variable to track if we're currently editing a cell
+        let isEditing = false;
+
+        let currentAccountId = null;
+
+        // Function to handle inline editing
+        function setupInlineEditing() {
+            // We no longer add click event listeners to cells directly
+            // Instead, cells will only be editable when the edit button is clicked
+            // The actual editing functionality is now moved to makeRowEditable function
+        }
+
+        // Function to make a row's cells editable
+        function makeRowEditable(accountId) {
+            if (isEditing) return;
+
+            const row = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
+            const editableCellsInRow = row.querySelectorAll('.editable');
+
+            // Add editing class to the row
+            row.classList.add('editing');
+
+            // Make the first cell editable
+            if (editableCellsInRow.length > 0) {
+                makeFieldEditable(editableCellsInRow[0]);
+            }
+        }
+
+        // Function to make a specific field editable
+        function makeFieldEditable(cell) {
+            isEditing = true;
+
+            const field = cell.getAttribute('data-field');
+            const accountId = cell.getAttribute('data-account-id');
+            const currentValue = cell.textContent.trim();
+            const cellType = cell.getAttribute('data-type') || 'text';
+
+            // Store original content to restore if editing is cancelled
+            cell.setAttribute('data-original-content', cell.innerHTML);
+
+            // Create input element based on cell type
+            let inputElement;
+
+            if (cellType === 'select') {
+                // Create select dropdown for fields like priority
+                inputElement = document.createElement('select');
+                inputElement.className = 'form-control form-control-sm';
+
+                // Get options from data attribute
+                const options = JSON.parse(cell.getAttribute('data-options'));
+
+                // Add options to select
+                for (const [value, label] of Object.entries(options)) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = label;
+                    if (currentValue === value) {
+                        option.selected = true;
+                    }
+                    inputElement.appendChild(option);
+                }
+            } else {
+                // Create text input for other fields
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'form-control form-control-sm';
+                inputElement.value = currentValue;
+            }
+
+            // Clear the cell and add the input
+            cell.innerHTML = '';
+            cell.appendChild(inputElement);
+
+            // Focus the input
+            inputElement.focus();
+
+            // Handle input blur (save on focus out)
+            inputElement.addEventListener('blur', function() {
+                saveEdit(cell, accountId, field, this.value);
+            });
+
+            // Handle Enter key press
+            inputElement.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    saveEdit(cell, accountId, field, this.value);
+                } else if (e.key === 'Escape') {
+                    cancelEdit(cell);
+                }
+            });
+        }
+
+        // Function to save edited value
+        function saveEdit(cell, accountId, field, value) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('field', field);
+            formData.append('value', value);
+
+            // Send update request
+            fetch(`/accounts/${accountId}/update`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update cell with new value
+                cell.textContent = value;
+
+                // Find the next editable cell in the row
+                const row = cell.closest('.account-row');
+                const editableCells = Array.from(row.querySelectorAll('.editable'));
+                const currentIndex = editableCells.indexOf(cell);
+                const nextCell = editableCells[currentIndex + 1];
+
+                // If there's a next cell, make it editable
+                if (nextCell) {
+                    makeFieldEditable(nextCell);
+                } else {
+                    // If this was the last cell, we're done editing
+                    isEditing = false;
+
+                    // Remove editing class from the row
+                    const row = cell.closest('.account-row');
+                    row.classList.remove('editing');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating account:', error);
+                // Restore original content
+                cancelEdit(cell);
+                alert('Error updating account. Please try again.');
+            });
+        }
+
+        // Function to cancel editing
+        function cancelEdit(cell) {
+            cell.innerHTML = cell.getAttribute('data-original-content');
+            isEditing = false;
+
+            // Remove editing class from the row
+            const row = cell.closest('.account-row');
+            if (row) {
+                row.classList.remove('editing');
+            }
+        }
+
+        // Initialize inline editing
+        setupInlineEditing();
+
+        // Add click event listener to edit buttons
+        const editButtons = document.querySelectorAll('.edit-row-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Prevent the row click event from firing
+                e.stopPropagation();
+
+                const accountId = this.getAttribute('data-account-id');
+
+                // Use the new makeRowEditable function to start editing the row
+                if (!isEditing) {
+                    makeRowEditable(accountId);
+                }
+            });
+        });
+
+        // Add click event listener to each account row
+        accountRows.forEach(row => {
+            row.addEventListener('click', function(e) {
+                // If we're editing, don't trigger row selection
+                if (isEditing) {
+                    return;
+                }
+
+                // Remove active class from all rows
+                accountRows.forEach(r => r.classList.remove('table-primary'));
+
+                // Add active class to clicked row
+                this.classList.add('table-primary');
+
+                // Get account ID from data attribute
+                const accountId = this.getAttribute('data-account-id');
+                currentAccountId = accountId;
+
+                // Fetch actions for this account
+                fetch(`/accounts/${accountId}/actions`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Save the form row
+                        const formRow = document.getElementById('action-form-row');
+                        const formRowDisplay = formRow.style.display;
+
+                        // Clear previous actions
+                        actionsTbody.innerHTML = '';
+
+                        // Re-add the form row to the tbody
+                        actionsTbody.appendChild(formRow);
+                        formRow.style.display = formRowDisplay;
+
+                        // Show actions section
+                        actionsSection.style.display = 'block';
+
+                        if (data.length > 0) {
+                            // Hide no actions message
+                            noActionsMessage.style.display = 'none';
+
+                            // Get only the last 4 actions (most recent)
+                            const lastFourActions = data.slice(-4);
+
+                            // Add actions to table after the form row
+                            lastFourActions.forEach(action => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${action.id}</td>
+                                    <td>${action.type}</td>
+                                    <td>${action.title}</td>
+                                    <td>${action.nextStepDate || ''}</td>
+                                    <td>${action.createdAt}</td>
+                                    <td>${action.owner}</td>
+                                    <td></td>
+                                `;
+                                actionsTbody.appendChild(row);
+                            });
+                        } else {
+                            // Show no actions message
+                            noActionsMessage.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching actions:', error);
+                        actionsSection.style.display = 'block';
+
+                        // Save the form row
+                        const formRow = document.getElementById('action-form-row');
+                        const formRowDisplay = formRow.style.display;
+
+                        // Clear previous actions
+                        actionsTbody.innerHTML = '';
+
+                        // Re-add the form row to the tbody
+                        actionsTbody.appendChild(formRow);
+                        formRow.style.display = formRowDisplay;
+
+                        noActionsMessage.style.display = 'block';
+                        noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
+                    });
+            });
+        });
+
+        // Handle create action button click
+        if (createActionBtn) {
+            const actionFormRow = document.getElementById('action-form-row');
+            const saveActionBtn = document.getElementById('save-action-btn');
+            const cancelActionBtn = document.getElementById('cancel-action-btn');
+
+            // Show the form row when Create Action button is clicked
+            createActionBtn.addEventListener('click', function() {
+                if (!currentAccountId) {
+                    alert('Please select an account first');
+                    return;
+                }
+
+                // Show the form row
+                actionFormRow.style.display = 'table-row';
+
+                // Focus on the title input
+                document.getElementById('action-title').focus();
+            });
+
+            // Handle cancel button
+            cancelActionBtn.addEventListener('click', function() {
+                // Hide the form row
+                actionFormRow.style.display = 'none';
+
+                // Reset form fields
+                document.getElementById('action-title').value = '';
+                document.getElementById('action-next-step-date').value = '';
+                document.getElementById('action-type').value = 'Appel';
+                document.getElementById('action-owner').value = '';
+            });
+
+            // Handle save button
+            saveActionBtn.addEventListener('click', function() {
+                if (!currentAccountId) {
+                    alert('Please select an account first');
+                    return;
+                }
+
+                // Validate required fields
+                const title = document.getElementById('action-title').value;
+                if (!title) {
+                    alert('Title is required');
+                    return;
+                }
+
+                const owner = document.getElementById('action-owner').value;
+                if (!owner) {
+                    alert('Owner is required');
+                    return;
+                }
+
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('title', document.getElementById('action-title').value);
+                formData.append('type', document.getElementById('action-type').value);
+                formData.append('nextStepDate', document.getElementById('action-next-step-date').value);
+                formData.append('owner', document.getElementById('action-owner').value);
+
+                // Send request to create action
+                fetch(`/accounts/${currentAccountId}/create-action`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide the form row
+                    actionFormRow.style.display = 'none';
+
+                    // Reset form fields
+                    document.getElementById('action-title').value = '';
+                    document.getElementById('action-next-step-date').value = '';
+                    document.getElementById('action-type').value = 'Appel';
+                    document.getElementById('action-owner').value = '';
+
+                    // Add the new action to the table
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.id}</td>
+                        <td>${data.type}</td>
+                        <td>${data.title}</td>
+                        <td>${data.nextStepDate || ''}</td>
+                        <td>${data.createdAt}</td>
+                        <td>${data.owner}</td>
+                        <td></td>
+                    `;
+
+                    // Hide no actions message if it's visible
+                    if (noActionsMessage.style.display !== 'none') {
+                        noActionsMessage.style.display = 'none';
+                    }
+
+                    // Add the new row after the form row
+                    const formRow = document.getElementById('action-form-row');
+                    if (formRow.nextSibling) {
+                        actionsTbody.insertBefore(row, formRow.nextSibling);
+                    } else {
+                        actionsTbody.appendChild(row);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error creating action:', error);
+                    alert('Error creating action. Please try again.');
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

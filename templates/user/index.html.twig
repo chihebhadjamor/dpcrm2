@@ -1,0 +1,795 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Users Management{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .editable {
+        /* Removed cursor: pointer to indicate cells are not directly editable */
+    }
+
+    .editable:hover {
+        background-color: #f8f9fa;
+        position: relative;
+    }
+
+    /* Add style for when row is in edit mode */
+    .editing .editable {
+        cursor: text;
+    }
+
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h1>Dashboard</h1>
+            </div>
+            <div class="card-body">
+                <p>Welcome, {{ app.user.name is defined ? app.user.name : app.user.userIdentifier }}! You are logged in as {{ app.user.userIdentifier }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Hidden input for CSRF token #}
+<input type="hidden" id="csrf_token" value="{{ csrf_token('update_user') }}">
+
+<div class="row">
+    <!-- Left Panel with Navigation Links (Detached) -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Navigation</h4>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ path('app_users') }}" class="list-group-item list-group-item-action list-group-item-primary active">
+                        <i class="fas fa-users"></i> Users Management
+                    </a>
+                    <a href="{{ path('app_accounts') }}" class="list-group-item list-group-item-action list-group-item-success">
+                        <i class="fas fa-building"></i> Accounts Management
+                    </a>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ path('app_logout') }}" class="btn btn-danger w-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel for Content Display (Detached) -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Users List</h4>
+                <button type="button" class="btn btn-light" id="create-user-btn">
+                    <i class="fas fa-plus"></i> Create User
+                </button>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Form row for creating new user -->
+                        <tr id="user-form-row" style="display: none;">
+                            <td><i>New</i></td>
+                            <td>
+                                <input type="text" class="form-control" id="user-name" name="name" placeholder="Name" required>
+                            </td>
+                            <td>
+                                <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                            </td>
+                            <td>
+                                <input type="password" class="form-control" id="user-password" name="password" placeholder="Password" required>
+                            </td>
+                            <td>
+                                <button type="button" id="save-user-btn" class="btn btn-sm btn-success text-white">Save</button>
+                                <button type="button" id="cancel-user-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                            </td>
+                        </tr>
+                        {% for user in users %}
+                            <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
+                                <td>{{ user.id }}</td>
+                                <td class="editable" data-field="name" data-user-id="{{ user.id }}">{{ user.name }}</td>
+                                <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
+                                <td class="editable" data-field="roles" data-user-id="{{ user.id }}">{{ user.roles|join(', ') }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-user-id="{{ user.id }}">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No users found</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Actions Table Section -->
+                <div id="actions-section" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">User Actions</h4>
+                            <button type="button" class="btn btn-light" id="create-action-btn">
+                                <i class="fas fa-plus"></i> Create Action
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <table id="actions-table" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Type</th>
+                                            <th>Action</th>
+                                            <th>Next Step Date</th>
+                                            <th>Created At</th>
+                                            <th>Owner</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="actions-tbody">
+                                        <!-- Form row for creating new actions -->
+                                        <tr id="action-form-row" style="display: none;">
+                                            <td><i>New</i></td>
+                                            <td>
+                                                <select class="form-control" id="action-type" name="type" required>
+                                                    <option value="Appel">Appel</option>
+                                                    <option value="Email">Email</option>
+                                                    <option value="RDV">RDV</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
+                                            </td>
+                                            <td>
+                                                <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
+                                            </td>
+                                            <td>Now</td>
+                                            <td>
+                                                <select class="form-control" id="action-owner" name="owner" required>
+                                                    <option value="">Select Owner</option>
+                                                    <!-- Users will be loaded here -->
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
+                                                <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                                            </td>
+                                        </tr>
+                                        <!-- Actions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-actions-message" class="text-center" style="display: none;">
+                                <p>No actions found for this user</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User creation is now handled inline in the table -->
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all user rows
+        const userRows = document.querySelectorAll('.user-row');
+        const actionsSection = document.getElementById('actions-section');
+        const actionsTbody = document.getElementById('actions-tbody');
+        const noActionsMessage = document.getElementById('no-actions-message');
+        const createActionBtn = document.getElementById('create-action-btn');
+
+        // Handle create user button click
+        const createUserBtn = document.getElementById('create-user-btn');
+        const userFormRow = document.getElementById('user-form-row');
+        const saveUserBtn = document.getElementById('save-user-btn');
+        const cancelUserBtn = document.getElementById('cancel-user-btn');
+
+        if (createUserBtn) {
+            // Show the form row when Create User button is clicked
+            createUserBtn.addEventListener('click', function() {
+                // Show the form row
+                userFormRow.style.display = 'table-row';
+
+                // Focus on the name input
+                document.getElementById('user-name').focus();
+            });
+
+            // Handle cancel button
+            cancelUserBtn.addEventListener('click', function() {
+                // Hide the form row
+                userFormRow.style.display = 'none';
+
+                // Reset form fields
+                document.getElementById('user-name').value = '';
+                document.getElementById('user-email').value = '';
+                document.getElementById('user-password').value = '';
+            });
+
+            // Handle save button
+            saveUserBtn.addEventListener('click', function() {
+                // Validate required fields
+                const name = document.getElementById('user-name').value;
+                if (!name) {
+                    alert('Name is required');
+                    return;
+                }
+
+                const email = document.getElementById('user-email').value;
+                if (!email) {
+                    alert('Email is required');
+                    return;
+                }
+
+                const password = document.getElementById('user-password').value;
+                if (!password) {
+                    alert('Password is required');
+                    return;
+                }
+
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('email', email);
+                formData.append('password', password);
+
+                // Send request to create user
+                fetch('/users/create-ajax', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide the form row
+                    userFormRow.style.display = 'none';
+
+                    // Reset form fields
+                    document.getElementById('user-name').value = '';
+                    document.getElementById('user-email').value = '';
+                    document.getElementById('user-password').value = '';
+
+                    // Add the new user to the table
+                    const row = document.createElement('tr');
+                    row.className = 'user-row';
+                    row.setAttribute('data-user-id', data.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${data.id}</td>
+                        <td class="editable" data-field="name" data-user-id="${data.id}">${data.name}</td>
+                        <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
+                        <td class="editable" data-field="roles" data-user-id="${data.id}">${data.roles.join(', ')}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-user-id="${data.id}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    // Add the new row after the form row
+                    if (userFormRow.nextSibling) {
+                        userFormRow.parentNode.insertBefore(row, userFormRow.nextSibling);
+                    } else {
+                        userFormRow.parentNode.appendChild(row);
+                    }
+
+                    // Attach event listeners to the new row
+                    row.addEventListener('click', function(e) {
+                        if (!e.target.closest('button')) {
+                            // Remove active class from all rows
+                            userRows.forEach(r => r.classList.remove('table-primary'));
+
+                            // Add active class to clicked row
+                            this.classList.add('table-primary');
+
+                            // Get user ID from data attribute
+                            const userId = this.getAttribute('data-user-id');
+
+                            // Fetch actions for this user
+                            fetch(`/users/${userId}/actions`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Show actions section and populate it
+                                    if (actionsSection) {
+                                        actionsSection.style.display = 'block';
+                                        // Rest of the actions loading code...
+                                    }
+                                });
+                        }
+                    });
+
+                    const editBtn = row.querySelector('.edit-row-btn');
+                    if (editBtn) {
+                        editBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            if (!isEditing) {
+                                makeRowEditable(data.id);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error creating user:', error);
+                    alert('Error creating user. Please try again.');
+                });
+            });
+        }
+
+        // Load users for the owner dropdown
+        function loadUsers() {
+            fetch('/api/users')
+                .then(response => response.json())
+                .then(data => {
+                    const ownerSelect = document.getElementById('action-owner');
+                    if (ownerSelect) {
+                        // Clear existing options except the first one
+                        while (ownerSelect.options.length > 1) {
+                            ownerSelect.remove(1);
+                        }
+
+                        // Add users to dropdown
+                        data.forEach(user => {
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = user.name;
+                            ownerSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                });
+        }
+
+        // Load users when the page loads
+        if (document.getElementById('action-owner')) {
+            loadUsers();
+        }
+
+        // Get all editable cells
+        const editableCells = document.querySelectorAll('.editable');
+
+        // Variable to track if we're currently editing a cell
+        let isEditing = false;
+
+        let currentUserId = null;
+
+        // Function to handle inline editing
+        function setupInlineEditing() {
+            // We no longer add click event listeners to cells directly
+            // Instead, cells will only be editable when the edit button is clicked
+            // The actual editing functionality is now moved to makeRowEditable function
+        }
+
+        // Function to make a row's cells editable
+        function makeRowEditable(userId) {
+            if (isEditing) return;
+
+            const row = document.querySelector(`.user-row[data-user-id="${userId}"]`);
+            const editableCellsInRow = row.querySelectorAll('.editable');
+
+            // Add editing class to the row
+            row.classList.add('editing');
+
+            // Make the first cell editable
+            if (editableCellsInRow.length > 0) {
+                makeFieldEditable(editableCellsInRow[0]);
+            }
+        }
+
+        // Function to make a specific field editable
+        function makeFieldEditable(cell) {
+            isEditing = true;
+
+            const field = cell.getAttribute('data-field');
+            const userId = cell.getAttribute('data-user-id');
+            const currentValue = cell.textContent.trim();
+            const cellType = cell.getAttribute('data-type') || 'text';
+
+            // Store original content to restore if editing is cancelled
+            cell.setAttribute('data-original-content', cell.innerHTML);
+
+            // Create input element based on cell type
+            let inputElement;
+
+            if (cellType === 'select') {
+                // Create select dropdown for fields like roles
+                inputElement = document.createElement('select');
+                inputElement.className = 'form-control form-control-sm';
+
+                // Get options from data attribute
+                const options = JSON.parse(cell.getAttribute('data-options') || '{}');
+
+                // Add options to select
+                for (const [value, label] of Object.entries(options)) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = label;
+                    if (currentValue === value) {
+                        option.selected = true;
+                    }
+                    inputElement.appendChild(option);
+                }
+            } else {
+                // Create text input for other fields
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'form-control form-control-sm';
+                inputElement.value = currentValue;
+            }
+
+            // Clear the cell and add the input
+            cell.innerHTML = '';
+            cell.appendChild(inputElement);
+
+            // Focus the input
+            inputElement.focus();
+
+            // Handle input blur (save on focus out)
+            inputElement.addEventListener('blur', function() {
+                saveEdit(cell, userId, field, this.value);
+            });
+
+            // Handle Enter key press
+            inputElement.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    saveEdit(cell, userId, field, this.value);
+                } else if (e.key === 'Escape') {
+                    cancelEdit(cell);
+                }
+            });
+        }
+
+        // Function to save edited value
+        function saveEdit(cell, userId, field, value) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('field', field);
+            formData.append('value', value);
+
+            // Add CSRF token
+            const csrfToken = document.getElementById('csrf_token').value;
+            formData.append('_token', csrfToken);
+
+            // Send update request
+            fetch(`/users/${userId}/update`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update cell with new value
+                    cell.textContent = data.value;
+
+                    // Find the next editable cell in the row
+                    const row = cell.closest('.user-row');
+                    const editableCells = Array.from(row.querySelectorAll('.editable'));
+                    const currentIndex = editableCells.indexOf(cell);
+                    const nextCell = editableCells[currentIndex + 1];
+
+                    // If there's a next cell, make it editable
+                    if (nextCell) {
+                        makeFieldEditable(nextCell);
+                    } else {
+                        // If this was the last cell, we're done editing
+                        isEditing = false;
+
+                        // Remove editing class from the row
+                        row.classList.remove('editing');
+                    }
+                } else {
+                    // Show error and revert to original content
+                    cancelEdit(cell);
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error updating user:', error);
+                // Restore original content
+                cancelEdit(cell);
+                alert('Error updating user. Please try again.');
+            });
+        }
+
+        // Function to cancel editing
+        function cancelEdit(cell) {
+            cell.innerHTML = cell.getAttribute('data-original-content');
+            isEditing = false;
+
+            // Remove editing class from the row
+            const row = cell.closest('.user-row');
+            if (row) {
+                row.classList.remove('editing');
+            }
+        }
+
+        // Initialize inline editing
+        setupInlineEditing();
+
+        // Add click event listener to edit buttons
+        const editButtons = document.querySelectorAll('.edit-row-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Prevent the row click event from firing
+                e.stopPropagation();
+
+                const userId = this.getAttribute('data-user-id');
+
+                // Use the new makeRowEditable function to start editing the row
+                if (!isEditing) {
+                    makeRowEditable(userId);
+                }
+            });
+        });
+
+        // Add click event listener to each user row
+        userRows.forEach(row => {
+            row.addEventListener('click', function(e) {
+                // If we're editing, don't trigger row selection
+                if (isEditing) {
+                    return;
+                }
+
+                // Remove active class from all rows
+                userRows.forEach(r => r.classList.remove('table-primary'));
+
+                // Add active class to clicked row
+                this.classList.add('table-primary');
+
+                // Get user ID from data attribute
+                const userId = this.getAttribute('data-user-id');
+                currentUserId = userId;
+
+                // If we have an actions section, fetch actions for this user
+                if (actionsSection) {
+                    // Fetch actions for this user
+                    fetch(`/users/${userId}/actions`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Save the form row
+                            const formRow = document.getElementById('action-form-row');
+                            const formRowDisplay = formRow ? formRow.style.display : 'none';
+
+                            // Clear previous actions
+                            actionsTbody.innerHTML = '';
+
+                            // Re-add the form row to the tbody if it exists
+                            if (formRow) {
+                                actionsTbody.appendChild(formRow);
+                                formRow.style.display = formRowDisplay;
+                            }
+
+                            // Show actions section
+                            actionsSection.style.display = 'block';
+
+                            if (data.length > 0) {
+                                // Hide no actions message
+                                if (noActionsMessage) {
+                                    noActionsMessage.style.display = 'none';
+                                }
+
+                                // Get only the last 4 actions (most recent)
+                                const lastFourActions = data.slice(-4);
+
+                                // Add actions to table after the form row
+                                lastFourActions.forEach(action => {
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+                                        <td>${action.id}</td>
+                                        <td>${action.type}</td>
+                                        <td>${action.title}</td>
+                                        <td>${action.nextStepDate || ''}</td>
+                                        <td>${action.createdAt}</td>
+                                        <td>${action.owner}</td>
+                                        <td></td>
+                                    `;
+                                    actionsTbody.appendChild(row);
+                                });
+                            } else {
+                                // Show no actions message
+                                if (noActionsMessage) {
+                                    noActionsMessage.style.display = 'block';
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching actions:', error);
+                            if (actionsSection) {
+                                actionsSection.style.display = 'block';
+
+                                // Save the form row
+                                const formRow = document.getElementById('action-form-row');
+                                const formRowDisplay = formRow ? formRow.style.display : 'none';
+
+                                // Clear previous actions
+                                actionsTbody.innerHTML = '';
+
+                                // Re-add the form row to the tbody if it exists
+                                if (formRow) {
+                                    actionsTbody.appendChild(formRow);
+                                    formRow.style.display = formRowDisplay;
+                                }
+
+                                if (noActionsMessage) {
+                                    noActionsMessage.style.display = 'block';
+                                    noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
+                                }
+                            }
+                        });
+                }
+            });
+        });
+
+        // Handle create action button click if it exists
+        if (createActionBtn) {
+            const actionFormRow = document.getElementById('action-form-row');
+            const saveActionBtn = document.getElementById('save-action-btn');
+            const cancelActionBtn = document.getElementById('cancel-action-btn');
+
+            // Show the form row when Create Action button is clicked
+            createActionBtn.addEventListener('click', function() {
+                if (!currentUserId) {
+                    alert('Please select a user first');
+                    return;
+                }
+
+                // Show the form row
+                if (actionFormRow) {
+                    actionFormRow.style.display = 'table-row';
+
+                    // Focus on the title input
+                    const titleInput = document.getElementById('action-title');
+                    if (titleInput) {
+                        titleInput.focus();
+                    }
+                }
+            });
+
+            // Handle cancel button
+            if (cancelActionBtn) {
+                cancelActionBtn.addEventListener('click', function() {
+                    // Hide the form row
+                    if (actionFormRow) {
+                        actionFormRow.style.display = 'none';
+                    }
+
+                    // Reset form fields
+                    const titleInput = document.getElementById('action-title');
+                    const nextStepDateInput = document.getElementById('action-next-step-date');
+                    const typeSelect = document.getElementById('action-type');
+                    const ownerSelect = document.getElementById('action-owner');
+
+                    if (titleInput) titleInput.value = '';
+                    if (nextStepDateInput) nextStepDateInput.value = '';
+                    if (typeSelect) typeSelect.value = 'Appel';
+                    if (ownerSelect) ownerSelect.value = '';
+                });
+            }
+
+            // Handle save button
+            if (saveActionBtn) {
+                saveActionBtn.addEventListener('click', function() {
+                    if (!currentUserId) {
+                        alert('Please select a user first');
+                        return;
+                    }
+
+                    // Validate required fields
+                    const titleInput = document.getElementById('action-title');
+                    const ownerSelect = document.getElementById('action-owner');
+
+                    if (titleInput && !titleInput.value) {
+                        alert('Title is required');
+                        return;
+                    }
+
+                    if (ownerSelect && !ownerSelect.value) {
+                        alert('Owner is required');
+                        return;
+                    }
+
+                    // Create FormData object
+                    const formData = new FormData();
+                    if (titleInput) formData.append('title', titleInput.value);
+
+                    const typeSelect = document.getElementById('action-type');
+                    if (typeSelect) formData.append('type', typeSelect.value);
+
+                    const nextStepDateInput = document.getElementById('action-next-step-date');
+                    if (nextStepDateInput) formData.append('nextStepDate', nextStepDateInput.value);
+
+                    if (ownerSelect) formData.append('owner', ownerSelect.value);
+
+                    // Send request to create action
+                    fetch(`/users/${currentUserId}/create-action`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Hide the form row
+                        if (actionFormRow) {
+                            actionFormRow.style.display = 'none';
+                        }
+
+                        // Reset form fields
+                        if (titleInput) titleInput.value = '';
+                        if (nextStepDateInput) nextStepDateInput.value = '';
+                        if (typeSelect) typeSelect.value = 'Appel';
+                        if (ownerSelect) ownerSelect.value = '';
+
+                        // Add the new action to the table
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${data.id}</td>
+                            <td>${data.type}</td>
+                            <td>${data.title}</td>
+                            <td>${data.nextStepDate || ''}</td>
+                            <td>${data.createdAt}</td>
+                            <td>${data.owner}</td>
+                            <td></td>
+                        `;
+
+                        // Hide no actions message if it's visible
+                        if (noActionsMessage && noActionsMessage.style.display !== 'none') {
+                            noActionsMessage.style.display = 'none';
+                        }
+
+                        // Add the new row after the form row
+                        if (actionFormRow) {
+                            if (actionFormRow.nextSibling) {
+                                actionsTbody.insertBefore(row, actionFormRow.nextSibling);
+                            } else {
+                                actionsTbody.appendChild(row);
+                            }
+                        } else {
+                            actionsTbody.appendChild(row);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error creating action:', error);
+                        alert('Error creating action. Please try again.');
+                    });
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
