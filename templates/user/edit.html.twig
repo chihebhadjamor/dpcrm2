@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Edit User: {{ user.firstName }} {{ user.lastName }}</h1>
+                </div>
+                <div class="card-body">
+                    {{ form_start(form) }}
+
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.firstName) }}
+                    {{ form_row(form.lastName) }}
+
+                    <div class="mb-3">
+                        {{ form_label(form.roles) }}
+                        <div class="form-check-group">
+                            {{ form_widget(form.roles) }}
+                        </div>
+                        <div class="form-text text-danger">
+                            {{ form_errors(form.roles) }}
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary">{{ button_label|default('Update User') }}</button>
+                    <a href="{{ path('app_users') }}" class="btn btn-secondary">Back to list</a>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

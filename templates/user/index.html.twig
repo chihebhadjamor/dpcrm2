@@ -13,10 +13,6 @@
         position: relative;
     }
 
-    /* Add style for when row is in edit mode */
-    .editing .editable {
-        cursor: text;
-    }
 
 </style>
 {% endblock %}
@@ -35,8 +31,9 @@
     </div>
 </div>
 
-{# Hidden input for CSRF token #}
-<input type="hidden" id="csrf_token" value="{{ csrf_token('update_user') }}">
+{# Hidden inputs for CSRF tokens #}
+<input type="hidden" id="csrf_token_create_user" value="{{ csrf_token('create_user') }}">
+<input type="hidden" id="csrf_token_create_action" value="{{ csrf_token('create_action') }}">
 
 <div class="row">
     <!-- Left Panel with Navigation Links (Detached) -->
@@ -77,6 +74,8 @@
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
                             <th>Email</th>
                             <th>Roles</th>
                             <th>Actions</th>
@@ -88,6 +87,12 @@
                             <td><i>New</i></td>
                             <td>
                                 <input type="text" class="form-control" id="user-name" name="name" placeholder="Name" required>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="user-firstName" name="firstName" placeholder="First Name">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="user-lastName" name="lastName" placeholder="Last Name">
                             </td>
                             <td>
                                 <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
@@ -104,12 +109,14 @@
                             <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
                                 <td>{{ user.id }}</td>
                                 <td class="editable" data-field="name" data-user-id="{{ user.id }}">{{ user.name }}</td>
+                                <td class="editable" data-field="firstName" data-user-id="{{ user.id }}">{{ user.firstName }}</td>
+                                <td class="editable" data-field="lastName" data-user-id="{{ user.id }}">{{ user.lastName }}</td>
                                 <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
                                 <td class="editable" data-field="roles" data-user-id="{{ user.id }}">{{ user.roles|join(', ') }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-user-id="{{ user.id }}">
-                                        <i class="fas fa-pen"></i>
-                                    </button>
+                                    <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
                                 </td>
                             </tr>
                         {% else %}
@@ -222,6 +229,8 @@
 
                 // Reset form fields
                 document.getElementById('user-name').value = '';
+                document.getElementById('user-firstName').value = '';
+                document.getElementById('user-lastName').value = '';
                 document.getElementById('user-email').value = '';
                 document.getElementById('user-password').value = '';
             });
@@ -253,6 +262,21 @@
                 formData.append('email', email);
                 formData.append('password', password);
 
+                // Add firstName and lastName if provided
+                const firstName = document.getElementById('user-firstName').value;
+                if (firstName) {
+                    formData.append('firstName', firstName);
+                }
+
+                const lastName = document.getElementById('user-lastName').value;
+                if (lastName) {
+                    formData.append('lastName', lastName);
+                }
+
+                // Add CSRF token
+                const csrfToken = document.getElementById('csrf_token_create_user').value;
+                formData.append('_token', csrfToken);
+
                 // Send request to create user
                 fetch('/users/create-ajax', {
                     method: 'POST',
@@ -270,6 +294,8 @@
 
                     // Reset form fields
                     document.getElementById('user-name').value = '';
+                    document.getElementById('user-firstName').value = '';
+                    document.getElementById('user-lastName').value = '';
                     document.getElementById('user-email').value = '';
                     document.getElementById('user-password').value = '';
 
@@ -281,12 +307,14 @@
                     row.innerHTML = `
                         <td>${data.id}</td>
                         <td class="editable" data-field="name" data-user-id="${data.id}">${data.name}</td>
+                        <td class="editable" data-field="firstName" data-user-id="${data.id}">${data.firstName || ''}</td>
+                        <td class="editable" data-field="lastName" data-user-id="${data.id}">${data.lastName || ''}</td>
                         <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
                         <td class="editable" data-field="roles" data-user-id="${data.id}">${data.roles.join(', ')}</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-user-id="${data.id}">
-                                <i class="fas fa-pen"></i>
-                            </button>
+                            <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
                         </td>
                     `;
 
@@ -322,15 +350,6 @@
                         }
                     });
 
-                    const editBtn = row.querySelector('.edit-row-btn');
-                    if (editBtn) {
-                        editBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            if (!isEditing) {
-                                makeRowEditable(data.id);
-                            }
-                        });
-                    }
                 })
                 .catch(error => {
                     console.error('Error creating user:', error);
@@ -370,195 +389,12 @@
             loadUsers();
         }
 
-        // Get all editable cells
-        const editableCells = document.querySelectorAll('.editable');
-
-        // Variable to track if we're currently editing a cell
-        let isEditing = false;
-
         let currentUserId = null;
 
-        // Function to handle inline editing
-        function setupInlineEditing() {
-            // We no longer add click event listeners to cells directly
-            // Instead, cells will only be editable when the edit button is clicked
-            // The actual editing functionality is now moved to makeRowEditable function
-        }
-
-        // Function to make a row's cells editable
-        function makeRowEditable(userId) {
-            if (isEditing) return;
-
-            const row = document.querySelector(`.user-row[data-user-id="${userId}"]`);
-            const editableCellsInRow = row.querySelectorAll('.editable');
-
-            // Add editing class to the row
-            row.classList.add('editing');
-
-            // Make the first cell editable
-            if (editableCellsInRow.length > 0) {
-                makeFieldEditable(editableCellsInRow[0]);
-            }
-        }
-
-        // Function to make a specific field editable
-        function makeFieldEditable(cell) {
-            isEditing = true;
-
-            const field = cell.getAttribute('data-field');
-            const userId = cell.getAttribute('data-user-id');
-            const currentValue = cell.textContent.trim();
-            const cellType = cell.getAttribute('data-type') || 'text';
-
-            // Store original content to restore if editing is cancelled
-            cell.setAttribute('data-original-content', cell.innerHTML);
-
-            // Create input element based on cell type
-            let inputElement;
-
-            if (cellType === 'select') {
-                // Create select dropdown for fields like roles
-                inputElement = document.createElement('select');
-                inputElement.className = 'form-control form-control-sm';
-
-                // Get options from data attribute
-                const options = JSON.parse(cell.getAttribute('data-options') || '{}');
-
-                // Add options to select
-                for (const [value, label] of Object.entries(options)) {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = label;
-                    if (currentValue === value) {
-                        option.selected = true;
-                    }
-                    inputElement.appendChild(option);
-                }
-            } else {
-                // Create text input for other fields
-                inputElement = document.createElement('input');
-                inputElement.type = 'text';
-                inputElement.className = 'form-control form-control-sm';
-                inputElement.value = currentValue;
-            }
-
-            // Clear the cell and add the input
-            cell.innerHTML = '';
-            cell.appendChild(inputElement);
-
-            // Focus the input
-            inputElement.focus();
-
-            // Handle input blur (save on focus out)
-            inputElement.addEventListener('blur', function() {
-                saveEdit(cell, userId, field, this.value);
-            });
-
-            // Handle Enter key press
-            inputElement.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    saveEdit(cell, userId, field, this.value);
-                } else if (e.key === 'Escape') {
-                    cancelEdit(cell);
-                }
-            });
-        }
-
-        // Function to save edited value
-        function saveEdit(cell, userId, field, value) {
-            // Create form data
-            const formData = new FormData();
-            formData.append('field', field);
-            formData.append('value', value);
-
-            // Add CSRF token
-            const csrfToken = document.getElementById('csrf_token').value;
-            formData.append('_token', csrfToken);
-
-            // Send update request
-            fetch(`/users/${userId}/update`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Update cell with new value
-                    cell.textContent = data.value;
-
-                    // Find the next editable cell in the row
-                    const row = cell.closest('.user-row');
-                    const editableCells = Array.from(row.querySelectorAll('.editable'));
-                    const currentIndex = editableCells.indexOf(cell);
-                    const nextCell = editableCells[currentIndex + 1];
-
-                    // If there's a next cell, make it editable
-                    if (nextCell) {
-                        makeFieldEditable(nextCell);
-                    } else {
-                        // If this was the last cell, we're done editing
-                        isEditing = false;
-
-                        // Remove editing class from the row
-                        row.classList.remove('editing');
-                    }
-                } else {
-                    // Show error and revert to original content
-                    cancelEdit(cell);
-                    alert('Error: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error updating user:', error);
-                // Restore original content
-                cancelEdit(cell);
-                alert('Error updating user. Please try again.');
-            });
-        }
-
-        // Function to cancel editing
-        function cancelEdit(cell) {
-            cell.innerHTML = cell.getAttribute('data-original-content');
-            isEditing = false;
-
-            // Remove editing class from the row
-            const row = cell.closest('.user-row');
-            if (row) {
-                row.classList.remove('editing');
-            }
-        }
-
-        // Initialize inline editing
-        setupInlineEditing();
-
-        // Add click event listener to edit buttons
-        const editButtons = document.querySelectorAll('.edit-row-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                // Prevent the row click event from firing
-                e.stopPropagation();
-
-                const userId = this.getAttribute('data-user-id');
-
-                // Use the new makeRowEditable function to start editing the row
-                if (!isEditing) {
-                    makeRowEditable(userId);
-                }
-            });
-        });
 
         // Add click event listener to each user row
         userRows.forEach(row => {
             row.addEventListener('click', function(e) {
-                // If we're editing, don't trigger row selection
-                if (isEditing) {
-                    return;
-                }
 
                 // Remove active class from all rows
                 userRows.forEach(r => r.classList.remove('table-primary'));
@@ -729,6 +565,10 @@
                     if (nextStepDateInput) formData.append('nextStepDate', nextStepDateInput.value);
 
                     if (ownerSelect) formData.append('owner', ownerSelect.value);
+
+                    // Add CSRF token
+                    const csrfToken = document.getElementById('csrf_token_create_action').value;
+                    formData.append('_token', csrfToken);
 
                     // Send request to create action
                     fetch(`/users/${currentUserId}/create-action`, {
