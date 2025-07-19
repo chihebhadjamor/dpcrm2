@@ -126,10 +126,22 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not found'], 404);
             }
 
-            $actions = $entityManager->getRepository(Action::class)->findBy(
-                ['user' => $user],
-                ['nextStepDate' => 'DESC']
-            );
+            // Use query builder to get actions where:
+            // 1. The user is the selected user AND
+            // 2. Either the owner is the selected user OR the action is closed
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a')
+                ->from(Action::class, 'a')
+                ->where('a.user = :user')
+                ->andWhere($queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->eq('a.owner', ':owner'),
+                    $queryBuilder->expr()->isNotNull('a.dateClosed')
+                ))
+                ->orderBy('a.nextStepDate', 'DESC')
+                ->setParameter('user', $user)
+                ->setParameter('owner', $user);
+
+            $actions = $queryBuilder->getQuery()->getResult();
 
             $actionsData = [];
             foreach ($actions as $action) {
@@ -140,6 +152,47 @@ class UserController extends AbstractWebController
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                     'owner' => $action->getOwner()->getUsername()
+                ];
+            }
+
+            return new JsonResponse($actionsData);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'An error occurred while fetching actions: ' . $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/my-actions', name: 'app_my_actions', methods: ['GET'])]
+    /**
+     * Get all actions owned by the current user, both open and closed
+     */
+    public function getMyActions(EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not authenticated'], 401);
+            }
+
+            // Get all actions where the current user is the owner, regardless of closed status
+            // Sort by nextStepDate in ascending order (most urgent first)
+            $actions = $entityManager->getRepository(Action::class)->findBy(
+                ['owner' => $user],
+                ['nextStepDate' => 'ASC']
+            );
+
+            $actionsData = [];
+            foreach ($actions as $action) {
+                $actionsData[] = [
+                    'id' => $action->getId(),
+                    'title' => $action->getTitle(),
+                    'type' => $action->getType(),
+                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                    'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'owner' => $action->getOwner()->getUsername(),
+                    'account' => $action->getAccount() ? $action->getAccount()->getName() : null,
+                    'closed' => $action->isClosed(),
+                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
                 ];
             }
 
@@ -160,10 +213,15 @@ class UserController extends AbstractWebController
             }
 
             // Get actions where the owner is the selected user
-            $actions = $entityManager->getRepository(Action::class)->findBy(
-                ['owner' => $user],
-                ['createdAt' => 'DESC']
-            );
+            // This ensures we only get actions owned by the selected user
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a')
+                ->from(Action::class, 'a')
+                ->where('a.owner = :user')
+                ->orderBy('a.createdAt', 'DESC')
+                ->setParameter('user', $user);
+
+            $actions = $queryBuilder->getQuery()->getResult();
 
             if (empty($actions)) {
                 return new JsonResponse([]);

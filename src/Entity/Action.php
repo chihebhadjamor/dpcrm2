@@ -47,8 +47,11 @@ class Action
     #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(name: 'date_closed', type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $dateClosed = null;
+
+    #[ORM\Column(name: 'closed', type: 'boolean', options: ['default' => false])]
+    private bool $closed = false;
 
     #[ORM\OneToMany(mappedBy: 'action', targetEntity: History::class, cascade: ['persist', 'remove'])]
     private Collection $histories;
@@ -194,12 +197,18 @@ class Action
 
     public function isClosed(): bool
     {
-        return $this->dateClosed !== null;
+        // For backward compatibility, check both properties
+        // If dateClosed is set but closed is false, update closed
+        if ($this->dateClosed !== null && !$this->closed) {
+            $this->closed = true;
+        }
+        return $this->closed;
     }
 
     public function close(): static
     {
         $this->dateClosed = new \DateTime();
+        $this->closed = true;
 
         return $this;
     }
@@ -207,6 +216,25 @@ class Action
     public function reopen(): static
     {
         $this->dateClosed = null;
+        $this->closed = false;
+
+        return $this;
+    }
+
+    public function getClosed(): bool
+    {
+        return $this->closed;
+    }
+
+    public function setClosed(bool $closed): static
+    {
+        $this->closed = $closed;
+
+        if ($closed && $this->dateClosed === null) {
+            $this->dateClosed = new \DateTime();
+        } elseif (!$closed) {
+            $this->dateClosed = null;
+        }
 
         return $this;
     }

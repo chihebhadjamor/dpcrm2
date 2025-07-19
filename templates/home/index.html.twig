@@ -19,6 +19,20 @@
         width: 90%;
         padding-left: 15px;
     }
+
+    /* Style for the My Actions frame */
+    .my-actions-frame {
+        margin-top: 20px;
+    }
+
+    .my-actions-table {
+        width: 100%;
+    }
+
+    .my-actions-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
 </style>
 {% endblock %}
 
@@ -69,8 +83,120 @@
             <div class="card-body">
                 <p>Please select an option from the left panel to manage users or accounts.</p>
                 <p>The selected content will be displayed here.</p>
+
+                <!-- My Actions Frame -->
+                <div class="my-actions-frame">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">My Actions (All)</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="my-actions-loading" class="text-center">
+                                <p>Loading your actions...</p>
+                            </div>
+                            <div id="my-actions-error" class="text-center text-danger" style="display: none;">
+                                <p>Error loading actions. Please try again.</p>
+                            </div>
+                            <div id="my-actions-empty" class="text-center" style="display: none;">
+                                <p>You have no actions assigned to you.</p>
+                            </div>
+                            <div id="my-actions-content" style="display: none;">
+                                <table class="table table-striped my-actions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Action</th>
+                                            <th>Account</th>
+                                            <th>Next Step Date</th>
+                                            <th>Created At</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="my-actions-tbody">
+                                        <!-- Actions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements for the My Actions frame
+        const myActionsLoading = document.getElementById('my-actions-loading');
+        const myActionsError = document.getElementById('my-actions-error');
+        const myActionsEmpty = document.getElementById('my-actions-empty');
+        const myActionsContent = document.getElementById('my-actions-content');
+        const myActionsTbody = document.getElementById('my-actions-tbody');
+
+        // Function to load the current user's actions
+        function loadMyActions() {
+            // Show loading indicator
+            myActionsLoading.style.display = 'block';
+            myActionsError.style.display = 'none';
+            myActionsEmpty.style.display = 'none';
+            myActionsContent.style.display = 'none';
+
+            // Fetch actions from the server
+            fetch('/my-actions')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    myActionsLoading.style.display = 'none';
+
+                    // Clear previous actions
+                    myActionsTbody.innerHTML = '';
+
+                    if (data.length > 0) {
+                        // Show actions content
+                        myActionsContent.style.display = 'block';
+
+                        // Add actions to table
+                        data.forEach(action => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${action.type}</td>
+                                <td>${action.title}</td>
+                                <td>${action.account || 'N/A'}</td>
+                                <td>${action.nextStepDate || 'N/A'}</td>
+                                <td>${action.createdAt}</td>
+                                <td>${action.closed ? 'Closed on ' + action.dateClosed : 'Open'}</td>
+                            `;
+
+                            // Add a class to the row if the action is closed
+                            if (action.closed) {
+                                row.classList.add('table-secondary');
+                            }
+                            myActionsTbody.appendChild(row);
+                        });
+                    } else {
+                        // Show empty message
+                        myActionsEmpty.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching actions:', error);
+                    // Hide loading indicator
+                    myActionsLoading.style.display = 'none';
+                    // Show error message
+                    myActionsError.style.display = 'block';
+                });
+        }
+
+        // Load actions when the page loads
+        loadMyActions();
+    });
+</script>
 {% endblock %}
