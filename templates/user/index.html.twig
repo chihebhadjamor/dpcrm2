@@ -47,7 +47,6 @@
 
 {# Hidden inputs for CSRF tokens #}
 <input type="hidden" id="csrf_token_create_user" value="{{ csrf_token('create_user') }}">
-<input type="hidden" id="csrf_token_create_action" value="{{ csrf_token('create_action') }}">
 
 <div class="row navigation-container">
     <!-- Left Panel with Navigation Links (Detached) -->
@@ -131,68 +130,6 @@
                     </tbody>
                 </table>
 
-                <!-- Actions Table Section -->
-                <div id="actions-section" class="mt-4" style="display: none;">
-                    <div class="card">
-                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h4 class="mb-0">User Actions</h4>
-                            <button type="button" class="btn btn-light" id="create-action-btn">
-                                <i class="fas fa-plus"></i> Create Action
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <table id="actions-table" class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Type</th>
-                                            <th>Action</th>
-                                            <th>Next Step Date</th>
-                                            <th>Created At</th>
-                                            <th>Owner</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="actions-tbody">
-                                        <!-- Form row for creating new actions -->
-                                        <tr id="action-form-row" style="display: none;">
-                                            <td><i>New</i></td>
-                                            <td>
-                                                <select class="form-control" id="action-type" name="type" required>
-                                                    <option value="Appel">Appel</option>
-                                                    <option value="Email">Email</option>
-                                                    <option value="RDV">RDV</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
-                                            </td>
-                                            <td>
-                                                <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
-                                            </td>
-                                            <td>Now</td>
-                                            <td>
-                                                <select class="form-control" id="action-owner" name="owner" required>
-                                                    <option value="">Select Owner</option>
-                                                    <!-- Users will be loaded here -->
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
-                                                <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
-                                            </td>
-                                        </tr>
-                                        <!-- Actions will be loaded here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div id="no-actions-message" class="text-center" style="display: none;">
-                                <p>No actions found for this user</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Account Actions Section -->
                 <div id="account-actions-section" class="mt-4" style="display: none;">
@@ -235,10 +172,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Get all user rows
         const userRows = document.querySelectorAll('.user-row');
-        const actionsSection = document.getElementById('actions-section');
-        const actionsTbody = document.getElementById('actions-tbody');
-        const noActionsMessage = document.getElementById('no-actions-message');
-        const createActionBtn = document.getElementById('create-action-btn');
 
         // Account actions elements
         const accountActionsSection = document.getElementById('account-actions-section');
@@ -359,16 +292,6 @@
                             // Get user ID from data attribute
                             const userId = this.getAttribute('data-user-id');
 
-                            // Fetch actions for this user
-                            fetch(`/users/${userId}/actions`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    // Show actions section and populate it
-                                    if (actionsSection) {
-                                        actionsSection.style.display = 'block';
-                                        // Rest of the actions loading code...
-                                    }
-                                });
                         }
                     });
 
@@ -380,38 +303,7 @@
             });
         }
 
-        // Load users for the owner dropdown
-        function loadUsers() {
-            fetch('/api/users')
-                .then(response => response.json())
-                .then(data => {
-                    const ownerSelect = document.getElementById('action-owner');
-                    if (ownerSelect) {
-                        // Clear existing options except the first one
-                        while (ownerSelect.options.length > 1) {
-                            ownerSelect.remove(1);
-                        }
 
-                        // Add users to dropdown
-                        data.forEach(user => {
-                            const option = document.createElement('option');
-                            option.value = user.id;
-                            option.textContent = user.username;
-                            ownerSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading users:', error);
-                });
-        }
-
-        // Load users when the page loads
-        if (document.getElementById('action-owner')) {
-            loadUsers();
-        }
-
-        let currentUserId = null;
 
 
         // Add click event listener to each user row
@@ -426,85 +318,7 @@
 
                 // Get user ID from data attribute
                 const userId = this.getAttribute('data-user-id');
-                currentUserId = userId;
 
-                // If we have an actions section, fetch actions for this user
-                if (actionsSection) {
-                    // Fetch actions for this user
-                    fetch(`/users/${userId}/actions`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Save the form row
-                            const formRow = document.getElementById('action-form-row');
-                            const formRowDisplay = formRow ? formRow.style.display : 'none';
-
-                            // Clear previous actions
-                            actionsTbody.innerHTML = '';
-
-                            // Re-add the form row to the tbody if it exists
-                            if (formRow) {
-                                actionsTbody.appendChild(formRow);
-                                formRow.style.display = formRowDisplay;
-                            }
-
-                            // Show actions section
-                            actionsSection.style.display = 'block';
-
-                            if (data.length > 0) {
-                                // Hide no actions message
-                                if (noActionsMessage) {
-                                    noActionsMessage.style.display = 'none';
-                                }
-
-                                // Get only the last 4 actions (most recent)
-                                const lastFourActions = data.slice(-4);
-
-                                // Add actions to table after the form row
-                                lastFourActions.forEach(action => {
-                                    const row = document.createElement('tr');
-                                    row.innerHTML = `
-                                        <td>${action.id}</td>
-                                        <td>${action.type}</td>
-                                        <td>${action.title}</td>
-                                        <td>${action.nextStepDate || ''}</td>
-                                        <td>${action.createdAt}</td>
-                                        <td>${action.owner}</td>
-                                        <td></td>
-                                    `;
-                                    actionsTbody.appendChild(row);
-                                });
-                            } else {
-                                // Show no actions message
-                                if (noActionsMessage) {
-                                    noActionsMessage.style.display = 'block';
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching actions:', error);
-                            if (actionsSection) {
-                                actionsSection.style.display = 'block';
-
-                                // Save the form row
-                                const formRow = document.getElementById('action-form-row');
-                                const formRowDisplay = formRow ? formRow.style.display : 'none';
-
-                                // Clear previous actions
-                                actionsTbody.innerHTML = '';
-
-                                // Re-add the form row to the tbody if it exists
-                                if (formRow) {
-                                    actionsTbody.appendChild(formRow);
-                                    formRow.style.display = formRowDisplay;
-                                }
-
-                                if (noActionsMessage) {
-                                    noActionsMessage.style.display = 'block';
-                                    noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
-                                }
-                            }
-                        });
-                }
 
                 // Fetch account actions for this user
                 if (accountActionsSection) {
@@ -560,148 +374,6 @@
             });
         });
 
-        // Handle create action button click if it exists
-        if (createActionBtn) {
-            const actionFormRow = document.getElementById('action-form-row');
-            const saveActionBtn = document.getElementById('save-action-btn');
-            const cancelActionBtn = document.getElementById('cancel-action-btn');
-
-            // Show the form row when Create Action button is clicked
-            createActionBtn.addEventListener('click', function() {
-                if (!currentUserId) {
-                    alert('Please select a user first');
-                    return;
-                }
-
-                // Show the form row
-                if (actionFormRow) {
-                    actionFormRow.style.display = 'table-row';
-
-                    // Focus on the title input
-                    const titleInput = document.getElementById('action-title');
-                    if (titleInput) {
-                        titleInput.focus();
-                    }
-                }
-            });
-
-            // Handle cancel button
-            if (cancelActionBtn) {
-                cancelActionBtn.addEventListener('click', function() {
-                    // Hide the form row
-                    if (actionFormRow) {
-                        actionFormRow.style.display = 'none';
-                    }
-
-                    // Reset form fields
-                    const titleInput = document.getElementById('action-title');
-                    const nextStepDateInput = document.getElementById('action-next-step-date');
-                    const typeSelect = document.getElementById('action-type');
-                    const ownerSelect = document.getElementById('action-owner');
-
-                    if (titleInput) titleInput.value = '';
-                    if (nextStepDateInput) nextStepDateInput.value = '';
-                    if (typeSelect) typeSelect.value = 'Appel';
-                    if (ownerSelect) ownerSelect.value = '';
-                });
-            }
-
-            // Handle save button
-            if (saveActionBtn) {
-                saveActionBtn.addEventListener('click', function() {
-                    if (!currentUserId) {
-                        alert('Please select a user first');
-                        return;
-                    }
-
-                    // Validate required fields
-                    const titleInput = document.getElementById('action-title');
-                    const ownerSelect = document.getElementById('action-owner');
-
-                    if (titleInput && !titleInput.value) {
-                        alert('Title is required');
-                        return;
-                    }
-
-                    if (ownerSelect && !ownerSelect.value) {
-                        alert('Owner is required');
-                        return;
-                    }
-
-                    // Create FormData object
-                    const formData = new FormData();
-                    if (titleInput) formData.append('title', titleInput.value);
-
-                    const typeSelect = document.getElementById('action-type');
-                    if (typeSelect) formData.append('type', typeSelect.value);
-
-                    const nextStepDateInput = document.getElementById('action-next-step-date');
-                    if (nextStepDateInput) formData.append('nextStepDate', nextStepDateInput.value);
-
-                    if (ownerSelect) formData.append('owner', ownerSelect.value);
-
-                    // Add CSRF token
-                    const csrfToken = document.getElementById('csrf_token_create_action').value;
-                    formData.append('_token', csrfToken);
-
-                    // Send request to create action
-                    fetch(`/users/${currentUserId}/create-action`, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Hide the form row
-                        if (actionFormRow) {
-                            actionFormRow.style.display = 'none';
-                        }
-
-                        // Reset form fields
-                        if (titleInput) titleInput.value = '';
-                        if (nextStepDateInput) nextStepDateInput.value = '';
-                        if (typeSelect) typeSelect.value = 'Appel';
-                        if (ownerSelect) ownerSelect.value = '';
-
-                        // Add the new action to the table
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${data.id}</td>
-                            <td>${data.type}</td>
-                            <td>${data.title}</td>
-                            <td>${data.nextStepDate || ''}</td>
-                            <td>${data.createdAt}</td>
-                            <td>${data.owner}</td>
-                            <td></td>
-                        `;
-
-                        // Hide no actions message if it's visible
-                        if (noActionsMessage && noActionsMessage.style.display !== 'none') {
-                            noActionsMessage.style.display = 'none';
-                        }
-
-                        // Add the new row after the form row
-                        if (actionFormRow) {
-                            if (actionFormRow.nextSibling) {
-                                actionsTbody.insertBefore(row, actionFormRow.nextSibling);
-                            } else {
-                                actionsTbody.appendChild(row);
-                            }
-                        } else {
-                            actionsTbody.appendChild(row);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error creating action:', error);
-                        alert('Error creating action. Please try again.');
-                    });
-                });
-            }
-        }
     });
 </script>
 {% endblock %}
