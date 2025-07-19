@@ -230,11 +230,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div id="show-all-actions" class="text-center mt-2" style="display: none;">
-                                <button type="button" class="btn btn-outline-primary" id="show-all-actions-btn">
-                                    Show All
-                                </button>
-                            </div>
                             <div id="no-actions-message" class="text-center" style="display: none;">
                                 <p>No actions found for this account</p>
                             </div>
@@ -560,8 +555,6 @@
 
         // Variable to store all actions for the current account
         let allAccountActions = [];
-        const showAllActionsBtn = document.getElementById('show-all-actions-btn');
-        const showAllActionsContainer = document.getElementById('show-all-actions');
 
         // Function to render actions in the table
         function renderActions(actions) {
@@ -651,20 +644,11 @@
                             // Hide no actions message
                             noActionsMessage.style.display = 'none';
 
-                            // Show only the first 10 actions initially
-                            const initialActions = data.slice(0, 10);
-                            renderActions(initialActions);
-
-                            // Show or hide the "Show All" button based on number of actions
-                            if (data.length > 10) {
-                                showAllActionsContainer.style.display = 'block';
-                            } else {
-                                showAllActionsContainer.style.display = 'none';
-                            }
+                            // Show all actions
+                            renderActions(data);
                         } else {
                             // Show no actions message
                             noActionsMessage.style.display = 'block';
-                            showAllActionsContainer.style.display = 'none';
                         }
                     })
                     .catch(error => {
@@ -684,19 +668,10 @@
 
                         noActionsMessage.style.display = 'block';
                         noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
-                        showAllActionsContainer.style.display = 'none';
                     });
             });
         });
 
-        // Add event listener for the "Show All" button
-        showAllActionsBtn.addEventListener('click', function() {
-            // Display all actions
-            renderActions(allAccountActions);
-
-            // Hide the "Show All" button since all actions are now displayed
-            showAllActionsContainer.style.display = 'none';
-        });
 
         // Add event delegation for action closed checkboxes
         actionsTbody.addEventListener('change', function(e) {
@@ -850,25 +825,8 @@
                         noActionsMessage.style.display = 'none';
                     }
 
-                    // Determine which actions to display
-                    let actionsToDisplay;
-                    if (showAllActionsContainer.style.display === 'none' || allAccountActions.length <= 10) {
-                        // We're showing all actions or there are 10 or fewer
-                        actionsToDisplay = allAccountActions;
-                        // Hide the "Show All" button since we're showing all actions
-                        showAllActionsContainer.style.display = 'none';
-                    } else {
-                        // We're showing just the first 10
-                        actionsToDisplay = allAccountActions.slice(0, 10);
-
-                        // Show the "Show All" button if there are more than 10 actions
-                        if (allAccountActions.length > 10) {
-                            showAllActionsContainer.style.display = 'block';
-                        }
-                    }
-
-                    // Render the actions
-                    renderActions(actionsToDisplay);
+                    // Display all actions
+                    renderActions(allAccountActions);
                 })
                 .catch(error => {
                     console.error('Error creating action:', error);
