@@ -159,32 +159,42 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not found'], 404);
             }
 
-            // Get accounts owned by the user
-            $accounts = $entityManager->getRepository(\App\Entity\Account::class)->findBy(['owner' => $user]);
+            // Get actions where the owner is the selected user
+            $actions = $entityManager->getRepository(Action::class)->findBy(
+                ['owner' => $user],
+                ['createdAt' => 'DESC']
+            );
 
-            if (empty($accounts)) {
+            if (empty($actions)) {
                 return new JsonResponse([]);
             }
 
-            // Get the most recent action for each account
+            // Group actions by account and get the most recent one for each account
             $accountActions = [];
-            foreach ($accounts as $account) {
-                $actions = $entityManager->getRepository(Action::class)->findBy(
-                    ['account' => $account],
-                    ['createdAt' => 'DESC'],
-                    1 // Limit to the most recent action
-                );
+            $processedAccounts = [];
 
-                if (!empty($actions)) {
-                    $action = $actions[0];
+            foreach ($actions as $action) {
+                $account = $action->getAccount();
+
+                // Skip actions without an associated account
+                if (!$account) {
+                    continue;
+                }
+
+                $accountId = $account->getId();
+
+                // Only process each account once (to get the most recent action)
+                if (!in_array($accountId, $processedAccounts)) {
                     $accountActions[] = [
                         'id' => $action->getId(),
-                        'accountId' => $account->getId(),
+                        'accountId' => $accountId,
                         'accountName' => $account->getName(),
                         'lastAction' => $action->getTitle(),
                         'priority' => $account->getPriority(),
                         'nextStep' => $account->getNextStep()
                     ];
+
+                    $processedAccounts[] = $accountId;
                 }
             }
 
