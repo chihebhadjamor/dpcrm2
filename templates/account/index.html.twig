@@ -93,6 +93,7 @@
                             <th>Priority</th>
                             <th>Next Step</th>
                             <th>Last Action</th>
+                            <th>Action Owner</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -120,6 +121,9 @@
                                 <!-- New account has no actions yet -->
                             </td>
                             <td>
+                                <!-- New account has no action owner yet -->
+                            </td>
+                            <td>
                                 <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
                                 <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
                             </td>
@@ -136,7 +140,14 @@
                                     {% if lastActions[account.id] is defined %}
                                         {{ lastActions[account.id].title }}
                                     {% else %}
-                                        No action identified
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lastActions[account.id] is defined %}
+                                        {{ lastActions[account.id].owner.username }}
+                                    {% else %}
+                                        N/A
                                     {% endif %}
                                 </td>
                                 <td>
@@ -147,7 +158,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="7" class="text-center">No accounts found</td>
+                                <td colspan="8" class="text-center">No accounts found</td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -156,9 +156,10 @@ class AccountController extends AbstractWebController
 
             // Use Doctrine's query builder for better compatibility
             $qb = $entityManager->createQueryBuilder();
-            $qb->select('a', 'acc')
+            $qb->select('a', 'acc', 'u')
                ->from(Action::class, 'a')
                ->join('a.account', 'acc')
+               ->join('a.owner', 'u')
                ->where('acc.id IN (:accountIds)')
                ->setParameter('accountIds', $accountIds)
                ->orderBy('a.createdAt', 'DESC');
