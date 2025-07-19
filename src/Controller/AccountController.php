@@ -145,6 +145,38 @@ class AccountController extends AbstractWebController
             ['createdAt' => 'DESC']
         );
 
+        // Fetch the most recent action for each account
+        $lastActions = [];
+
+        if (!empty($accounts)) {
+            // Get all account IDs
+            $accountIds = array_map(function($account) {
+                return $account->getId();
+            }, $accounts);
+
+            // Use Doctrine's query builder for better compatibility
+            $qb = $entityManager->createQueryBuilder();
+            $qb->select('a', 'acc')
+               ->from(Action::class, 'a')
+               ->join('a.account', 'acc')
+               ->where('acc.id IN (:accountIds)')
+               ->setParameter('accountIds', $accountIds)
+               ->orderBy('a.createdAt', 'DESC');
+
+            $actions = $qb->getQuery()->getResult();
+
+            // Group actions by account ID and keep only the most recent one
+            $tempActions = [];
+            foreach ($actions as $action) {
+                $accountId = $action->getAccount()->getId();
+                if (!isset($tempActions[$accountId])) {
+                    $tempActions[$accountId] = $action;
+                }
+            }
+
+            $lastActions = $tempActions;
+        }
+
         // Create a new account instance for the form
         $account = new Account();
 
@@ -198,7 +230,10 @@ class AccountController extends AbstractWebController
             'Account created successfully!',
             'There was an error creating the account.',
             'account/index.html.twig',
-            ['accounts' => $accounts]
+            [
+                'accounts' => $accounts,
+                'lastActions' => $lastActions
+            ]
         );
     }
 

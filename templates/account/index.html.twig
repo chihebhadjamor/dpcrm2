@@ -92,6 +92,7 @@
                             <th>Contact</th>
                             <th>Priority</th>
                             <th>Next Step</th>
+                            <th>Last Action</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -116,6 +117,9 @@
                                 <input type="text" class="form-control" id="account-next-step" name="nextStep" placeholder="Next Step">
                             </td>
                             <td>
+                                <!-- New account has no actions yet -->
+                            </td>
+                            <td>
                                 <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
                                 <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
                             </td>
@@ -128,6 +132,13 @@
                                 <td class="editable" data-field="priority" data-account-id="{{ account.id }}" data-type="select"
                                     data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>{{ account.priority }}</td>
                                 <td class="editable" data-field="nextStep" data-account-id="{{ account.id }}">{{ account.nextStep }}</td>
+                                <td>
+                                    {% if lastActions[account.id] is defined %}
+                                        {{ lastActions[account.id].title }}
+                                    {% else %}
+                                        No action identified
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
                                         <i class="fas fa-edit"></i> Edit
@@ -338,6 +349,7 @@
                         <td class="editable" data-field="priority" data-account-id="${data.id}" data-type="select"
                             data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
                         <td class="editable" data-field="nextStep" data-account-id="${data.id}">${data.nextStep || ''}</td>
+                        <td>No action identified</td>
                         <td>
                             <a href="/account/${data.id}/edit" class="btn btn-sm btn-outline-success">
                                 <i class="fas fa-edit"></i> Edit
