@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Action;
 use App\Entity\User;
+use App\Form\AccountType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,25 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
 class AccountController extends AbstractWebController
 {
+    #[Route('/accounts/{id}/edit', name: 'app_account_edit', methods: ['GET', 'POST'])]
+    public function edit(Request $request, Account $account, EntityManagerInterface $entityManager): Response
+    {
+        $form = $this->createForm(AccountType::class, $account);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Account updated successfully.');
+
+            return $this->redirectToRoute('app_accounts', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('account/edit.html.twig', [
+            'account' => $account,
+            'form' => $form->createView(),
+        ]);
+    }
     #[Route('/api/users', name: 'app_get_users', methods: ['GET'])]
     public function getUsers(EntityManagerInterface $entityManager): JsonResponse
     {

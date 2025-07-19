@@ -34,6 +34,21 @@ class Account
     private ?string $priority = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Url]
+    private ?string $website = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $phone = null;
+
+    #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Choice(choices: ['Active', 'Inactive', 'Pending'])]
+    private ?string $status = 'Active';
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $context = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $nextStep = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -156,6 +171,72 @@ class Account
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getWebsite(): ?string
+    {
+        return $this->website;
+    }
+
+    public function setWebsite(?string $website): static
+    {
+        $this->website = $website;
+
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): static
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public static function getAvailableStatuses(): array
+    {
+        return [
+            'Active' => 'Active',
+            'Inactive' => 'Inactive',
+            'Pending' => 'Pending'
+        ];
+    }
+
+    public static function getAvailablePriorities(): array
+    {
+        return [
+            'High' => 'Haute',
+            'Medium' => 'Moyenne',
+            'Low' => 'Basse'
+        ];
+    }
+
+    public function getContext(): ?string
+    {
+        return $this->context;
+    }
+
+    public function setContext(?string $context): static
+    {
+        $this->context = $context;
 
         return $this;
     }

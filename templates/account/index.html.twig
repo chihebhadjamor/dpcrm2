@@ -76,7 +76,7 @@
                             <th>Name</th>
                             <th>Contact</th>
                             <th>Priority</th>
-                            <th>Context</th>
+                            <th>Next Step</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -114,9 +114,9 @@
                                     data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>{{ account.priority }}</td>
                                 <td class="editable" data-field="nextStep" data-account-id="{{ account.id }}">{{ account.nextStep }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-account-id="{{ account.id }}">
-                                        <i class="fas fa-pen"></i>
-                                    </button>
+                                    <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
                                 </td>
                             </tr>
                         {% else %}
@@ -319,9 +319,9 @@
                             data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
                         <td class="editable" data-field="nextStep" data-account-id="${data.id}">${data.nextStep || ''}</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-account-id="${data.id}">
-                                <i class="fas fa-pen"></i>
-                            </button>
+                            <a href="/account/${data.id}/edit" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
                         </td>
                     `;
 
@@ -339,13 +339,6 @@
                         }
                     });
 
-                    const editBtn = row.querySelector('.edit-row-btn');
-                    if (editBtn) {
-                        editBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            makeRowEditable(data.id);
-                        });
-                    }
                 })
                 .catch(error => {
                     console.error('Error creating account:', error);
@@ -511,21 +504,6 @@
         // Initialize inline editing
         setupInlineEditing();
 
-        // Add click event listener to edit buttons
-        const editButtons = document.querySelectorAll('.edit-row-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                // Prevent the row click event from firing
-                e.stopPropagation();
-
-                const accountId = this.getAttribute('data-account-id');
-
-                // Use the new makeRowEditable function to start editing the row
-                if (!isEditing) {
-                    makeRowEditable(accountId);
-                }
-            });
-        });
 
         // Add click event listener to each account row
         accountRows.forEach(row => {

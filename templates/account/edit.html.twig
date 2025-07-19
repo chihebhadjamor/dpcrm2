@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Account{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Edit Account: {{ account.name }}</h1>
+                </div>
+                <div class="card-body">
+                    {{ form_start(form) }}
+
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.contact) }}
+                    {{ form_row(form.website) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.status) }}
+                    {{ form_row(form.priority) }}
+
+                    <button class="btn btn-primary">{{ button_label|default('Update Account') }}</button>
+                    <a href="{{ path('app_accounts') }}" class="btn btn-secondary">Back to list</a>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

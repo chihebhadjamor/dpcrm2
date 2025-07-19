@@ -25,7 +25,7 @@
                 <h1>Dashboard</h1>
             </div>
             <div class="card-body">
-                <p>Welcome, {{ app.user.name is defined ? app.user.name : app.user.userIdentifier }}! You are logged in as {{ app.user.userIdentifier }}</p>
+                <p>Welcome, {{ app.user.username is defined ? app.user.username : app.user.userIdentifier }}! You are logged in as {{ app.user.userIdentifier }}</p>
             </div>
         </div>
     </div>
@@ -73,10 +73,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
+                            <th>Username</th>
                             <th>Email</th>
+                            <th>Name</th>
                             <th>Roles</th>
                             <th>Actions</th>
                         </tr>
@@ -86,16 +85,13 @@
                         <tr id="user-form-row" style="display: none;">
                             <td><i>New</i></td>
                             <td>
-                                <input type="text" class="form-control" id="user-name" name="name" placeholder="Name" required>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control" id="user-firstName" name="firstName" placeholder="First Name">
-                            </td>
-                            <td>
-                                <input type="text" class="form-control" id="user-lastName" name="lastName" placeholder="Last Name">
+                                <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
                             </td>
                             <td>
                                 <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="user-name" name="name" placeholder="Name">
                             </td>
                             <td>
                                 <input type="password" class="form-control" id="user-password" name="password" placeholder="Password" required>
@@ -108,10 +104,9 @@
                         {% for user in users %}
                             <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
                                 <td>{{ user.id }}</td>
-                                <td class="editable" data-field="name" data-user-id="{{ user.id }}">{{ user.name }}</td>
-                                <td class="editable" data-field="firstName" data-user-id="{{ user.id }}">{{ user.firstName }}</td>
-                                <td class="editable" data-field="lastName" data-user-id="{{ user.id }}">{{ user.lastName }}</td>
+                                <td class="editable" data-field="username" data-user-id="{{ user.id }}">{{ user.username }}</td>
                                 <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
+                                <td class="editable" data-field="name" data-user-id="{{ user.id }}">{{ user.name }}</td>
                                 <td class="editable" data-field="roles" data-user-id="{{ user.id }}">{{ user.roles|join(', ') }}</td>
                                 <td>
                                     <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
@@ -218,8 +213,8 @@
                 // Show the form row
                 userFormRow.style.display = 'table-row';
 
-                // Focus on the name input
-                document.getElementById('user-name').focus();
+                // Focus on the username input
+                document.getElementById('user-username').focus();
             });
 
             // Handle cancel button
@@ -228,9 +223,7 @@
                 userFormRow.style.display = 'none';
 
                 // Reset form fields
-                document.getElementById('user-name').value = '';
-                document.getElementById('user-firstName').value = '';
-                document.getElementById('user-lastName').value = '';
+                document.getElementById('user-username').value = '';
                 document.getElementById('user-email').value = '';
                 document.getElementById('user-password').value = '';
             });
@@ -238,9 +231,9 @@
             // Handle save button
             saveUserBtn.addEventListener('click', function() {
                 // Validate required fields
-                const name = document.getElementById('user-name').value;
-                if (!name) {
-                    alert('Name is required');
+                const username = document.getElementById('user-username').value;
+                if (!username) {
+                    alert('Username is required');
                     return;
                 }
 
@@ -256,21 +249,15 @@
                     return;
                 }
 
+                const name = document.getElementById('user-name').value;
+
                 // Create FormData object
                 const formData = new FormData();
-                formData.append('name', name);
+                formData.append('username', username);
                 formData.append('email', email);
                 formData.append('password', password);
-
-                // Add firstName and lastName if provided
-                const firstName = document.getElementById('user-firstName').value;
-                if (firstName) {
-                    formData.append('firstName', firstName);
-                }
-
-                const lastName = document.getElementById('user-lastName').value;
-                if (lastName) {
-                    formData.append('lastName', lastName);
+                if (name) {
+                    formData.append('name', name);
                 }
 
                 // Add CSRF token
@@ -293,11 +280,10 @@
                     userFormRow.style.display = 'none';
 
                     // Reset form fields
-                    document.getElementById('user-name').value = '';
-                    document.getElementById('user-firstName').value = '';
-                    document.getElementById('user-lastName').value = '';
+                    document.getElementById('user-username').value = '';
                     document.getElementById('user-email').value = '';
                     document.getElementById('user-password').value = '';
+                    document.getElementById('user-name').value = '';
 
                     // Add the new user to the table
                     const row = document.createElement('tr');
@@ -306,10 +292,9 @@
                     row.style.cursor = 'pointer';
                     row.innerHTML = `
                         <td>${data.id}</td>
-                        <td class="editable" data-field="name" data-user-id="${data.id}">${data.name}</td>
-                        <td class="editable" data-field="firstName" data-user-id="${data.id}">${data.firstName || ''}</td>
-                        <td class="editable" data-field="lastName" data-user-id="${data.id}">${data.lastName || ''}</td>
+                        <td class="editable" data-field="username" data-user-id="${data.id}">${data.username}</td>
                         <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
+                        <td class="editable" data-field="name" data-user-id="${data.id}">${data.name || ''}</td>
                         <td class="editable" data-field="roles" data-user-id="${data.id}">${data.roles.join(', ')}</td>
                         <td>
                             <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
@@ -374,7 +359,7 @@
                         data.forEach(user => {
                             const option = document.createElement('option');
                             option.value = user.id;
-                            option.textContent = user.name;
+                            option.textContent = user.username;
                             ownerSelect.appendChild(option);
                         });
                     }

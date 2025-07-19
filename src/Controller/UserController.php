@@ -34,14 +34,13 @@ class UserController extends AbstractWebController
         }
 
         // Get form data
-        $name = $request->request->get('name');
+        $username = $request->request->get('username');
         $email = $request->request->get('email');
         $password = $request->request->get('password');
-        $firstName = $request->request->get('firstName');
-        $lastName = $request->request->get('lastName');
+        $name = $request->request->get('name');
 
         // Validate required fields
-        if (!$name || !$email || !$password) {
+        if (!$username || !$email || !$password) {
             return new JsonResponse(['error' => 'Missing required fields'], 400);
         }
 
@@ -56,17 +55,18 @@ class UserController extends AbstractWebController
             return new JsonResponse(['error' => 'Email is already in use'], 400);
         }
 
+        // Check if username is already in use
+        $existingUser = $entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+        if ($existingUser) {
+            return new JsonResponse(['error' => 'Username is already in use'], 400);
+        }
+
         // Create a new user
         $user = new User();
-        $user->setName($name);
+        $user->setUsername($username);
         $user->setEmail($email);
-
-        // Set firstName and lastName if provided
-        if ($firstName) {
-            $user->setFirstName($firstName);
-        }
-        if ($lastName) {
-            $user->setLastName($lastName);
+        if ($name) {
+            $user->setName($name);
         }
 
         // Hash the password
@@ -86,10 +86,9 @@ class UserController extends AbstractWebController
         // Return the created user data
         return new JsonResponse([
             'id' => $user->getId(),
-            'name' => $user->getName(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
+            'username' => $user->getUsername(),
             'email' => $user->getEmail(),
+            'name' => $user->getName(),
             'roles' => $user->getRoles()
         ]);
     }
@@ -114,7 +113,7 @@ class UserController extends AbstractWebController
         foreach ($users as $user) {
             $usersData[] = [
                 'id' => $user->getId(),
-                'name' => $user->getName()
+                'username' => $user->getUsername()
             ];
         }
 
@@ -144,7 +143,7 @@ class UserController extends AbstractWebController
                     'type' => $action->getType(),
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-                    'owner' => $action->getOwner()->getName()
+                    'owner' => $action->getOwner()->getUsername()
                 ];
             }
 
@@ -213,7 +212,7 @@ class UserController extends AbstractWebController
             'type' => $action->getType(),
             'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
             'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-            'owner' => $action->getOwner()->getName()
+            'owner' => $action->getOwner()->getUsername()
         ]);
     }
 
@@ -248,11 +247,16 @@ class UserController extends AbstractWebController
 
             // Validate and update the field
             switch ($fieldName) {
-                case 'name':
+                case 'username':
                     if (strlen($value) >= 2 && strlen($value) <= 180) {
-                        $user->setName($value);
+                        // Check if username is already in use by another user
+                        $existingUser = $entityManager->getRepository(User::class)->findOneBy(['username' => $value]);
+                        if ($existingUser && $existingUser->getId() !== $user->getId()) {
+                            return new JsonResponse(['error' => 'Username is already in use'], 400);
+                        }
+                        $user->setUsername($value);
                     } else {
-                        return new JsonResponse(['error' => 'Name must be between 2 and 180 characters'], 400);
+                        return new JsonResponse(['error' => 'Username must be between 2 and 180 characters'], 400);
                     }
                     break;
                 case 'email':
@@ -265,6 +269,13 @@ class UserController extends AbstractWebController
                         $user->setEmail($value);
                     } else {
                         return new JsonResponse(['error' => 'Invalid email format'], 400);
+                    }
+                    break;
+                case 'name':
+                    if (strlen($value) <= 255) {
+                        $user->setName($value);
+                    } else {
+                        return new JsonResponse(['error' => 'Name must be less than 255 characters'], 400);
                     }
                     break;
                 case 'roles':
@@ -288,20 +299,6 @@ class UserController extends AbstractWebController
                     break;
                 case 'secret_2fa':
                     $user->setSecret2fa($value);
-                    break;
-                case 'firstName':
-                    if (strlen($value) <= 100) {
-                        $user->setFirstName($value);
-                    } else {
-                        return new JsonResponse(['error' => 'First name must be 100 characters or less'], 400);
-                    }
-                    break;
-                case 'lastName':
-                    if (strlen($value) <= 100) {
-                        $user->setLastName($value);
-                    } else {
-                        return new JsonResponse(['error' => 'Last name must be 100 characters or less'], 400);
-                    }
                     break;
                 default:
                     return new JsonResponse(['error' => 'Invalid field name'], 400);

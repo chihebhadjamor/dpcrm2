@@ -1,0 +1,4 @@
+-- Add website, phone, and status columns to account table
+ALTER TABLE account ADD COLUMN IF NOT EXISTS website VARCHAR(255) DEFAULT NULL;
+ALTER TABLE account ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT NULL;
+ALTER TABLE account ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active' NOT NULL;
