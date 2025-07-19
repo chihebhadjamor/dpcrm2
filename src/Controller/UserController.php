@@ -161,9 +161,53 @@ class UserController extends AbstractWebController
         }
     }
 
+    #[Route('/users/{userId}/open-actions', name: 'app_user_open_actions', methods: ['GET'])]
+    public function getUserOpenActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            $user = $entityManager->getRepository(User::class)->find($userId);
+
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+
+            // Use query builder to get open actions where:
+            // 1. The user is either the owner or is associated with the action AND
+            // 2. The action is not closed (closed = false)
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a')
+                ->from(Action::class, 'a')
+                ->where('a.user = :user OR a.owner = :user')
+                ->andWhere('a.closed = :closed')
+                ->orderBy('a.nextStepDate', 'ASC')
+                ->setParameter('user', $user)
+                ->setParameter('closed', false);
+
+            $actions = $queryBuilder->getQuery()->getResult();
+
+            $actionsData = [];
+            foreach ($actions as $action) {
+                $actionsData[] = [
+                    'id' => $action->getId(),
+                    'title' => $action->getTitle(),
+                    'type' => $action->getType(),
+                    'accountName' => $action->getAccount() ? $action->getAccount()->getName() : null,
+                    'priority' => $action->getAccount() ? $action->getAccount()->getPriority() : null,
+                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                    'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'owner' => $action->getOwner()->getUsername()
+                ];
+            }
+
+            return new JsonResponse($actionsData);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'An error occurred while fetching open actions: ' . $e->getMessage()], 500);
+        }
+    }
+
     #[Route('/my-actions', name: 'app_my_actions', methods: ['GET'])]
     /**
-     * Get all actions owned by the current user, both open and closed
+     * Get all actions related to the current user, both open and closed
      */
     public function getMyActions(EntityManagerInterface $entityManager): JsonResponse
     {
@@ -174,12 +218,16 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not authenticated'], 401);
             }
 
-            // Get all actions where the current user is the owner, regardless of closed status
+            // Get all actions where the current user is either the owner or is associated with the action
             // Sort by nextStepDate in ascending order (most urgent first)
-            $actions = $entityManager->getRepository(Action::class)->findBy(
-                ['owner' => $user],
-                ['nextStepDate' => 'ASC']
-            );
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a')
+                ->from(Action::class, 'a')
+                ->where('a.owner = :user OR a.user = :user')
+                ->orderBy('a.nextStepDate', 'ASC')
+                ->setParameter('user', $user);
+
+            $actions = $queryBuilder->getQuery()->getResult();
 
             $actionsData = [];
             foreach ($actions as $action) {
@@ -212,12 +260,12 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not found'], 404);
             }
 
-            // Get actions where the owner is the selected user
-            // This ensures we only get actions owned by the selected user
+            // Get actions where the user is either the owner or is associated with the action
+            // This ensures we get all actions related to the user
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
-                ->where('a.owner = :user')
+                ->where('a.owner = :user OR a.user = :user')
                 ->orderBy('a.createdAt', 'DESC')
                 ->setParameter('user', $user);
 

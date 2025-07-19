@@ -39,6 +39,11 @@
         opacity: 0.7;
         background-color: #f8f9fa !important;
     }
+
+    /* Add strikethrough for text in closed action cells */
+    .action-closed td {
+        text-decoration: line-through;
+    }
 </style>
 {% endblock %}
 
@@ -99,7 +104,6 @@
                             <th>Priority</th>
                             <th>Next Step</th>
                             <th>Last Action</th>
-                            <th>Action Owner</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -127,9 +131,6 @@
                                 <!-- New account has no actions yet -->
                             </td>
                             <td>
-                                <!-- New account has no action owner yet -->
-                            </td>
-                            <td>
                                 <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
                                 <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
                             </td>
@@ -150,13 +151,6 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if lastActions[account.id] is defined %}
-                                        {{ lastActions[account.id].owner.username }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                <td>
                                     <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
@@ -164,7 +158,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="8" class="text-center">No accounts found</td>
+                                <td colspan="7" class="text-center">No accounts found</td>
                             </tr>
                         {% endfor %}
                     </tbody>
