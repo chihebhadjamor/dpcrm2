@@ -137,7 +137,7 @@
                             </button>
                         </div>
                         <div class="card-body">
-                            <div style="max-height: 200px; overflow-y: auto;">
+                            <div style="max-height: 20vh; overflow-y: auto;">
                                 <table id="actions-table" class="table table-striped">
                                     <thead>
                                         <tr>
@@ -182,6 +182,11 @@
                                         <!-- Actions will be loaded here -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div id="show-all-actions" class="text-center mt-2" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary" id="show-all-actions-btn">
+                                    Show All
+                                </button>
                             </div>
                             <div id="no-actions-message" class="text-center" style="display: none;">
                                 <p>No actions found for this account</p>
@@ -505,6 +510,40 @@
         setupInlineEditing();
 
 
+        // Variable to store all actions for the current account
+        let allAccountActions = [];
+        const showAllActionsBtn = document.getElementById('show-all-actions-btn');
+        const showAllActionsContainer = document.getElementById('show-all-actions');
+
+        // Function to render actions in the table
+        function renderActions(actions) {
+            // Save the form row
+            const formRow = document.getElementById('action-form-row');
+            const formRowDisplay = formRow.style.display;
+
+            // Clear previous actions
+            actionsTbody.innerHTML = '';
+
+            // Re-add the form row to the tbody
+            actionsTbody.appendChild(formRow);
+            formRow.style.display = formRowDisplay;
+
+            // Add actions to table after the form row
+            actions.forEach(action => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${action.id}</td>
+                    <td>${action.type}</td>
+                    <td>${action.title}</td>
+                    <td>${action.nextStepDate || ''}</td>
+                    <td>${action.createdAt}</td>
+                    <td>${action.owner}</td>
+                    <td></td>
+                `;
+                actionsTbody.appendChild(row);
+            });
+        }
+
         // Add click event listener to each account row
         accountRows.forEach(row => {
             row.addEventListener('click', function(e) {
@@ -527,16 +566,8 @@
                 fetch(`/accounts/${accountId}/actions`)
                     .then(response => response.json())
                     .then(data => {
-                        // Save the form row
-                        const formRow = document.getElementById('action-form-row');
-                        const formRowDisplay = formRow.style.display;
-
-                        // Clear previous actions
-                        actionsTbody.innerHTML = '';
-
-                        // Re-add the form row to the tbody
-                        actionsTbody.appendChild(formRow);
-                        formRow.style.display = formRowDisplay;
+                        // Store all actions (already sorted by createdAt DESC from the server)
+                        allAccountActions = data;
 
                         // Show actions section
                         actionsSection.style.display = 'block';
@@ -545,26 +576,20 @@
                             // Hide no actions message
                             noActionsMessage.style.display = 'none';
 
-                            // Get only the last 4 actions (most recent)
-                            const lastFourActions = data.slice(-4);
+                            // Show only the first 10 actions initially
+                            const initialActions = data.slice(0, 10);
+                            renderActions(initialActions);
 
-                            // Add actions to table after the form row
-                            lastFourActions.forEach(action => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${action.id}</td>
-                                    <td>${action.type}</td>
-                                    <td>${action.title}</td>
-                                    <td>${action.nextStepDate || ''}</td>
-                                    <td>${action.createdAt}</td>
-                                    <td>${action.owner}</td>
-                                    <td></td>
-                                `;
-                                actionsTbody.appendChild(row);
-                            });
+                            // Show or hide the "Show All" button based on number of actions
+                            if (data.length > 10) {
+                                showAllActionsContainer.style.display = 'block';
+                            } else {
+                                showAllActionsContainer.style.display = 'none';
+                            }
                         } else {
                             // Show no actions message
                             noActionsMessage.style.display = 'block';
+                            showAllActionsContainer.style.display = 'none';
                         }
                     })
                     .catch(error => {
@@ -584,8 +609,18 @@
 
                         noActionsMessage.style.display = 'block';
                         noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
+                        showAllActionsContainer.style.display = 'none';
                     });
             });
+        });
+
+        // Add event listener for the "Show All" button
+        showAllActionsBtn.addEventListener('click', function() {
+            // Display all actions
+            renderActions(allAccountActions);
+
+            // Hide the "Show All" button since all actions are now displayed
+            showAllActionsContainer.style.display = 'none';
         });
 
         // Handle create action button click
@@ -668,30 +703,37 @@
                     document.getElementById('action-type').value = 'Appel';
                     document.getElementById('action-owner').value = '';
 
-                    // Add the new action to the table
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${data.id}</td>
-                        <td>${data.type}</td>
-                        <td>${data.title}</td>
-                        <td>${data.nextStepDate || ''}</td>
-                        <td>${data.createdAt}</td>
-                        <td>${data.owner}</td>
-                        <td></td>
-                    `;
+                    // Add the new action to our stored actions array and sort by createdAt
+                    allAccountActions.push(data);
+                    // Sort actions by createdAt in descending order
+                    allAccountActions.sort((a, b) => {
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    });
 
                     // Hide no actions message if it's visible
                     if (noActionsMessage.style.display !== 'none') {
                         noActionsMessage.style.display = 'none';
                     }
 
-                    // Add the new row after the form row
-                    const formRow = document.getElementById('action-form-row');
-                    if (formRow.nextSibling) {
-                        actionsTbody.insertBefore(row, formRow.nextSibling);
+                    // Determine which actions to display
+                    let actionsToDisplay;
+                    if (showAllActionsContainer.style.display === 'none' || allAccountActions.length <= 10) {
+                        // We're showing all actions or there are 10 or fewer
+                        actionsToDisplay = allAccountActions;
+                        // Hide the "Show All" button since we're showing all actions
+                        showAllActionsContainer.style.display = 'none';
                     } else {
-                        actionsTbody.appendChild(row);
+                        // We're showing just the first 10
+                        actionsToDisplay = allAccountActions.slice(0, 10);
+
+                        // Show the "Show All" button if there are more than 10 actions
+                        if (allAccountActions.length > 10) {
+                            showAllActionsContainer.style.display = 'block';
+                        }
                     }
+
+                    // Render the actions
+                    renderActions(actionsToDisplay);
                 })
                 .catch(error => {
                     console.error('Error creating action:', error);

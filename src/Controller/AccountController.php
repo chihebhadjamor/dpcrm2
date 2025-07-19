@@ -213,7 +213,7 @@ class AccountController extends AbstractWebController
 
         $actions = $entityManager->getRepository(Action::class)->findBy(
             ['account' => $account],
-            ['nextStepDate' => 'DESC']
+            ['createdAt' => 'DESC']
         );
 
         $actionsData = [];
