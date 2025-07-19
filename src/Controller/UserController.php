@@ -149,6 +149,51 @@ class UserController extends AbstractWebController
         }
     }
 
+    #[Route('/users/{userId}/account-actions', name: 'app_user_account_actions', methods: ['GET'])]
+    public function getUserAccountActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            $user = $entityManager->getRepository(User::class)->find($userId);
+
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+
+            // Get accounts owned by the user
+            $accounts = $entityManager->getRepository(\App\Entity\Account::class)->findBy(['owner' => $user]);
+
+            if (empty($accounts)) {
+                return new JsonResponse([]);
+            }
+
+            // Get the most recent action for each account
+            $accountActions = [];
+            foreach ($accounts as $account) {
+                $actions = $entityManager->getRepository(Action::class)->findBy(
+                    ['account' => $account],
+                    ['createdAt' => 'DESC'],
+                    1 // Limit to the most recent action
+                );
+
+                if (!empty($actions)) {
+                    $action = $actions[0];
+                    $accountActions[] = [
+                        'id' => $action->getId(),
+                        'accountId' => $account->getId(),
+                        'accountName' => $account->getName(),
+                        'lastAction' => $action->getTitle(),
+                        'priority' => $account->getPriority(),
+                        'nextStep' => $account->getNextStep()
+                    ];
+                }
+            }
+
+            return new JsonResponse($accountActions);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'An error occurred while fetching account actions: ' . $e->getMessage()], 500);
+        }
+    }
+
     #[Route('/users/{userId}/create-action', name: 'app_create_user_action', methods: ['POST'])]
     public function createAction(int $userId, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
     {

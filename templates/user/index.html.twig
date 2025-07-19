@@ -193,6 +193,36 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Account Actions Section -->
+                <div id="account-actions-section" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h4 class="mb-0">User Account Actions</h4>
+                        </div>
+                        <div class="card-body">
+                            <div style="max-height: 20vh; overflow-y: auto;">
+                                <table id="account-actions-table" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Account Name</th>
+                                            <th>Last Action</th>
+                                            <th>Priority</th>
+                                            <th>Next Step</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="account-actions-tbody">
+                                        <!-- Account actions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-account-actions-message" class="text-center" style="display: none;">
+                                <p>No account actions found for this user</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -209,6 +239,11 @@
         const actionsTbody = document.getElementById('actions-tbody');
         const noActionsMessage = document.getElementById('no-actions-message');
         const createActionBtn = document.getElementById('create-action-btn');
+
+        // Account actions elements
+        const accountActionsSection = document.getElementById('account-actions-section');
+        const accountActionsTbody = document.getElementById('account-actions-tbody');
+        const noAccountActionsMessage = document.getElementById('no-account-actions-message');
 
         // Handle create user button click
         const createUserBtn = document.getElementById('create-user-btn');
@@ -466,6 +501,58 @@
                                 if (noActionsMessage) {
                                     noActionsMessage.style.display = 'block';
                                     noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
+                                }
+                            }
+                        });
+                }
+
+                // Fetch account actions for this user
+                if (accountActionsSection) {
+                    fetch(`/users/${userId}/account-actions`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Clear previous account actions
+                            accountActionsTbody.innerHTML = '';
+
+                            // Show account actions section
+                            accountActionsSection.style.display = 'block';
+
+                            if (data.length > 0) {
+                                // Hide no account actions message
+                                if (noAccountActionsMessage) {
+                                    noAccountActionsMessage.style.display = 'none';
+                                }
+
+                                // Add account actions to table
+                                data.forEach(action => {
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+                                        <td>${action.id}</td>
+                                        <td>${action.accountName}</td>
+                                        <td>${action.lastAction}</td>
+                                        <td>${action.priority}</td>
+                                        <td>${action.nextStep || 'N/A'}</td>
+                                    `;
+                                    accountActionsTbody.appendChild(row);
+                                });
+                            } else {
+                                // Show no account actions message
+                                if (noAccountActionsMessage) {
+                                    noAccountActionsMessage.style.display = 'block';
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching account actions:', error);
+                            if (accountActionsSection) {
+                                accountActionsSection.style.display = 'block';
+
+                                // Clear previous account actions
+                                accountActionsTbody.innerHTML = '';
+
+                                if (noAccountActionsMessage) {
+                                    noAccountActionsMessage.style.display = 'block';
+                                    noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
                                 }
                             }
                         });
