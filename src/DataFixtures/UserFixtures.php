@@ -20,7 +20,7 @@ class UserFixtures extends Fixture
     {
         // Create admin user
         $adminUser = new User();
-        $adminUser->setName('Administrator');
+        $adminUser->setUsername('Administrator');
         $adminUser->setEmail('admin@example.com');
         $adminUser->setRoles(['ROLE_ADMIN']);
 
@@ -34,7 +34,7 @@ class UserFixtures extends Fixture
 
         // Create standard user
         $standardUser = new User();
-        $standardUser->setName('Standard User');
+        $standardUser->setUsername('Standard User');
         $standardUser->setEmail('user@example.com');
         $standardUser->setRoles(['ROLE_USER']);
 

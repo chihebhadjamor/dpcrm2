@@ -30,15 +30,15 @@ class UpdateUserRoleCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $name = 'chiheb';
+        $username = 'chiheb';
         $roles = ['ROLE_USER'];
 
         // Check if user exists
         $userRepository = $this->entityManager->getRepository(User::class);
-        $user = $userRepository->findOneBy(['name' => $name]);
+        $user = $userRepository->findOneBy(['username' => $username]);
 
         if (!$user) {
-            $output->writeln(sprintf('User %s not found', $name));
+            $output->writeln(sprintf('User %s not found', $username));
             return Command::FAILURE;
         }
 
@@ -49,7 +49,7 @@ class UpdateUserRoleCommand extends Command
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        $output->writeln(sprintf('Roles for user %s have been updated to %s', $name, implode(', ', $roles)));
+        $output->writeln(sprintf('Roles for user %s have been updated to %s', $username, implode(', ', $roles)));
 
         return Command::SUCCESS;
     }

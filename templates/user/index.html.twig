@@ -75,7 +75,6 @@
                             <th>ID</th>
                             <th>Username</th>
                             <th>Email</th>
-                            <th>Name</th>
                             <th>Roles</th>
                             <th>Actions</th>
                         </tr>
@@ -91,9 +90,6 @@
                                 <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
                             </td>
                             <td>
-                                <input type="text" class="form-control" id="user-name" name="name" placeholder="Name">
-                            </td>
-                            <td>
                                 <input type="password" class="form-control" id="user-password" name="password" placeholder="Password" required>
                             </td>
                             <td>
@@ -106,7 +102,6 @@
                                 <td>{{ user.id }}</td>
                                 <td class="editable" data-field="username" data-user-id="{{ user.id }}">{{ user.username }}</td>
                                 <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
-                                <td class="editable" data-field="name" data-user-id="{{ user.id }}">{{ user.name }}</td>
                                 <td class="editable" data-field="roles" data-user-id="{{ user.id }}">{{ user.roles|join(', ') }}</td>
                                 <td>
                                     <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
@@ -116,7 +111,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="5" class="text-center">No users found</td>
+                                <td colspan="4" class="text-center">No users found</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -249,16 +244,11 @@
                     return;
                 }
 
-                const name = document.getElementById('user-name').value;
-
                 // Create FormData object
                 const formData = new FormData();
                 formData.append('username', username);
                 formData.append('email', email);
                 formData.append('password', password);
-                if (name) {
-                    formData.append('name', name);
-                }
 
                 // Add CSRF token
                 const csrfToken = document.getElementById('csrf_token_create_user').value;
@@ -283,7 +273,6 @@
                     document.getElementById('user-username').value = '';
                     document.getElementById('user-email').value = '';
                     document.getElementById('user-password').value = '';
-                    document.getElementById('user-name').value = '';
 
                     // Add the new user to the table
                     const row = document.createElement('tr');
@@ -294,7 +283,6 @@
                         <td>${data.id}</td>
                         <td class="editable" data-field="username" data-user-id="${data.id}">${data.username}</td>
                         <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
-                        <td class="editable" data-field="name" data-user-id="${data.id}">${data.name || ''}</td>
                         <td class="editable" data-field="roles" data-user-id="${data.id}">${data.roles.join(', ')}</td>
                         <td>
                             <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">

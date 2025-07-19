@@ -46,7 +46,7 @@ class AccountController extends AbstractWebController
         foreach ($users as $user) {
             $usersData[] = [
                 'id' => $user->getId(),
-                'name' => $user->getName()
+                'name' => $user->getUsername()
             ];
         }
 
@@ -174,7 +174,7 @@ class AccountController extends AbstractWebController
             ])
             ->add('owner', EntityType::class, [
                 'class' => User::class,
-                'choice_label' => 'name',
+                'choice_label' => 'username',
                 'label' => 'Owner',
                 'attr' => ['class' => 'form-control']
             ])
@@ -224,7 +224,7 @@ class AccountController extends AbstractWebController
                 'type' => $action->getType(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-                'owner' => $action->getOwner() ? $action->getOwner()->getName() : 'Unknown'
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown'
             ];
         }
 
@@ -271,7 +271,7 @@ class AccountController extends AbstractWebController
             'contact' => $account->getContact(),
             'priority' => $account->getPriority(),
             'nextStep' => $account->getNextStep(),
-            'owner' => $account->getOwner()->getName()
+            'owner' => $account->getOwner()->getUsername()
         ]);
     }
 
@@ -339,7 +339,7 @@ class AccountController extends AbstractWebController
                 'type' => $action->getType(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-                'owner' => $action->getOwner() ? $action->getOwner()->getName() : 'Unknown'
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown'
             ]);
         } catch (\Exception $e) {
             // Log the detailed error

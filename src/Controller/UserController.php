@@ -65,9 +65,6 @@ class UserController extends AbstractWebController
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);
-        if ($name) {
-            $user->setName($name);
-        }
 
         // Hash the password
         $hashedPassword = $passwordHasher->hashPassword(
@@ -88,7 +85,6 @@ class UserController extends AbstractWebController
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'name' => $user->getName(),
             'roles' => $user->getRoles()
         ]);
     }
@@ -269,13 +265,6 @@ class UserController extends AbstractWebController
                         $user->setEmail($value);
                     } else {
                         return new JsonResponse(['error' => 'Invalid email format'], 400);
-                    }
-                    break;
-                case 'name':
-                    if (strlen($value) <= 255) {
-                        $user->setName($value);
-                    } else {
-                        return new JsonResponse(['error' => 'Name must be less than 255 characters'], 400);
                     }
                     break;
                 case 'roles':

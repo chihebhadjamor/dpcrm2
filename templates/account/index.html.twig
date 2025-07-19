@@ -29,7 +29,7 @@
                 <h1>Dashboard</h1>
             </div>
             <div class="card-body">
-                <p>Welcome, {{ app.user.name is defined ? app.user.name : app.user.userIdentifier }}! You are logged in as {{ app.user.userIdentifier }}</p>
+                <p>Welcome, {{ app.user.userIdentifier }}!</p>
             </div>
         </div>
     </div>
@@ -222,7 +222,7 @@
                     data.forEach(user => {
                         const option = document.createElement('option');
                         option.value = user.id;
-                        option.textContent = user.name;
+                        option.textContent = user.username;
                         ownerSelect.appendChild(option);
                     });
                 })

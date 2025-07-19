@@ -23,11 +23,6 @@ class UserType extends AbstractType
                 'label' => 'Username',
                 'attr' => ['class' => 'form-control mb-3']
             ])
-            ->add('name', TextType::class, [
-                'label' => 'Name',
-                'attr' => ['class' => 'form-control mb-3'],
-                'required' => false
-            ])
             ->add('roles', ChoiceType::class, [
                 'label' => 'Roles',
                 'choices' => [

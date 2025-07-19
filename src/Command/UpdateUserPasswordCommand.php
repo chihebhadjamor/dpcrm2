@@ -34,18 +34,19 @@ class UpdateUserPasswordCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $name = 'chiheb.hadjamor@datapowa.fr';
+        $email = 'chiheb.hadjamor@datapowa.fr';
         $plainPassword = 'DataPowa123!';
         $roles = ['ROLE_ADMIN', 'ROLE_USER'];
 
         // Check if user exists
         $userRepository = $this->entityManager->getRepository(User::class);
-        $user = $userRepository->findOneBy(['name' => $name]);
+        $user = $userRepository->findOneBy(['email' => $email]);
 
         if (!$user) {
             // Create a new user
             $user = new User();
-            $user->setName($name);
+            $user->setEmail($email);
+            $user->setUsername(explode('@', $email)[0]); // Use part before @ as username
             $user->setRoles($roles);
         }
 
@@ -57,7 +58,7 @@ class UpdateUserPasswordCommand extends Command
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        $output->writeln(sprintf('Password for user %s has been updated to %s', $name, $plainPassword));
+        $output->writeln(sprintf('Password for user %s has been updated to %s', $email, $plainPassword));
 
         return Command::SUCCESS;
     }

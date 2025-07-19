@@ -19,13 +19,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    private ?string $username = null;
+    private string $username;
 
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $name = null;
 
     #[ORM\Column]
     private array $roles = [];
@@ -87,7 +84,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        return (string) $this->username;
     }
 
     public function getEmail(): ?string
@@ -102,17 +99,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(?string $name): static
-    {
-        $this->name = $name;
-
-        return $this;
-    }
 
     public function isIs2faEnabled(): bool
     {
