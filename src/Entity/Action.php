@@ -47,6 +47,9 @@ class Action
     #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
 
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $dateClosed = null;
+
     #[ORM\OneToMany(mappedBy: 'action', targetEntity: History::class, cascade: ['persist', 'remove'])]
     private Collection $histories;
 
@@ -177,4 +180,34 @@ class Action
         return $this;
     }
 
+    public function getDateClosed(): ?\DateTimeInterface
+    {
+        return $this->dateClosed;
+    }
+
+    public function setDateClosed(?\DateTimeInterface $dateClosed): static
+    {
+        $this->dateClosed = $dateClosed;
+
+        return $this;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->dateClosed !== null;
+    }
+
+    public function close(): static
+    {
+        $this->dateClosed = new \DateTime();
+
+        return $this;
+    }
+
+    public function reopen(): static
+    {
+        $this->dateClosed = null;
+
+        return $this;
+    }
 }

@@ -260,7 +260,9 @@ class AccountController extends AbstractWebController
                 'type' => $action->getType(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown'
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
             ];
         }
 
@@ -375,7 +377,9 @@ class AccountController extends AbstractWebController
                 'type' => $action->getType(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
-                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown'
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
             ]);
         } catch (\Exception $e) {
             // Log the detailed error
@@ -383,6 +387,47 @@ class AccountController extends AbstractWebController
 
             // Return error response
             return new JsonResponse(['error' => 'Error creating action. Please try again.'], 400);
+        }
+    }
+
+    #[Route('/actions/{id}/toggle-closed', name: 'app_action_toggle_closed', methods: ['POST'])]
+    public function toggleActionClosed(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Find the action
+        $action = $entityManager->getRepository(Action::class)->find($id);
+
+        if (!$action) {
+            return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        try {
+            // Toggle the closed status
+            if ($action->isClosed()) {
+                $action->reopen();
+            } else {
+                $action->close();
+            }
+
+            // Save to database
+            $entityManager->flush();
+
+            // Return the updated action data
+            return new JsonResponse([
+                'id' => $action->getId(),
+                'title' => $action->getTitle(),
+                'type' => $action->getType(),
+                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+            ]);
+        } catch (\Exception $e) {
+            // Log the detailed error
+            error_log('Error toggling action closed status: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+
+            // Return error response
+            return new JsonResponse(['error' => 'Error updating action. Please try again.'], 400);
         }
     }
 }

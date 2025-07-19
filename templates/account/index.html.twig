@@ -33,6 +33,12 @@
         width: 90%;
         padding-left: 15px;
     }
+
+    /* Style for closed actions */
+    .action-closed {
+        opacity: 0.7;
+        background-color: #f8f9fa !important;
+    }
 </style>
 {% endblock %}
 
@@ -184,6 +190,7 @@
                                             <th>Next Step Date</th>
                                             <th>Created At</th>
                                             <th>Owner</th>
+                                            <th>Closed</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -210,6 +217,9 @@
                                                     <option value="">Select Owner</option>
                                                     <!-- Users will be loaded here -->
                                                 </select>
+                                            </td>
+                                            <td>
+                                                <!-- New actions are not closed by default -->
                                             </td>
                                             <td>
                                                 <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
@@ -569,6 +579,15 @@
             // Add actions to table after the form row
             actions.forEach(action => {
                 const row = document.createElement('tr');
+
+                // Add closed class to row if action is closed
+                if (action.closed) {
+                    row.classList.add('action-closed');
+                }
+
+                // Set data attribute for action ID
+                row.setAttribute('data-action-id', action.id);
+
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td>${action.type}</td>
@@ -576,6 +595,16 @@
                     <td>${action.nextStepDate || ''}</td>
                     <td>${action.createdAt}</td>
                     <td>${action.owner}</td>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input action-closed-checkbox" type="checkbox"
+                                   ${action.closed ? 'checked' : ''}
+                                   data-action-id="${action.id}">
+                            <label class="form-check-label">
+                                ${action.closed ? 'Closed on ' + action.dateClosed : 'Open'}
+                            </label>
+                        </div>
+                    </td>
                     <td></td>
                 `;
                 actionsTbody.appendChild(row);
@@ -659,6 +688,58 @@
 
             // Hide the "Show All" button since all actions are now displayed
             showAllActionsContainer.style.display = 'none';
+        });
+
+        // Add event delegation for action closed checkboxes
+        actionsTbody.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('action-closed-checkbox')) {
+                const actionId = e.target.getAttribute('data-action-id');
+
+                // Send request to toggle closed status
+                fetch(`/actions/${actionId}/toggle-closed`, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Find the action in our stored actions array
+                    const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        // Update the action in our stored array
+                        allAccountActions[actionIndex] = data;
+
+                        // Find the row in the table
+                        const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+
+                        // Update the row's closed status
+                        if (data.closed) {
+                            row.classList.add('action-closed');
+                            // Update the label
+                            const label = row.querySelector('.form-check-label');
+                            if (label) {
+                                label.textContent = `Closed on ${data.dateClosed}`;
+                            }
+                        } else {
+                            row.classList.remove('action-closed');
+                            // Update the label
+                            const label = row.querySelector('.form-check-label');
+                            if (label) {
+                                label.textContent = 'Open';
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error toggling action closed status:', error);
+                    alert('Error updating action. Please try again.');
+                    // Reset checkbox to its previous state
+                    e.target.checked = !e.target.checked;
+                });
+            }
         });
 
         // Handle create action button click
