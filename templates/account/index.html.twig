@@ -190,7 +190,7 @@
                                             <th>Next Step Date</th>
                                             <th>Created At</th>
                                             <th>Owner</th>
-                                            <th>Closed</th>
+                                            <th>Closed (0/0)</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -576,6 +576,14 @@
             actionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
 
+            // Update the Closed column header with count
+            const closedCount = actions.filter(action => action.closed).length;
+            const totalCount = actions.length;
+            const closedHeader = document.querySelector('#actions-table thead th:nth-child(7)');
+            if (closedHeader) {
+                closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+            }
+
             // Add actions to table after the form row
             actions.forEach(action => {
                 const row = document.createElement('tr');
@@ -730,6 +738,14 @@
                             if (label) {
                                 label.textContent = 'Open';
                             }
+                        }
+
+                        // Update the Closed column header with count
+                        const closedCount = allAccountActions.filter(action => action.closed).length;
+                        const totalCount = allAccountActions.length;
+                        const closedHeader = document.querySelector('#actions-table thead th:nth-child(7)');
+                        if (closedHeader) {
+                            closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
                         }
                     }
                 })
