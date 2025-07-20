@@ -33,11 +33,6 @@ class AccountType extends AbstractType
                 'label' => 'Status',
                 'choices' => Account::getAvailableStatuses(),
                 'attr' => ['class' => 'form-select mb-3']
-            ])
-            ->add('priority', ChoiceType::class, [
-                'label' => 'Priority',
-                'choices' => Account::getAvailablePriorities(),
-                'attr' => ['class' => 'form-select mb-3']
             ]);
     }
 

@@ -82,13 +82,6 @@ class AccountController extends AbstractWebController
                     return new JsonResponse(['error' => 'Name must be between 2 and 255 characters'], 400);
                 }
                 break;
-            case 'priority':
-                if (in_array($value, ['Haute', 'Moyenne', 'Basse'])) {
-                    $account->setPriority($value);
-                } else {
-                    return new JsonResponse(['error' => 'Priority must be one of: Haute, Moyenne, Basse'], 400);
-                }
-                break;
             default:
                 return new JsonResponse(['error' => 'Invalid field name'], 400);
         }
@@ -187,15 +180,6 @@ class AccountController extends AbstractWebController
                 'label' => 'Name',
                 'attr' => ['class' => 'form-control']
             ])
-            ->add('priority', ChoiceType::class, [
-                'label' => 'Priority',
-                'choices' => [
-                    'High' => 'Haute',
-                    'Medium' => 'Moyenne',
-                    'Low' => 'Basse'
-                ],
-                'attr' => ['class' => 'form-control']
-            ])
             ->add('save', SubmitType::class, [
                 'label' => 'Create Account',
                 'attr' => ['class' => 'btn btn-success mt-2']
@@ -268,7 +252,6 @@ class AccountController extends AbstractWebController
         // Get form data
         $name = $request->request->get('name');
         $contact = $request->request->get('contact');
-        $priority = $request->request->get('priority');
         $ownerId = $request->request->get('owner');
 
         // Validate required fields
@@ -279,7 +262,6 @@ class AccountController extends AbstractWebController
         // Create a new account
         $account = new Account();
         $account->setName($name);
-        $account->setPriority($priority);
 
         // Save to database
         $entityManager->persist($account);
@@ -309,7 +291,6 @@ class AccountController extends AbstractWebController
             'id' => $account->getId(),
             'name' => $account->getName(),
             'contact' => $contact,
-            'priority' => $account->getPriority(),
             'actionOwner' => $actionOwner
         ]);
     }
@@ -470,7 +451,6 @@ class AccountController extends AbstractWebController
                 'id' => $accountId,
                 'name' => $account->getName(),
                 'contact' => isset($contactInfo[$accountId]) ? $contactInfo[$accountId] : null,
-                'priority' => $account->getPriority(),
                 'nextStepDate' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null,
                 'nextAction' => $nextAction ? $nextAction->getTitle() : null,
                 'actionOwner' => $nextAction ? $nextAction->getOwner()->getUsername() : null

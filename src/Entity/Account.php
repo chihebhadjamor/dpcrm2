@@ -25,10 +25,6 @@ class Account implements ArrayAccess
     private ?string $name = null;
 
 
-    #[ORM\Column(length: 50)]
-    #[Assert\NotBlank]
-    #[Assert\Choice(choices: ['Haute', 'Moyenne', 'Basse'])]
-    private ?string $priority = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Url]
@@ -78,17 +74,6 @@ class Account implements ArrayAccess
     }
 
 
-    public function getPriority(): ?string
-    {
-        return $this->priority;
-    }
-
-    public function setPriority(string $priority): static
-    {
-        $this->priority = $priority;
-
-        return $this;
-    }
 
 
 
@@ -179,14 +164,6 @@ class Account implements ArrayAccess
         ];
     }
 
-    public static function getAvailablePriorities(): array
-    {
-        return [
-            'High' => 'Haute',
-            'Medium' => 'Moyenne',
-            'Low' => 'Basse'
-        ];
-    }
 
     public function getContext(): ?string
     {
