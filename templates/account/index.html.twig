@@ -178,11 +178,9 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Type</th>
                                     <th>Contact</th>
                                     <th>Action</th>
                                     <th>Action Date</th>
-                                    <th>Created At</th>
                                     <th>Owner</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -193,13 +191,6 @@
                                 <tr id="action-form-row" style="display: none;">
                                     <td><i>New</i></td>
                                     <td>
-                                        <select class="form-control" id="action-type" name="type" required>
-                                            <option value="Appel">Appel</option>
-                                            <option value="Email">Email</option>
-                                            <option value="RDV">RDV</option>
-                                        </select>
-                                    </td>
-                                    <td>
                                         <input type="text" class="form-control" id="action-contact" name="contact" placeholder="Contact">
                                     </td>
                                     <td>
@@ -208,7 +199,6 @@
                                     <td>
                                         <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
                                     </td>
-                                    <td>Now</td>
                                     <td>
                                         <select class="form-control" id="action-owner" name="owner" required>
                                             <option value="">Select Owner</option>
@@ -674,11 +664,9 @@
 
                 row.innerHTML = `
                     <td>${action.id}</td>
-                    <td>${action.type}</td>
                     <td>${action.contact || ''}</td>
                     <td>${action.title}</td>
                     <td>${action.nextStepDate || ''}</td>
-                    <td>${action.createdAt}</td>
                     <td>${action.owner}</td>
                     <td>
                         <div class="form-check">
@@ -879,7 +867,6 @@
                 document.getElementById('action-title').value = '';
                 document.getElementById('action-contact').value = '';
                 document.getElementById('action-next-step-date').value = '';
-                document.getElementById('action-type').value = 'Appel';
                 document.getElementById('action-owner').value = '';
 
                 // If there are no actions, show the no actions message
@@ -911,7 +898,6 @@
                 // Create FormData object
                 const formData = new FormData();
                 formData.append('title', document.getElementById('action-title').value);
-                formData.append('type', document.getElementById('action-type').value);
                 formData.append('contact', document.getElementById('action-contact').value);
                 formData.append('nextStepDate', document.getElementById('action-next-step-date').value);
                 formData.append('owner', document.getElementById('action-owner').value);
@@ -935,7 +921,6 @@
                     document.getElementById('action-title').value = '';
                     document.getElementById('action-contact').value = '';
                     document.getElementById('action-next-step-date').value = '';
-                    document.getElementById('action-type').value = 'Appel';
                     document.getElementById('action-owner').value = '';
 
                     // Add the new action to our stored actions array and sort by createdAt

@@ -23,10 +23,6 @@ class Action
     #[Assert\Length(min: 2, max: 255)]
     private ?string $title = null;
 
-    #[ORM\Column(length: 50)]
-    #[Assert\NotBlank]
-    #[Assert\Choice(choices: ['Appel', 'Email', 'RDV'])]
-    private ?string $type = null;
 
 
     #[ORM\Column(type: 'datetime', nullable: true)]
@@ -79,17 +75,6 @@ class Action
         return $this;
     }
 
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
-
-    public function setType(string $type): static
-    {
-        $this->type = $type;
-
-        return $this;
-    }
 
 
     public function getNextStepDate(): ?\DateTimeInterface

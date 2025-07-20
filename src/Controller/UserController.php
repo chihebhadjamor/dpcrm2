@@ -141,7 +141,6 @@ class UserController extends AbstractWebController
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
-                    'type' => $action->getType(),
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                     'owner' => $action->getOwner()->getUsername()
@@ -183,7 +182,6 @@ class UserController extends AbstractWebController
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
-                    'type' => $action->getType(),
                     'accountName' => $action->getAccount() ? $action->getAccount()->getName() : null,
                     'priority' => $action->getAccount() ? $action->getAccount()->getPriority() : null,
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
@@ -227,7 +225,6 @@ class UserController extends AbstractWebController
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
-                    'type' => $action->getType(),
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                     'owner' => $action->getOwner()->getUsername(),
@@ -337,7 +334,6 @@ class UserController extends AbstractWebController
         // Create a new action
         $action = new Action();
         $action->setTitle($request->request->get('title'));
-        $action->setType($request->request->get('type'));
 
         // Handle next step date
         $nextStepDate = $request->request->get('nextStepDate');
@@ -357,7 +353,6 @@ class UserController extends AbstractWebController
         return new JsonResponse([
             'id' => $action->getId(),
             'title' => $action->getTitle(),
-            'type' => $action->getType(),
             'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
             'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
             'owner' => $action->getOwner()->getUsername()

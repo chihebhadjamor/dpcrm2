@@ -233,7 +233,6 @@ class AccountController extends AbstractWebController
             $actionsData[] = [
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
-                'type' => $action->getType(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -274,7 +273,6 @@ class AccountController extends AbstractWebController
             if ($owner) {
                 $action = new Action();
                 $action->setTitle('Initial contact');
-                $action->setType('Email');
                 $action->setContact($contact);
                 $action->setAccount($account);
                 $action->setOwner($owner);
@@ -324,7 +322,6 @@ class AccountController extends AbstractWebController
         // Create a new action
         $action = new Action();
         $action->setTitle($request->request->get('title'));
-        $action->setType($request->request->get('type'));
         $action->setContact($request->request->get('contact'));
         $action->setCreatedAt(new \DateTime()); // Explicitly set createdAt
 
@@ -353,7 +350,6 @@ class AccountController extends AbstractWebController
             return new JsonResponse([
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
-                'type' => $action->getType(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -485,7 +481,6 @@ class AccountController extends AbstractWebController
             return new JsonResponse([
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
-                'type' => $action->getType(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
