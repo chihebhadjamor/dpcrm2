@@ -18,22 +18,6 @@
         cursor: text;
     }
 
-    .row.navigation-container {
-        display: flex;
-        flex-wrap: nowrap;
-    }
-
-    .navigation-left-panel {
-        width: 10%;
-        border-right: 1px solid #ccc;
-        padding-right: 15px;
-    }
-
-    .navigation-right-panel {
-        width: 90%;
-        padding-left: 15px;
-    }
-
     /* Style for closed actions */
     .action-closed {
         opacity: 0.7;
@@ -50,44 +34,7 @@
 
 {% block body %}
 <div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h1>Dashboard</h1>
-            </div>
-            <div class="card-body">
-                <p>Welcome, {{ app.user.userIdentifier }}!</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row navigation-container">
-    <!-- Left Panel with Navigation Links (Detached) -->
-    <div class="navigation-left-panel">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Navigation</h4>
-            </div>
-            <div class="card-body">
-                <div class="list-group">
-                    <a href="{{ path('app_users') }}" class="list-group-item list-group-item-action list-group-item-primary">
-                        <i class="fas fa-users"></i> Users
-                    </a>
-                    <a href="{{ path('app_accounts') }}" class="list-group-item list-group-item-action list-group-item-success active">
-                        <i class="fas fa-building"></i> Accounts
-                    </a>
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ path('app_logout') }}" class="btn btn-danger w-100">Logout</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Panel for Content Display (Detached) -->
-    <div class="navigation-right-panel">
+    <div class="col-12">
         <div class="card">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Accounts List</h4>
@@ -96,19 +43,20 @@
                 </button>
             </div>
             <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Account Name</th>
-                            <th>Contact</th>
-                            <th>Priority</th>
-                            <th>Next Action Date</th>
-                            <th>Next Action</th>
-                            <th>Owner</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Account Name</th>
+                                <th>Contact</th>
+                                <th>Priority</th>
+                                <th>Next Action Date</th>
+                                <th>Next Action</th>
+                                <th>Owner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                     <tbody>
                         <!-- Form row for creating new account -->
                         <tr id="account-form-row" style="display: none;">
@@ -230,7 +178,8 @@
                                         </tr>
                                         <!-- Actions will be loaded here -->
                                     </tbody>
-                                </table>
+                                    </table>
+                </div>
                             </div>
                             <div id="no-actions-message" class="text-center" style="display: none;">
                                 <p>No actions found for this account</p>
