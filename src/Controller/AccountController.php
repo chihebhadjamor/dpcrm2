@@ -247,10 +247,16 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Account not found'], 404);
         }
 
-        $actions = $entityManager->getRepository(Action::class)->findBy(
-            ['account' => $account],
-            ['createdAt' => 'DESC']
-        );
+        // Use query builder to order by closed ASC (open actions first) and then by createdAt DESC
+        $queryBuilder = $entityManager->createQueryBuilder();
+        $queryBuilder->select('a')
+            ->from(Action::class, 'a')
+            ->where('a.account = :account')
+            ->orderBy('a.closed', 'ASC')
+            ->addOrderBy('a.createdAt', 'DESC')
+            ->setParameter('account', $account);
+
+        $actions = $queryBuilder->getQuery()->getResult();
 
         $actionsData = [];
         foreach ($actions as $action) {

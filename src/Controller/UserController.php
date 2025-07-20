@@ -262,11 +262,13 @@ class UserController extends AbstractWebController
 
             // Get actions where the user is either the owner or is associated with the action
             // This ensures we get all actions related to the user
+            // Order by closed ASC (open actions first) and then by createdAt DESC
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
                 ->where('a.owner = :user OR a.user = :user')
-                ->orderBy('a.createdAt', 'DESC')
+                ->orderBy('a.closed', 'ASC')
+                ->addOrderBy('a.createdAt', 'DESC')
                 ->setParameter('user', $user);
 
             $actions = $queryBuilder->getQuery()->getResult();
