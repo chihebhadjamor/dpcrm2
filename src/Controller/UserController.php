@@ -267,6 +267,8 @@ class UserController extends AbstractWebController
             $actions = $queryBuilder->getQuery()->getResult();
 
             if (empty($actions)) {
+                // Return an empty array when the user has no actions
+                // The frontend will display a message: "This user has no actions to display."
                 return new JsonResponse([]);
             }
 
@@ -286,8 +288,9 @@ class UserController extends AbstractWebController
                     'accountId' => $account->getId(),
                     'accountName' => $account->getName(),
                     'lastAction' => $action->getTitle(),
-                    'priority' => $account->getPriority(),
-                    'nextStep' => $account->getNextStep(),
+                    'priority' => '', // Priority column has been removed from Account entity
+                    'nextStep' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Keep field name for backward compatibility
+                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Add new field with more descriptive name
                     'closed' => $action->isClosed(),
                     'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
                 ];
