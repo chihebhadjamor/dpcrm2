@@ -145,8 +145,8 @@ class AccountController extends AbstractWebController
             ['createdAt' => 'DESC']
         );
 
-        // Fetch the most recent action for each account
-        $lastActions = [];
+        // Fetch the earliest upcoming (future) action for each account
+        $nextActions = [];
 
         if (!empty($accounts)) {
             // Get all account IDs
@@ -154,19 +154,22 @@ class AccountController extends AbstractWebController
                 return $account->getId();
             }, $accounts);
 
-            // Use Doctrine's query builder for better compatibility
+            // Use Doctrine's query builder to get all open actions
             $qb = $entityManager->createQueryBuilder();
             $qb->select('a', 'acc', 'u')
                ->from(Action::class, 'a')
                ->join('a.account', 'acc')
                ->join('a.owner', 'u')
                ->where('acc.id IN (:accountIds)')
+               ->andWhere('a.closed = :closed')
+               ->andWhere('a.nextStepDate IS NOT NULL')
                ->setParameter('accountIds', $accountIds)
-               ->orderBy('a.createdAt', 'DESC');
+               ->setParameter('closed', false)
+               ->orderBy('a.nextStepDate', 'ASC'); // Order by date ascending to get earliest
 
             $actions = $qb->getQuery()->getResult();
 
-            // Group actions by account ID and keep only the most recent one
+            // Group actions by account ID and keep only the earliest upcoming one
             $tempActions = [];
             foreach ($actions as $action) {
                 $accountId = $action->getAccount()->getId();
@@ -175,7 +178,7 @@ class AccountController extends AbstractWebController
                 }
             }
 
-            $lastActions = $tempActions;
+            $nextActions = $tempActions;
         }
 
         // Create a new account instance for the form
@@ -201,7 +204,7 @@ class AccountController extends AbstractWebController
                 'attr' => ['class' => 'form-control']
             ])
             ->add('nextStep', TextType::class, [
-                'label' => 'Next Step',
+                'label' => 'Next Action Date',
                 'required' => false,
                 'attr' => ['class' => 'form-control']
             ])
@@ -233,7 +236,7 @@ class AccountController extends AbstractWebController
             'account/index.html.twig',
             [
                 'accounts' => $accounts,
-                'lastActions' => $lastActions
+                'nextActions' => $nextActions
             ]
         );
     }
