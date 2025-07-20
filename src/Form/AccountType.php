@@ -19,10 +19,6 @@ class AccountType extends AbstractType
                 'label' => 'Account Name',
                 'attr' => ['class' => 'form-control mb-3']
             ])
-            ->add('contact', TextType::class, [
-                'label' => 'Contact',
-                'attr' => ['class' => 'form-control mb-3']
-            ])
             ->add('website', UrlType::class, [
                 'label' => 'Website',
                 'required' => false,

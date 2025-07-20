@@ -126,20 +126,13 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not found'], 404);
             }
 
-            // Use query builder to get actions where:
-            // 1. The user is the selected user AND
-            // 2. Either the owner is the selected user OR the action is closed
+            // Use query builder to get actions where the user is the owner
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
-                ->where('a.user = :user')
-                ->andWhere($queryBuilder->expr()->orX(
-                    $queryBuilder->expr()->eq('a.owner', ':owner'),
-                    $queryBuilder->expr()->isNotNull('a.dateClosed')
-                ))
+                ->where('a.owner = :user')
                 ->orderBy('a.nextStepDate', 'DESC')
-                ->setParameter('user', $user)
-                ->setParameter('owner', $user);
+                ->setParameter('user', $user);
 
             $actions = $queryBuilder->getQuery()->getResult();
 
@@ -172,12 +165,12 @@ class UserController extends AbstractWebController
             }
 
             // Use query builder to get open actions where:
-            // 1. The user is either the owner or is associated with the action AND
+            // 1. The user is the owner AND
             // 2. The action is not closed (closed = false)
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
-                ->where('a.user = :user OR a.owner = :user')
+                ->where('a.owner = :user')
                 ->andWhere('a.closed = :closed')
                 ->orderBy('a.nextStepDate', 'ASC')
                 ->setParameter('user', $user)
@@ -218,12 +211,12 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not authenticated'], 401);
             }
 
-            // Get all actions where the current user is either the owner or is associated with the action
+            // Get all actions where the current user is the owner
             // Sort by nextStepDate in ascending order (most urgent first)
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
-                ->where('a.owner = :user OR a.user = :user')
+                ->where('a.owner = :user')
                 ->orderBy('a.nextStepDate', 'ASC')
                 ->setParameter('user', $user);
 
@@ -260,13 +253,13 @@ class UserController extends AbstractWebController
                 return new JsonResponse(['error' => 'User not found'], 404);
             }
 
-            // Get actions where the user is either the owner or is associated with the action
-            // This ensures we get all actions related to the user
+            // Get actions where the user is the owner
+            // This ensures we get all actions owned by the user
             // Order by closed ASC (open actions first) and then by createdAt DESC
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a')
                 ->from(Action::class, 'a')
-                ->where('a.owner = :user OR a.user = :user')
+                ->where('a.owner = :user')
                 ->orderBy('a.closed', 'ASC')
                 ->addOrderBy('a.createdAt', 'DESC')
                 ->setParameter('user', $user);
@@ -350,8 +343,7 @@ class UserController extends AbstractWebController
             $action->setNextStepDate($dateTime);
         }
 
-        // Set relationships
-        $action->setUser($user);
+        // Set owner relationship
         $action->setOwner($owner);
 
         // Save to database
