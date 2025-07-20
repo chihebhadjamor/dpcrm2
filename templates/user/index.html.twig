@@ -97,7 +97,7 @@
                                                 <th>Last Action</th>
                                                 <th>Priority</th>
                                                 <th>Next Step</th>
-                                                <th>Closed</th>
+                                                <th>Closed (0/0)</th>
                                                 <th>Close Date</th>
                                             </tr>
                                         </thead>
@@ -306,6 +306,14 @@
                                     noAccountActionsMessage.style.display = 'none';
                                 }
 
+                                // Update the Closed column header with count
+                                const closedCount = data.filter(action => action.closed).length;
+                                const totalCount = data.length;
+                                const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                if (closedHeader) {
+                                    closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                                }
+
                                 // Add account actions to table
                                 data.forEach(action => {
                                     const row = document.createElement('tr');
@@ -345,6 +353,12 @@
 
                                 // Clear previous account actions
                                 accountActionsTbody.innerHTML = '';
+
+                                // Reset the Closed column header to default
+                                const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                if (closedHeader) {
+                                    closedHeader.textContent = 'Closed (0/0)';
+                                }
 
                                 if (noAccountActionsMessage) {
                                     noAccountActionsMessage.style.display = 'block';
