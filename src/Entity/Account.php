@@ -6,12 +6,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use ArrayAccess;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'account')]
 #[ORM\Index(columns: ['name'], name: 'idx_account_name')]
 #[ORM\HasLifecycleCallbacks]
-class Account
+class Account implements ArrayAccess
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -239,5 +240,53 @@ class Account
         $this->context = $context;
 
         return $this;
+    }
+
+    /**
+     * Determines whether an offset exists
+     */
+    public function offsetExists(mixed $offset): bool
+    {
+        return property_exists($this, $offset) || method_exists($this, 'get' . ucfirst($offset));
+    }
+
+    /**
+     * Gets the value at the specified offset
+     */
+    public function offsetGet(mixed $offset): mixed
+    {
+        $getter = 'get' . ucfirst($offset);
+        if (method_exists($this, $getter)) {
+            return $this->$getter();
+        }
+
+        if (property_exists($this, $offset)) {
+            return $this->$offset;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sets the value at the specified offset
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $setter = 'set' . ucfirst($offset);
+        if (method_exists($this, $setter)) {
+            $this->$setter($value);
+        } elseif (property_exists($this, $offset)) {
+            $this->$offset = $value;
+        }
+    }
+
+    /**
+     * Unsets an offset
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        if (property_exists($this, $offset)) {
+            $this->$offset = null;
+        }
     }
 }

@@ -15,13 +15,20 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\FormFactoryInterface;
 
 class AccountController extends AbstractWebController
 {
+    private FormFactoryInterface $formFactory;
+
+    public function __construct(FormFactoryInterface $formFactory)
+    {
+        $this->formFactory = $formFactory;
+    }
     #[Route('/accounts/{id}/edit', name: 'app_account_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Account $account, EntityManagerInterface $entityManager): Response
     {
-        $form = $this->createForm(AccountType::class, $account);
+        $form = $this->formFactory->create(AccountType::class, $account);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -185,7 +192,7 @@ class AccountController extends AbstractWebController
         $account = new Account();
 
         // Create the form
-        $form = $this->createFormBuilder($account)
+        $form = $this->formFactory->createBuilder()->setData($account)
             ->add('name', TextType::class, [
                 'label' => 'Name',
                 'attr' => ['class' => 'form-control']
