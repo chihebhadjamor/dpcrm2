@@ -53,6 +53,9 @@ class Action
     #[ORM\Column(name: 'closed', type: 'boolean', options: ['default' => false])]
     private bool $closed = false;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $contact = null;
+
     #[ORM\OneToMany(mappedBy: 'action', targetEntity: History::class, cascade: ['persist', 'remove'])]
     private Collection $histories;
 
@@ -235,6 +238,18 @@ class Action
         } elseif (!$closed) {
             $this->dateClosed = null;
         }
+
+        return $this;
+    }
+
+    public function getContact(): ?string
+    {
+        return $this->contact;
+    }
+
+    public function setContact(?string $contact): static
+    {
+        $this->contact = $contact;
 
         return $this;
     }

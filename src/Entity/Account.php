@@ -24,10 +24,6 @@ class Account implements ArrayAccess
     #[Assert\Length(min: 2, max: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255)]
-    #[Assert\NotBlank]
-    #[Assert\Length(min: 2, max: 255)]
-    private ?string $contact = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
@@ -86,17 +82,6 @@ class Account implements ArrayAccess
         return $this;
     }
 
-    public function getContact(): ?string
-    {
-        return $this->contact;
-    }
-
-    public function setContact(string $contact): static
-    {
-        $this->contact = $contact;
-
-        return $this;
-    }
 
     public function getPriority(): ?string
     {

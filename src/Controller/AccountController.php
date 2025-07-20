@@ -154,6 +154,8 @@ class AccountController extends AbstractWebController
 
         // Fetch the earliest upcoming (future) action for each account
         $nextActions = [];
+        // Store contact information for each account
+        $contactInfo = [];
 
         if (!empty($accounts)) {
             // Get all account IDs
@@ -182,10 +184,35 @@ class AccountController extends AbstractWebController
                 $accountId = $action->getAccount()->getId();
                 if (!isset($tempActions[$accountId])) {
                     $tempActions[$accountId] = $action;
+                    // Store contact information from the earliest upcoming action
+                    $contactInfo[$accountId] = $action->getContact();
                 }
             }
 
             $nextActions = $tempActions;
+
+            // For accounts without open actions or without contact in open actions,
+            // find the most recently closed action with contact information
+            foreach ($accountIds as $accountId) {
+                if (!isset($contactInfo[$accountId])) {
+                    // Use Doctrine's query builder to get the most recently closed action
+                    $qbClosed = $entityManager->createQueryBuilder();
+                    $qbClosed->select('a')
+                       ->from(Action::class, 'a')
+                       ->where('a.account = :accountId')
+                       ->andWhere('a.closed = :closed')
+                       ->setParameter('accountId', $accountId)
+                       ->setParameter('closed', true)
+                       ->orderBy('a.dateClosed', 'DESC') // Order by date closed descending to get most recent
+                       ->setMaxResults(1);
+
+                    $mostRecentClosedAction = $qbClosed->getQuery()->getOneOrNullResult();
+
+                    if ($mostRecentClosedAction) {
+                        $contactInfo[$accountId] = $mostRecentClosedAction->getContact();
+                    }
+                }
+            }
         }
 
         // Create a new account instance for the form
@@ -195,10 +222,6 @@ class AccountController extends AbstractWebController
         $form = $this->formFactory->createBuilder()->setData($account)
             ->add('name', TextType::class, [
                 'label' => 'Name',
-                'attr' => ['class' => 'form-control']
-            ])
-            ->add('contact', TextType::class, [
-                'label' => 'Contact',
                 'attr' => ['class' => 'form-control']
             ])
             ->add('priority', ChoiceType::class, [
@@ -243,7 +266,8 @@ class AccountController extends AbstractWebController
             'account/index.html.twig',
             [
                 'accounts' => $accounts,
-                'nextActions' => $nextActions
+                'nextActions' => $nextActions,
+                'contactInfo' => $contactInfo
             ]
         );
     }
@@ -274,6 +298,7 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'type' => $action->getType(),
+                'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
@@ -359,6 +384,7 @@ class AccountController extends AbstractWebController
         $action = new Action();
         $action->setTitle($request->request->get('title'));
         $action->setType($request->request->get('type'));
+        $action->setContact($request->request->get('contact'));
         $action->setCreatedAt(new \DateTime()); // Explicitly set createdAt
 
         // Handle next step date
@@ -391,6 +417,7 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'type' => $action->getType(),
+                'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
@@ -416,6 +443,8 @@ class AccountController extends AbstractWebController
 
         // Fetch the earliest upcoming (future) action for each account
         $nextActions = [];
+        // Store contact information for each account
+        $contactInfo = [];
 
         if (!empty($accounts)) {
             // Get all account IDs
@@ -444,10 +473,35 @@ class AccountController extends AbstractWebController
                 $accountId = $action->getAccount()->getId();
                 if (!isset($tempActions[$accountId])) {
                     $tempActions[$accountId] = $action;
+                    // Store contact information from the earliest upcoming action
+                    $contactInfo[$accountId] = $action->getContact();
                 }
             }
 
             $nextActions = $tempActions;
+
+            // For accounts without open actions or without contact in open actions,
+            // find the most recently closed action with contact information
+            foreach ($accountIds as $accountId) {
+                if (!isset($contactInfo[$accountId])) {
+                    // Use Doctrine's query builder to get the most recently closed action
+                    $qbClosed = $entityManager->createQueryBuilder();
+                    $qbClosed->select('a')
+                       ->from(Action::class, 'a')
+                       ->where('a.account = :accountId')
+                       ->andWhere('a.closed = :closed')
+                       ->setParameter('accountId', $accountId)
+                       ->setParameter('closed', true)
+                       ->orderBy('a.dateClosed', 'DESC') // Order by date closed descending to get most recent
+                       ->setMaxResults(1);
+
+                    $mostRecentClosedAction = $qbClosed->getQuery()->getOneOrNullResult();
+
+                    if ($mostRecentClosedAction) {
+                        $contactInfo[$accountId] = $mostRecentClosedAction->getContact();
+                    }
+                }
+            }
         }
 
         // Prepare the accounts data for JSON response
@@ -459,7 +513,7 @@ class AccountController extends AbstractWebController
             $accountsData[] = [
                 'id' => $accountId,
                 'name' => $account->getName(),
-                'contact' => $account->getContact(),
+                'contact' => isset($contactInfo[$accountId]) ? $contactInfo[$accountId] : null,
                 'priority' => $account->getPriority(),
                 'nextStepDate' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null,
                 'nextAction' => $nextAction ? $nextAction->getTitle() : null,
@@ -496,6 +550,7 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'type' => $action->getType(),
+                'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',

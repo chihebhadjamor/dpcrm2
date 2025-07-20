@@ -64,9 +64,7 @@
                             <td>
                                 <input type="text" class="form-control" id="account-name" name="name" placeholder="Account Name" required>
                             </td>
-                            <td>
-                                <input type="text" class="form-control" id="account-contact" name="contact" placeholder="Contact" required>
-                            </td>
+                            <!-- Contact field removed as it's now managed at the Action level -->
                             <td>
                                 <select class="form-control" id="account-priority" name="priority" required>
                                     <option value="Haute">High</option>
@@ -92,7 +90,7 @@
                             <tr class="account-row" data-account-id="{{ account.id }}" style="cursor: pointer;">
                                 <td>{{ account.id }}</td>
                                 <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
-                                <td class="editable" data-field="contact" data-account-id="{{ account.id }}">{{ account.contact }}</td>
+                                <td>{% if contactInfo[account.id] is defined %}{{ contactInfo[account.id] }}{% endif %}</td>
                                 <td class="editable" data-field="priority" data-account-id="{{ account.id }}" data-type="select"
                                     data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>{{ account.priority }}</td>
                                 <td>
@@ -136,6 +134,7 @@
                                         <tr>
                                             <th>ID</th>
                                             <th>Type</th>
+                                            <th>Contact</th>
                                             <th>Action</th>
                                             <th>Next Step Date</th>
                                             <th>Created At</th>
@@ -154,6 +153,9 @@
                                                     <option value="Email">Email</option>
                                                     <option value="RDV">RDV</option>
                                                 </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control" id="action-contact" name="contact" placeholder="Contact">
                                             </td>
                                             <td>
                                                 <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
@@ -243,7 +245,7 @@
                 row.innerHTML = `
                     <td>${account.id}</td>
                     <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
-                    <td class="editable" data-field="contact" data-account-id="${account.id}">${account.contact}</td>
+                    <td>${account.contact || ''}</td>
                     <td class="editable" data-field="priority" data-account-id="${account.id}" data-type="select"
                         data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${account.priority}</td>
                     <td>${account.nextStepDate || ''}</td>
@@ -324,7 +326,6 @@
 
                 // Reset form fields
                 document.getElementById('account-name').value = '';
-                document.getElementById('account-contact').value = '';
                 document.getElementById('account-priority').value = 'Haute';
                 document.getElementById('account-next-step').value = '';
             });
@@ -338,17 +339,9 @@
                     return;
                 }
 
-                const contact = document.getElementById('account-contact').value;
-                if (!contact) {
-                    alert('Contact is required');
-                    return;
-                }
-
-
                 // Create FormData object
                 const formData = new FormData();
                 formData.append('name', document.getElementById('account-name').value);
-                formData.append('contact', document.getElementById('account-contact').value);
                 formData.append('priority', document.getElementById('account-priority').value);
                 formData.append('nextStep', document.getElementById('account-next-step').value);
 
@@ -369,7 +362,6 @@
 
                     // Reset form fields
                     document.getElementById('account-name').value = '';
-                    document.getElementById('account-contact').value = '';
                     document.getElementById('account-priority').value = 'Haute';
                     document.getElementById('account-next-step').value = '';
 
@@ -381,7 +373,7 @@
                     row.innerHTML = `
                         <td>${data.id}</td>
                         <td class="editable" data-field="name" data-account-id="${data.id}">${data.name}</td>
-                        <td class="editable" data-field="contact" data-account-id="${data.id}">${data.contact}</td>
+                        <td></td>
                         <td class="editable" data-field="priority" data-account-id="${data.id}" data-type="select"
                             data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
                         <td>${data.nextStep || ''}</td>
@@ -613,6 +605,7 @@
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td>${action.type}</td>
+                    <td>${action.contact || ''}</td>
                     <td>${action.title}</td>
                     <td>${action.nextStepDate || ''}</td>
                     <td>${action.createdAt}</td>
@@ -802,6 +795,7 @@
 
                 // Reset form fields
                 document.getElementById('action-title').value = '';
+                document.getElementById('action-contact').value = '';
                 document.getElementById('action-next-step-date').value = '';
                 document.getElementById('action-type').value = 'Appel';
                 document.getElementById('action-owner').value = '';
@@ -831,6 +825,7 @@
                 const formData = new FormData();
                 formData.append('title', document.getElementById('action-title').value);
                 formData.append('type', document.getElementById('action-type').value);
+                formData.append('contact', document.getElementById('action-contact').value);
                 formData.append('nextStepDate', document.getElementById('action-next-step-date').value);
                 formData.append('owner', document.getElementById('action-owner').value);
 
