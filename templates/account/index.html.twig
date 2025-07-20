@@ -129,7 +129,7 @@
                                             <th>Action Date</th>
                                             <th>Created At</th>
                                             <th>Owner</th>
-                                            <th>Closed (0/0)</th>
+                                            <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -562,12 +562,13 @@
             actionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
 
-            // Update the Closed column header with count
+            // Update the actions header with closed/total count
             const closedCount = actions.filter(action => action.closed).length;
             const totalCount = actions.length;
-            const closedHeader = document.querySelector('#actions-table thead th:nth-child(7)');
-            if (closedHeader) {
-                closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+            const actionsHeader = document.getElementById('actions-header');
+            if (actionsHeader) {
+                const accountName = actionsHeader.textContent.split('(')[0].trim();
+                actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
             }
 
             // Add actions to table after the form row
@@ -718,12 +719,13 @@
                             }
                         }
 
-                        // Update the Closed column header with count
+                        // Update the actions header with closed/total count
                         const closedCount = allAccountActions.filter(action => action.closed).length;
                         const totalCount = allAccountActions.length;
-                        const closedHeader = document.querySelector('#actions-table thead th:nth-child(7)');
-                        if (closedHeader) {
-                            closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                        const actionsHeader = document.getElementById('actions-header');
+                        if (actionsHeader) {
+                            const accountName = actionsHeader.textContent.split('(')[0].trim();
+                            actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
                         }
 
                         // Refresh the accounts list to reflect the updated action status
