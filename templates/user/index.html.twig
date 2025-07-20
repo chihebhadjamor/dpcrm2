@@ -147,6 +147,8 @@
                                             <th>Last Action</th>
                                             <th>Priority</th>
                                             <th>Next Step</th>
+                                            <th>Closed</th>
+                                            <th>Close Date</th>
                                         </tr>
                                     </thead>
                                     <tbody id="account-actions-tbody">
@@ -345,7 +347,9 @@
                                         <td>${action.accountName}</td>
                                         <td>${action.lastAction}</td>
                                         <td>${action.priority}</td>
-                                        <td>${action.nextStep || 'N/A'}</td>
+                                        <td>${action.nextStep || ''}</td>
+                                        <td>${action.closed ? 'Yes' : 'No'}</td>
+                                        <td>${action.dateClosed || ''}</td>
                                     `;
                                     accountActionsTbody.appendChild(row);
                                 });

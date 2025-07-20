@@ -297,7 +297,9 @@ class UserController extends AbstractWebController
                         'accountName' => $account->getName(),
                         'lastAction' => $action->getTitle(),
                         'priority' => $account->getPriority(),
-                        'nextStep' => $account->getNextStep()
+                        'nextStep' => $account->getNextStep(),
+                        'closed' => $action->isClosed(),
+                        'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
                     ];
 
                     $processedAccounts[] = $accountId;
