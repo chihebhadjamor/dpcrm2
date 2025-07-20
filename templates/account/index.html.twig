@@ -50,8 +50,8 @@
                                 <th>ID</th>
                                 <th>Account Name</th>
                                 <th>Contact</th>
-                                <th>Next Action Date</th>
                                 <th>Next Action</th>
+                                <th>Next Action Date</th>
                                 <th>Owner</th>
                                 <th>Actions</th>
                             </tr>
@@ -85,12 +85,12 @@
                                 <td>{% if contactInfo[account.id] is defined %}{{ contactInfo[account.id] }}{% endif %}</td>
                                 <td>
                                     {% if nextActions[account.id] is defined %}
-                                        {{ nextActions[account.id].nextStepDate|date('Y-m-d') }}
+                                        {{ nextActions[account.id].title }}
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if nextActions[account.id] is defined %}
-                                        {{ nextActions[account.id].title }}
+                                        {{ nextActions[account.id].nextStepDate|date('Y-m-d') }}
                                     {% endif %}
                                 </td>
                                 <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
@@ -126,7 +126,7 @@
                                             <th>Type</th>
                                             <th>Contact</th>
                                             <th>Action</th>
-                                            <th>Next Step Date</th>
+                                            <th>Action Date</th>
                                             <th>Created At</th>
                                             <th>Owner</th>
                                             <th>Closed (0/0)</th>
@@ -236,8 +236,8 @@
                     <td>${account.id}</td>
                     <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
                     <td>${account.contact || ''}</td>
-                    <td>${account.nextStepDate || ''}</td>
                     <td>${account.nextAction || ''}</td>
+                    <td>${account.nextStepDate || ''}</td>
                     <td>${account.actionOwner || ''}</td>
                     <td>
                         <a href="/accounts/${account.id}/edit" class="btn btn-sm btn-outline-success">
