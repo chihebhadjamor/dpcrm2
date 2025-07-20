@@ -12,6 +12,48 @@
         background-color: #f8f9fa;
         position: relative;
     }
+
+    /* Two-column layout styles */
+    .user-list-column {
+        width: 35%;
+        float: left;
+        padding-right: 15px;
+    }
+
+    .backlog-column {
+        width: 65%;
+        float: left;
+        padding-left: 15px;
+    }
+
+    /* Loading indicator */
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .loading-spinner i {
+        font-size: 2rem;
+    }
+
+    /* Selected user highlight */
+    .user-row.selected {
+        background-color: #e2f0e2 !important;
+    }
+
+    /* Responsive layout for smaller screens */
+    @media (max-width: 768px) {
+        .user-list-column, .backlog-column {
+            width: 100%;
+            float: none;
+            padding: 0;
+        }
+
+        .backlog-column {
+            margin-top: 20px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -20,96 +62,109 @@
 <input type="hidden" id="csrf_token_create_user" value="{{ csrf_token('create_user') }}">
 
 <div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Users List</h4>
-                <button type="button" class="btn btn-light" id="create-user-btn">
-                    <i class="fas fa-plus"></i> Create User
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Roles</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                    <tbody>
-                        <!-- Form row for creating new user -->
-                        <tr id="user-form-row" style="display: none;">
-                            <td><i>New</i></td>
-                            <td>
-                                <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
-                            </td>
-                            <td>
-                                <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
-                            </td>
-                            <td>
-                                <input type="password" class="form-control" id="user-password" name="password" placeholder="Password" required>
-                            </td>
-                            <td>
-                                <button type="button" id="save-user-btn" class="btn btn-sm btn-success text-white">Save</button>
-                                <button type="button" id="cancel-user-btn" class="btn btn-sm btn-secondary">Cancel</button>
-                            </td>
-                        </tr>
-                        {% for user in users %}
-                            <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
-                                <td>{{ user.id }}</td>
-                                <td class="editable" data-field="username" data-user-id="{{ user.id }}">{{ user.username }}</td>
-                                <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
-                                <td class="editable" data-field="roles" data-user-id="{{ user.id }}">{{ user.roles|join(', ') }}</td>
-                                <td>
-                                    <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center">No users found</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                    </table>
+    <div class="clearfix">
+        <!-- Left Column: User List -->
+        <div class="user-list-column">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Users List</h4>
+                    <button type="button" class="btn btn-light" id="create-user-btn">
+                        <i class="fas fa-plus"></i> Create User
+                    </button>
                 </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Form row for creating new user -->
+                                <tr id="user-form-row" style="display: none;">
+                                    <td><i>New</i></td>
+                                    <td>
+                                        <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
+                                    </td>
+                                    <td>
+                                        <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                                    </td>
+                                    <td>
+                                        <button type="button" id="save-user-btn" class="btn btn-sm btn-success text-white">Save</button>
+                                        <button type="button" id="cancel-user-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                                    </td>
+                                </tr>
+                                {% for user in users %}
+                                    <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
+                                        <td>{{ user.id }}</td>
+                                        <td class="editable" data-field="username" data-user-id="{{ user.id }}">{{ user.username }}</td>
+                                        <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
+                                        <td>
+                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No users found</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Right Column: User Backlog -->
+        <div class="backlog-column">
+            <!-- Initial message when no user is selected -->
+            <div id="no-user-selected-message" class="card">
+                <div class="card-body text-center">
+                    <p class="mb-0">Select a user to view his/her backlog.</p>
+                </div>
+            </div>
 
-                <!-- Account Actions Section -->
-                <div id="account-actions-section" class="mt-4" style="display: none;">
-                    <div class="card">
-                        <div class="card-header bg-success text-white">
-                            <h4 class="mb-0" id="account-actions-header">Backlog of User</h4>
+            <!-- Loading indicator -->
+            <div id="loading-spinner" class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading backlog...</p>
+            </div>
+
+            <!-- Account Actions Section -->
+            <div id="account-actions-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0" id="account-actions-header">Backlog of User</h4>
+                    </div>
+                    <div class="card-body">
+                        <div style="max-height: 70vh; overflow-y: auto;">
+                            <div class="table-responsive">
+                                <table id="account-actions-table" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Account</th>
+                                            <th>Action</th>
+                                            <th>Action Date</th>
+                                            <th>Status</th>
+                                            <th>Closed (0/0)</th>
+                                            <th>Close Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="account-actions-tbody">
+                                        <!-- Account actions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div style="max-height: 20vh; overflow-y: auto;">
-                                <div class="table-responsive">
-                                    <table id="account-actions-table" class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Account Name</th>
-                                                <th>Action</th>
-                                                <th>Action Date</th>
-                                                <th>Status</th>
-                                                <th>Closed (0/0)</th>
-                                                <th>Close Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="account-actions-tbody">
-                                            <!-- Account actions will be loaded here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div id="no-account-actions-message" class="text-center" style="display: none;">
-                                <p>This user has no actions to display.</p>
-                            </div>
+                        <div id="no-account-actions-message" class="text-center" style="display: none;">
+                            <p>This user has no actions to display.</p>
                         </div>
                     </div>
                 </div>
@@ -218,7 +273,6 @@
                         <td>${data.id}</td>
                         <td class="editable" data-field="username" data-user-id="${data.id}">${data.username}</td>
                         <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
-                        <td class="editable" data-field="roles" data-user-id="${data.id}">${data.roles.join(', ')}</td>
                         <td>
                             <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
                                 <i class="fas fa-edit"></i> Edit
@@ -235,25 +289,131 @@
 
                     // Attach event listeners to the new row
                     row.addEventListener('click', function(e) {
-                        if (!e.target.closest('button')) {
-                            // Remove active class from all rows
-                            userRows.forEach(r => r.classList.remove('table-primary'));
-
-                            // Add active class to clicked row
-                            this.classList.add('table-primary');
-
-                            // Get user ID from data attribute
-                            const userId = this.getAttribute('data-user-id');
-
-                            // Get username from the row (second cell contains username)
-                            const username = this.querySelector('td:nth-child(2)').textContent;
-
-                            // Update the header with the username
-                            const accountActionsHeader = document.getElementById('account-actions-header');
-                            if (accountActionsHeader) {
-                                accountActionsHeader.textContent = `Backlog of ${username}`;
-                            }
+                        // Don't process if clicking on a button within the row
+                        if (e.target.closest('button') || e.target.closest('a')) {
+                            return;
                         }
+
+                        // Remove selected class from all rows
+                        document.querySelectorAll('.user-row').forEach(r => r.classList.remove('selected', 'table-primary'));
+
+                        // Add selected class to clicked row
+                        this.classList.add('selected', 'table-primary');
+
+                        // Get user ID from data attribute
+                        const userId = this.getAttribute('data-user-id');
+
+                        // Get username from the row (second cell contains username)
+                        const username = this.querySelector('td:nth-child(2)').textContent;
+
+                        // Update the header with the username
+                        const accountActionsHeader = document.getElementById('account-actions-header');
+                        if (accountActionsHeader) {
+                            accountActionsHeader.textContent = `Backlog of ${username}`;
+                        }
+
+                        // Hide the "no user selected" message
+                        if (noUserSelectedMessage) {
+                            noUserSelectedMessage.style.display = 'none';
+                        }
+
+                        // Show loading spinner
+                        if (loadingSpinner) {
+                            loadingSpinner.style.display = 'block';
+                        }
+
+                        // Hide account actions section while loading
+                        if (accountActionsSection) {
+                            accountActionsSection.style.display = 'none';
+                        }
+
+                        // Fetch account actions for this user
+                        fetch(`/users/${userId}/account-actions`)
+                            .then(response => response.json())
+                            .then(data => {
+                                // Hide loading spinner
+                                if (loadingSpinner) {
+                                    loadingSpinner.style.display = 'none';
+                                }
+
+                                // Clear previous account actions
+                                accountActionsTbody.innerHTML = '';
+
+                                // Show account actions section
+                                accountActionsSection.style.display = 'block';
+
+                                if (data.length > 0) {
+                                    // Hide no account actions message
+                                    if (noAccountActionsMessage) {
+                                        noAccountActionsMessage.style.display = 'none';
+                                    }
+
+                                    // Update the Closed column header with count
+                                    const closedCount = data.filter(action => action.closed).length;
+                                    const totalCount = data.length;
+                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    if (closedHeader) {
+                                        closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                                    }
+
+                                    // Add account actions to table
+                                    data.forEach(action => {
+                                        const row = document.createElement('tr');
+                                        // Add class for closed actions to make them visually distinct
+                                        if (action.closed) {
+                                            row.classList.add('text-muted');
+                                            row.style.textDecoration = 'line-through';
+                                            row.style.color = '#6c757d'; // Explicitly set gray color
+                                            row.style.fontStyle = 'italic'; // Add italic styling
+                                        }
+
+                                        // Apply cell-level styling for closed actions
+                                        const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
+
+                                        row.innerHTML = `
+                                            <td ${cellStyle}>${action.accountId}</td>
+                                            <td ${cellStyle}>${action.accountName}</td>
+                                            <td ${cellStyle}>${action.lastAction}</td>
+                                            <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
+                                            <td ${cellStyle}>${action.closed ? 'Closed' : 'Open'}</td>
+                                            <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                            <td ${cellStyle}>${action.dateClosed || ''}</td>
+                                        `;
+                                        accountActionsTbody.appendChild(row);
+                                    });
+                                } else {
+                                    // Show no account actions message
+                                    if (noAccountActionsMessage) {
+                                        noAccountActionsMessage.style.display = 'block';
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching account actions:', error);
+
+                                // Hide loading spinner
+                                if (loadingSpinner) {
+                                    loadingSpinner.style.display = 'none';
+                                }
+
+                                if (accountActionsSection) {
+                                    accountActionsSection.style.display = 'block';
+
+                                    // Clear previous account actions
+                                    accountActionsTbody.innerHTML = '';
+
+                                    // Reset the Closed column header to default
+                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    if (closedHeader) {
+                                        closedHeader.textContent = 'Closed (0/0)';
+                                    }
+
+                                    if (noAccountActionsMessage) {
+                                        noAccountActionsMessage.style.display = 'block';
+                                        noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
+                                    }
+                                }
+                            });
                     });
 
                 })
@@ -267,15 +427,23 @@
 
 
 
+        // Get references to new elements
+        const noUserSelectedMessage = document.getElementById('no-user-selected-message');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
         // Add click event listener to each user row
         userRows.forEach(row => {
             row.addEventListener('click', function(e) {
+                // Don't process if clicking on a button within the row
+                if (e.target.closest('button') || e.target.closest('a')) {
+                    return;
+                }
 
-                // Remove active class from all rows
-                userRows.forEach(r => r.classList.remove('table-primary'));
+                // Remove selected class from all rows
+                userRows.forEach(r => r.classList.remove('selected', 'table-primary'));
 
-                // Add active class to clicked row
-                this.classList.add('table-primary');
+                // Add selected class to clicked row
+                this.classList.add('selected', 'table-primary');
 
                 // Get user ID from data attribute
                 const userId = this.getAttribute('data-user-id');
@@ -289,84 +457,108 @@
                     accountActionsHeader.textContent = `Backlog of ${username}`;
                 }
 
-                // Fetch account actions for this user
+                // Hide the "no user selected" message
+                if (noUserSelectedMessage) {
+                    noUserSelectedMessage.style.display = 'none';
+                }
+
+                // Show loading spinner
+                if (loadingSpinner) {
+                    loadingSpinner.style.display = 'block';
+                }
+
+                // Hide account actions section while loading
                 if (accountActionsSection) {
-                    fetch(`/users/${userId}/account-actions`)
-                        .then(response => response.json())
-                        .then(data => {
+                    accountActionsSection.style.display = 'none';
+                }
+
+                // Fetch account actions for this user
+                fetch(`/users/${userId}/account-actions`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading spinner
+                        if (loadingSpinner) {
+                            loadingSpinner.style.display = 'none';
+                        }
+
+                        // Clear previous account actions
+                        accountActionsTbody.innerHTML = '';
+
+                        // Show account actions section
+                        accountActionsSection.style.display = 'block';
+
+                        if (data.length > 0) {
+                            // Hide no account actions message
+                            if (noAccountActionsMessage) {
+                                noAccountActionsMessage.style.display = 'none';
+                            }
+
+                            // Update the Closed column header with count
+                            const closedCount = data.filter(action => action.closed).length;
+                            const totalCount = data.length;
+                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            if (closedHeader) {
+                                closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                            }
+
+                            // Add account actions to table
+                            data.forEach(action => {
+                                const row = document.createElement('tr');
+                                // Add class for closed actions to make them visually distinct
+                                if (action.closed) {
+                                    row.classList.add('text-muted');
+                                    row.style.textDecoration = 'line-through';
+                                    row.style.color = '#6c757d'; // Explicitly set gray color
+                                    row.style.fontStyle = 'italic'; // Add italic styling
+                                }
+
+                                // Apply cell-level styling for closed actions
+                                const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
+
+                                row.innerHTML = `
+                                    <td ${cellStyle}>${action.accountId}</td>
+                                    <td ${cellStyle}>${action.accountName}</td>
+                                    <td ${cellStyle}>${action.lastAction}</td>
+                                    <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
+                                    <td ${cellStyle}>${action.closed ? 'Closed' : 'Open'}</td>
+                                    <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                    <td ${cellStyle}>${action.dateClosed || ''}</td>
+                                `;
+                                accountActionsTbody.appendChild(row);
+                            });
+                        } else {
+                            // Show no account actions message
+                            if (noAccountActionsMessage) {
+                                noAccountActionsMessage.style.display = 'block';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching account actions:', error);
+
+                        // Hide loading spinner
+                        if (loadingSpinner) {
+                            loadingSpinner.style.display = 'none';
+                        }
+
+                        if (accountActionsSection) {
+                            accountActionsSection.style.display = 'block';
+
                             // Clear previous account actions
                             accountActionsTbody.innerHTML = '';
 
-                            // Show account actions section
-                            accountActionsSection.style.display = 'block';
-
-                            if (data.length > 0) {
-                                // Hide no account actions message
-                                if (noAccountActionsMessage) {
-                                    noAccountActionsMessage.style.display = 'none';
-                                }
-
-                                // Update the Closed column header with count
-                                const closedCount = data.filter(action => action.closed).length;
-                                const totalCount = data.length;
-                                const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                                if (closedHeader) {
-                                    closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
-                                }
-
-                                // Add account actions to table
-                                data.forEach(action => {
-                                    const row = document.createElement('tr');
-                                    // Add class for closed actions to make them visually distinct
-                                    if (action.closed) {
-                                        row.classList.add('text-muted');
-                                        row.style.textDecoration = 'line-through';
-                                        row.style.color = '#6c757d'; // Explicitly set gray color
-                                        row.style.fontStyle = 'italic'; // Add italic styling
-                                    }
-
-                                    // Apply cell-level styling for closed actions
-                                    const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
-
-                                    row.innerHTML = `
-                                        <td ${cellStyle}>${action.id}</td>
-                                        <td ${cellStyle}>${action.accountName}</td>
-                                        <td ${cellStyle}>${action.lastAction}</td>
-                                        <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                        <td ${cellStyle}>${action.closed ? 'Closed' : 'Open'}</td>
-                                        <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
-                                        <td ${cellStyle}>${action.dateClosed || ''}</td>
-                                    `;
-                                    accountActionsTbody.appendChild(row);
-                                });
-                            } else {
-                                // Show no account actions message
-                                if (noAccountActionsMessage) {
-                                    noAccountActionsMessage.style.display = 'block';
-                                }
+                            // Reset the Closed column header to default
+                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            if (closedHeader) {
+                                closedHeader.textContent = 'Closed (0/0)';
                             }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching account actions:', error);
-                            if (accountActionsSection) {
-                                accountActionsSection.style.display = 'block';
 
-                                // Clear previous account actions
-                                accountActionsTbody.innerHTML = '';
-
-                                // Reset the Closed column header to default
-                                const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                                if (closedHeader) {
-                                    closedHeader.textContent = 'Closed (0/0)';
-                                }
-
-                                if (noAccountActionsMessage) {
-                                    noAccountActionsMessage.style.display = 'block';
-                                    noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
-                                }
+                            if (noAccountActionsMessage) {
+                                noAccountActionsMessage.style.display = 'block';
+                                noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
                             }
-                        });
-                }
+                        }
+                    });
             });
         });
 
