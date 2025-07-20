@@ -82,13 +82,6 @@ class AccountController extends AbstractWebController
                     return new JsonResponse(['error' => 'Name must be between 2 and 255 characters'], 400);
                 }
                 break;
-            case 'contact':
-                if (strlen($value) >= 2 && strlen($value) <= 255) {
-                    $account->setContact($value);
-                } else {
-                    return new JsonResponse(['error' => 'Contact must be between 2 and 255 characters'], 400);
-                }
-                break;
             case 'priority':
                 if (in_array($value, ['Haute', 'Moyenne', 'Basse'])) {
                     $account->setPriority($value);
@@ -120,14 +113,6 @@ class AccountController extends AbstractWebController
                     }
                 }
                 break;
-            case 'owner':
-                $owner = $entityManager->getRepository(User::class)->find($value);
-                if ($owner) {
-                    $account->setOwner($owner);
-                } else {
-                    return new JsonResponse(['error' => 'User not found'], 404);
-                }
-                break;
             default:
                 return new JsonResponse(['error' => 'Invalid field name'], 400);
         }
@@ -156,6 +141,8 @@ class AccountController extends AbstractWebController
         $nextActions = [];
         // Store contact information for each account
         $contactInfo = [];
+        // Store owner information for each account
+        $ownerInfo = [];
 
         if (!empty($accounts)) {
             // Get all account IDs
@@ -238,12 +225,6 @@ class AccountController extends AbstractWebController
                 'required' => false,
                 'attr' => ['class' => 'form-control']
             ])
-            ->add('owner', EntityType::class, [
-                'class' => User::class,
-                'choice_label' => 'username',
-                'label' => 'Owner',
-                'attr' => ['class' => 'form-control']
-            ])
             ->add('save', SubmitType::class, [
                 'label' => 'Create Account',
                 'attr' => ['class' => 'btn btn-success mt-2']
@@ -321,36 +302,56 @@ class AccountController extends AbstractWebController
         $ownerId = $request->request->get('owner');
 
         // Validate required fields
-        if (!$name || !$contact || !$ownerId) {
+        if (!$name) {
             return new JsonResponse(['error' => 'Missing required fields'], 400);
-        }
-
-        // Get the owner
-        $owner = $entityManager->getRepository(User::class)->find($ownerId);
-        if (!$owner) {
-            return new JsonResponse(['error' => 'Owner not found'], 404);
         }
 
         // Create a new account
         $account = new Account();
         $account->setName($name);
-        $account->setContact($contact);
         $account->setPriority($priority);
         $account->setNextStep($nextStep);
-        $account->setOwner($owner);
 
         // Save to database
         $entityManager->persist($account);
         $entityManager->flush();
 
+        // Create an initial action for this account if owner is provided
+        $actionOwner = null;
+        if ($ownerId) {
+            $owner = $entityManager->getRepository(User::class)->find($ownerId);
+            if ($owner) {
+                $action = new Action();
+                $action->setTitle('Initial contact');
+                $action->setType('Email');
+                $action->setContact($contact);
+                $action->setAccount($account);
+                $action->setOwner($owner);
+
+                if ($nextStep) {
+                    try {
+                        $dateTime = new \DateTime($nextStep);
+                        $action->setNextStepDate($dateTime);
+                    } catch (\Exception $e) {
+                        // If date parsing fails, just continue without setting nextStepDate
+                    }
+                }
+
+                $entityManager->persist($action);
+                $entityManager->flush();
+
+                $actionOwner = $owner->getUsername();
+            }
+        }
+
         // Return the created account data
         return new JsonResponse([
             'id' => $account->getId(),
             'name' => $account->getName(),
-            'contact' => $account->getContact(),
+            'contact' => $contact,
             'priority' => $account->getPriority(),
             'nextStep' => $account->getNextStep(),
-            'owner' => $account->getOwner()->getUsername()
+            'actionOwner' => $actionOwner
         ]);
     }
 
@@ -517,7 +518,7 @@ class AccountController extends AbstractWebController
                 'priority' => $account->getPriority(),
                 'nextStepDate' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null,
                 'nextAction' => $nextAction ? $nextAction->getTitle() : null,
-                'owner' => $account->getOwner()->getUsername()
+                'actionOwner' => $nextAction ? $nextAction->getOwner()->getUsername() : null
             ];
         }
 

@@ -48,9 +48,6 @@ class Account implements ArrayAccess
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $nextStep = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $owner = null;
 
     #[ORM\OneToMany(mappedBy: 'account', targetEntity: Action::class, cascade: ['persist', 'remove'])]
     private Collection $actions;
@@ -107,17 +104,6 @@ class Account implements ArrayAccess
         return $this;
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->owner;
-    }
-
-    public function setOwner(?User $owner): static
-    {
-        $this->owner = $owner;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Action>

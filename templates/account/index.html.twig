@@ -103,7 +103,7 @@
                                         {{ nextActions[account.id].title }}
                                     {% endif %}
                                 </td>
-                                <td>{{ account.owner.username }}</td>
+                                <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
                                 <td>
                                     <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
                                         <i class="fas fa-edit"></i> Edit
@@ -250,7 +250,7 @@
                         data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${account.priority}</td>
                     <td>${account.nextStepDate || ''}</td>
                     <td>${account.nextAction || ''}</td>
-                    <td>${account.owner}</td>
+                    <td>${account.actionOwner || ''}</td>
                     <td>
                         <a href="/accounts/${account.id}/edit" class="btn btn-sm btn-outline-success">
                             <i class="fas fa-edit"></i> Edit
@@ -378,7 +378,7 @@
                             data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
                         <td>${data.nextStep || ''}</td>
                         <td></td>
-                        <td>${data.owner}</td>
+                        <td>${data.actionOwner || ''}</td>
                         <td>
                             <a href="/accounts/${data.id}/edit" class="btn btn-sm btn-outline-success">
                                 <i class="fas fa-edit"></i> Edit

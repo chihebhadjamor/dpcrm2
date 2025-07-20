@@ -39,14 +39,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Account::class)]
-    private Collection $accounts;
 
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Action::class)]
     private Collection $actions;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Action::class)]
-    private Collection $userActions;
 
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: History::class)]
     private Collection $histories;
@@ -54,9 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        $this->accounts = new ArrayCollection();
         $this->actions = new ArrayCollection();
-        $this->userActions = new ArrayCollection();
         $this->histories = new ArrayCollection();
     }
 
@@ -167,35 +160,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    /**
-     * @return Collection<int, Account>
-     */
-    public function getAccounts(): Collection
-    {
-        return $this->accounts;
-    }
-
-    public function addAccount(Account $account): static
-    {
-        if (!$this->accounts->contains($account)) {
-            $this->accounts->add($account);
-            $account->setOwner($this);
-        }
-
-        return $this;
-    }
-
-    public function removeAccount(Account $account): static
-    {
-        if ($this->accounts->removeElement($account)) {
-            // set the owning side to null (unless already changed)
-            if ($account->getOwner() === $this) {
-                $account->setOwner(null);
-            }
-        }
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Action>
@@ -257,33 +221,4 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Action>
-     */
-    public function getUserActions(): Collection
-    {
-        return $this->userActions;
-    }
-
-    public function addUserAction(Action $action): static
-    {
-        if (!$this->userActions->contains($action)) {
-            $this->userActions->add($action);
-            $action->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUserAction(Action $action): static
-    {
-        if ($this->userActions->removeElement($action)) {
-            // set the owning side to null (unless already changed)
-            if ($action->getUser() === $this) {
-                $action->setUser(null);
-            }
-        }
-
-        return $this;
-    }
 }

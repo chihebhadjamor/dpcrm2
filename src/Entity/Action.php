@@ -43,10 +43,6 @@ class Action
     #[ORM\JoinColumn(nullable: true)]
     private ?Account $account = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'actions')]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?User $user = null;
-
     #[ORM\Column(name: 'date_closed', type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $dateClosed = null;
 
@@ -144,17 +140,6 @@ class Action
         return $this;
     }
 
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(?User $user): static
-    {
-        $this->user = $user;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, History>
