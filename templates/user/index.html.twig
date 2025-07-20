@@ -152,9 +152,7 @@
                                             <th>Account</th>
                                             <th>Action</th>
                                             <th>Action Date</th>
-                                            <th>Status</th>
                                             <th>Closed (0/0)</th>
-                                            <th>Close Date</th>
                                         </tr>
                                     </thead>
                                     <tbody id="account-actions-tbody">
@@ -351,7 +349,7 @@
                                     // Update the Closed column header with count
                                     const closedCount = data.filter(action => action.closed).length;
                                     const totalCount = data.length;
-                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
                                     if (closedHeader) {
                                         closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
                                     }
@@ -375,9 +373,7 @@
                                             <td ${cellStyle}>${action.accountName}</td>
                                             <td ${cellStyle}>${action.lastAction}</td>
                                             <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                            <td ${cellStyle}>${action.closed ? 'Closed' : 'Open'}</td>
                                             <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
-                                            <td ${cellStyle}>${action.dateClosed || ''}</td>
                                         `;
                                         accountActionsTbody.appendChild(row);
                                     });
@@ -403,7 +399,7 @@
                                     accountActionsTbody.innerHTML = '';
 
                                     // Reset the Closed column header to default
-                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
                                     if (closedHeader) {
                                         closedHeader.textContent = 'Closed (0/0)';
                                     }
@@ -496,7 +492,7 @@
                             // Update the Closed column header with count
                             const closedCount = data.filter(action => action.closed).length;
                             const totalCount = data.length;
-                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
                             if (closedHeader) {
                                 closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
                             }
@@ -520,9 +516,7 @@
                                     <td ${cellStyle}>${action.accountName}</td>
                                     <td ${cellStyle}>${action.lastAction}</td>
                                     <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                    <td ${cellStyle}>${action.closed ? 'Closed' : 'Open'}</td>
                                     <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
-                                    <td ${cellStyle}>${action.dateClosed || ''}</td>
                                 `;
                                 accountActionsTbody.appendChild(row);
                             });
@@ -548,7 +542,7 @@
                             accountActionsTbody.innerHTML = '';
 
                             // Reset the Closed column header to default
-                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
                             if (closedHeader) {
                                 closedHeader.textContent = 'Closed (0/0)';
                             }
