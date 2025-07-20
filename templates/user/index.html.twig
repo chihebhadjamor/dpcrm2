@@ -135,7 +135,7 @@
                 <div id="account-actions-section" class="mt-4" style="display: none;">
                     <div class="card">
                         <div class="card-header bg-success text-white">
-                            <h4 class="mb-0">User Account Actions</h4>
+                            <h4 class="mb-0" id="account-actions-header">Backlog of User</h4>
                         </div>
                         <div class="card-body">
                             <div style="max-height: 20vh; overflow-y: auto;">
@@ -294,6 +294,14 @@
                             // Get user ID from data attribute
                             const userId = this.getAttribute('data-user-id');
 
+                            // Get username from the row (second cell contains username)
+                            const username = this.querySelector('td:nth-child(2)').textContent;
+
+                            // Update the header with the username
+                            const accountActionsHeader = document.getElementById('account-actions-header');
+                            if (accountActionsHeader) {
+                                accountActionsHeader.textContent = `Backlog of ${username}`;
+                            }
                         }
                     });
 
@@ -321,6 +329,14 @@
                 // Get user ID from data attribute
                 const userId = this.getAttribute('data-user-id');
 
+                // Get username from the row (second cell contains username)
+                const username = this.querySelector('td:nth-child(2)').textContent;
+
+                // Update the header with the username
+                const accountActionsHeader = document.getElementById('account-actions-header');
+                if (accountActionsHeader) {
+                    accountActionsHeader.textContent = `Backlog of ${username}`;
+                }
 
                 // Fetch account actions for this user
                 if (accountActionsSection) {
