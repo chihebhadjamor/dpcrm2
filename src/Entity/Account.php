@@ -45,8 +45,6 @@ class Account implements ArrayAccess
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $context = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $nextStep = null;
 
 
     #[ORM\OneToMany(mappedBy: 'account', targetEntity: Action::class, cascade: ['persist', 'remove'])]
@@ -92,17 +90,6 @@ class Account implements ArrayAccess
         return $this;
     }
 
-    public function getNextStep(): ?string
-    {
-        return $this->nextStep;
-    }
-
-    public function setNextStep(?string $nextStep): static
-    {
-        $this->nextStep = $nextStep;
-
-        return $this;
-    }
 
 
     /**

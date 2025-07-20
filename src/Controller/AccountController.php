@@ -89,30 +89,6 @@ class AccountController extends AbstractWebController
                     return new JsonResponse(['error' => 'Priority must be one of: Haute, Moyenne, Basse'], 400);
                 }
                 break;
-            case 'nextStep':
-                $account->setNextStep($value);
-
-                // If nextStep is updated, update the most recent action's nextStepDate
-                if (!empty($value)) {
-                    try {
-                        // Try to parse the date from the nextStep value
-                        $dateTime = new \DateTime($value);
-
-                        // Find the most recent action for this account
-                        $action = $entityManager->getRepository(Action::class)->findOneBy(
-                            ['account' => $account],
-                            ['createdAt' => 'DESC']
-                        );
-
-                        // If an action exists, update its nextStepDate
-                        if ($action) {
-                            $action->setNextStepDate($dateTime);
-                        }
-                    } catch (\Exception $e) {
-                        // If date parsing fails, just continue without updating action
-                    }
-                }
-                break;
             default:
                 return new JsonResponse(['error' => 'Invalid field name'], 400);
         }
@@ -220,11 +196,6 @@ class AccountController extends AbstractWebController
                 ],
                 'attr' => ['class' => 'form-control']
             ])
-            ->add('nextStep', TextType::class, [
-                'label' => 'Next Action Date',
-                'required' => false,
-                'attr' => ['class' => 'form-control']
-            ])
             ->add('save', SubmitType::class, [
                 'label' => 'Create Account',
                 'attr' => ['class' => 'btn btn-success mt-2']
@@ -298,7 +269,6 @@ class AccountController extends AbstractWebController
         $name = $request->request->get('name');
         $contact = $request->request->get('contact');
         $priority = $request->request->get('priority');
-        $nextStep = $request->request->get('nextStep');
         $ownerId = $request->request->get('owner');
 
         // Validate required fields
@@ -310,7 +280,6 @@ class AccountController extends AbstractWebController
         $account = new Account();
         $account->setName($name);
         $account->setPriority($priority);
-        $account->setNextStep($nextStep);
 
         // Save to database
         $entityManager->persist($account);
@@ -328,15 +297,6 @@ class AccountController extends AbstractWebController
                 $action->setAccount($account);
                 $action->setOwner($owner);
 
-                if ($nextStep) {
-                    try {
-                        $dateTime = new \DateTime($nextStep);
-                        $action->setNextStepDate($dateTime);
-                    } catch (\Exception $e) {
-                        // If date parsing fails, just continue without setting nextStepDate
-                    }
-                }
-
                 $entityManager->persist($action);
                 $entityManager->flush();
 
@@ -350,7 +310,6 @@ class AccountController extends AbstractWebController
             'name' => $account->getName(),
             'contact' => $contact,
             'priority' => $account->getPriority(),
-            'nextStep' => $account->getNextStep(),
             'actionOwner' => $actionOwner
         ]);
     }
@@ -395,10 +354,6 @@ class AccountController extends AbstractWebController
                 $dateTime = new \DateTime($nextStepDate);
                 $action->setNextStepDate($dateTime);
 
-                // Synchronize with account's nextStep field
-                // Format the date as a string for the account's nextStep field
-                $formattedDate = $dateTime->format('Y-m-d');
-                $account->setNextStep($formattedDate);
             } catch (\Exception $e) {
                 return new JsonResponse(['error' => 'Invalid date format for nextStepDate'], 400);
             }

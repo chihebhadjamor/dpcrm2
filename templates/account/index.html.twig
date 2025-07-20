@@ -73,7 +73,7 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="date" class="form-control" id="account-next-step" name="nextStep" placeholder="Next Action Date">
+                                <!-- Next Action Date field removed -->
                             </td>
                             <td>
                                 <!-- New account has no actions yet -->
@@ -327,7 +327,6 @@
                 // Reset form fields
                 document.getElementById('account-name').value = '';
                 document.getElementById('account-priority').value = 'Haute';
-                document.getElementById('account-next-step').value = '';
             });
 
             // Handle save button
@@ -343,7 +342,6 @@
                 const formData = new FormData();
                 formData.append('name', document.getElementById('account-name').value);
                 formData.append('priority', document.getElementById('account-priority').value);
-                formData.append('nextStep', document.getElementById('account-next-step').value);
 
                 // Send request to create account
                 fetch('/accounts/create-ajax', {
@@ -363,7 +361,6 @@
                     // Reset form fields
                     document.getElementById('account-name').value = '';
                     document.getElementById('account-priority').value = 'Haute';
-                    document.getElementById('account-next-step').value = '';
 
                     // Add the new account to the table
                     const row = document.createElement('tr');
@@ -376,7 +373,7 @@
                         <td></td>
                         <td class="editable" data-field="priority" data-account-id="${data.id}" data-type="select"
                             data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${data.priority}</td>
-                        <td>${data.nextStep || ''}</td>
+                        <td></td>
                         <td></td>
                         <td>${data.actionOwner || ''}</td>
                         <td>
