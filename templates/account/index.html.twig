@@ -256,6 +256,75 @@
         const noActionsMessage = document.getElementById('no-actions-message');
         const createActionBtn = document.getElementById('create-action-btn');
 
+        // Function to update the accounts table with new data
+        function updateAccountsTable(accounts) {
+            // Get the accounts table body
+            const accountsTableBody = document.querySelector('.table-striped tbody');
+
+            // Save the form row if it exists
+            const formRow = document.getElementById('account-form-row');
+            const formRowDisplay = formRow ? formRow.style.display : 'none';
+
+            // Get all current account rows
+            const currentAccountRows = document.querySelectorAll('.account-row');
+
+            // Remove all current account rows
+            currentAccountRows.forEach(row => {
+                row.remove();
+            });
+
+            // Re-add the form row if it exists
+            if (formRow) {
+                accountsTableBody.appendChild(formRow);
+                formRow.style.display = formRowDisplay;
+            }
+
+            // Add the updated account rows
+            accounts.forEach(account => {
+                const row = document.createElement('tr');
+                row.className = 'account-row';
+                row.setAttribute('data-account-id', account.id);
+                row.style.cursor = 'pointer';
+
+                // Check if this is the currently selected account
+                if (currentAccountId && currentAccountId == account.id) {
+                    row.classList.add('table-primary');
+                }
+
+                row.innerHTML = `
+                    <td>${account.id}</td>
+                    <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
+                    <td class="editable" data-field="contact" data-account-id="${account.id}">${account.contact}</td>
+                    <td class="editable" data-field="priority" data-account-id="${account.id}" data-type="select"
+                        data-options='{"Haute":"High","Moyenne":"Medium","Basse":"Low"}'>${account.priority}</td>
+                    <td>${account.nextStepDate || ''}</td>
+                    <td>${account.nextAction || ''}</td>
+                    <td>${account.owner}</td>
+                    <td>
+                        <a href="/account/${account.id}/edit" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </td>
+                `;
+
+                accountsTableBody.appendChild(row);
+
+                // Add click event listener to the new row
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('button') && !isEditing) {
+                        // Remove active class from all rows
+                        document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                        // Add active class to clicked row
+                        this.classList.add('table-primary');
+
+                        // Load account actions
+                        loadAccountActions(account.id);
+                    }
+                });
+            });
+        }
+
         // Load users for the action owner dropdown
         function loadUsers() {
             fetch('/api/users')
@@ -734,6 +803,18 @@
                         if (closedHeader) {
                             closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
                         }
+
+                        // Refresh the accounts list to reflect the updated action status
+                        // Instead of reloading the entire page, fetch only the updated accounts data
+                        fetch('/accounts/list-ajax')
+                            .then(response => response.json())
+                            .then(data => {
+                                // Update the accounts table with the new data
+                                updateAccountsTable(data);
+                            })
+                            .catch(error => {
+                                console.error('Error refreshing accounts list:', error);
+                            });
                     }
                 })
                 .catch(error => {

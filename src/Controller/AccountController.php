@@ -399,6 +399,70 @@ class AccountController extends AbstractWebController
         }
     }
 
+    #[Route('/accounts/list-ajax', name: 'app_accounts_list_ajax', methods: ['GET'])]
+    public function getAccountsList(EntityManagerInterface $entityManager): JsonResponse
+    {
+        $accounts = $entityManager->getRepository(Account::class)->findBy(
+            [],
+            ['createdAt' => 'DESC']
+        );
+
+        // Fetch the earliest upcoming (future) action for each account
+        $nextActions = [];
+
+        if (!empty($accounts)) {
+            // Get all account IDs
+            $accountIds = array_map(function($account) {
+                return $account->getId();
+            }, $accounts);
+
+            // Use Doctrine's query builder to get all open actions
+            $qb = $entityManager->createQueryBuilder();
+            $qb->select('a', 'acc', 'u')
+               ->from(Action::class, 'a')
+               ->join('a.account', 'acc')
+               ->join('a.owner', 'u')
+               ->where('acc.id IN (:accountIds)')
+               ->andWhere('a.closed = :closed')
+               ->andWhere('a.nextStepDate IS NOT NULL')
+               ->setParameter('accountIds', $accountIds)
+               ->setParameter('closed', false)
+               ->orderBy('a.nextStepDate', 'ASC'); // Order by date ascending to get earliest
+
+            $actions = $qb->getQuery()->getResult();
+
+            // Group actions by account ID and keep only the earliest upcoming one
+            $tempActions = [];
+            foreach ($actions as $action) {
+                $accountId = $action->getAccount()->getId();
+                if (!isset($tempActions[$accountId])) {
+                    $tempActions[$accountId] = $action;
+                }
+            }
+
+            $nextActions = $tempActions;
+        }
+
+        // Prepare the accounts data for JSON response
+        $accountsData = [];
+        foreach ($accounts as $account) {
+            $accountId = $account->getId();
+            $nextAction = isset($nextActions[$accountId]) ? $nextActions[$accountId] : null;
+
+            $accountsData[] = [
+                'id' => $accountId,
+                'name' => $account->getName(),
+                'contact' => $account->getContact(),
+                'priority' => $account->getPriority(),
+                'nextStepDate' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null,
+                'nextAction' => $nextAction ? $nextAction->getTitle() : null,
+                'owner' => $account->getOwner()->getUsername()
+            ];
+        }
+
+        return new JsonResponse($accountsData);
+    }
+
     #[Route('/actions/{id}/toggle-closed', name: 'app_action_toggle_closed', methods: ['POST'])]
     public function toggleActionClosed(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
