@@ -18,6 +18,19 @@
                     {{ form_row(form.phone) }}
                     {{ form_row(form.status) }}
 
+                    <div class="mb-3">
+                        <label class="form-label">Account Contacts</label>
+                        <div class="input-group mb-2">
+                            <input type="text" id="contact-input" class="form-control" placeholder="Add a contact">
+                            <button class="btn btn-outline-secondary" type="button" id="add-contact-btn">Add</button>
+                        </div>
+                        <div id="contacts-container" class="d-flex flex-wrap gap-2 mb-2">
+                            <!-- Contact tags will be added here -->
+                        </div>
+                        <small class="text-muted">Press Enter or click Add to add a contact</small>
+                        {{ form_widget(form.contacts) }}
+                    </div>
+
                     <button class="btn btn-primary">{{ button_label|default('Update Account') }}</button>
                     <a href="{{ path('app_accounts') }}" class="btn btn-secondary">Back to list</a>
 
@@ -27,4 +40,131 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contactInput = document.getElementById('contact-input');
+        const addContactBtn = document.getElementById('add-contact-btn');
+        const contactsContainer = document.getElementById('contacts-container');
+
+        // Try to find the contacts input with the expected ID
+        let contactsJsonInput = document.getElementById('account_contacts_json');
+
+        // If not found, try to find it by name
+        if (!contactsJsonInput) {
+            console.error('Could not find element with ID "account_contacts_json"');
+            // Look for any hidden input that might be the contacts field
+            const hiddenInputs = document.querySelectorAll('input[type="hidden"]');
+            console.log('Found hidden inputs:', hiddenInputs.length);
+
+            // Log all hidden inputs for debugging
+            hiddenInputs.forEach((input, index) => {
+                console.log(`Hidden input ${index}:`, input.id, input.name);
+            });
+
+            // Try to find by name
+            contactsJsonInput = document.querySelector('input[name="account[contacts]"]');
+            if (contactsJsonInput) {
+                console.log('Found contacts input by name:', contactsJsonInput.name);
+            } else {
+                console.error('Could not find contacts input by name either');
+                // Create a fallback element if needed
+                contactsJsonInput = document.createElement('input');
+                contactsJsonInput.type = 'hidden';
+                contactsJsonInput.id = 'account_contacts_json';
+                contactsJsonInput.name = 'account[contacts]';
+                document.querySelector('form').appendChild(contactsJsonInput);
+                console.log('Created fallback contacts input');
+            }
+        } else {
+            console.log('Found contacts input with ID:', contactsJsonInput.id);
+        }
+
+        // Array to store contacts
+        let contacts = [];
+
+        // Initialize contacts from existing data if available
+        if (contactsJsonInput.value) {
+            try {
+                contacts = JSON.parse(contactsJsonInput.value);
+                renderContacts();
+            } catch (e) {
+                console.error('Error parsing contacts JSON:', e);
+                // Initialize as empty array if parsing fails
+                contacts = [];
+            }
+        } else {
+            // Initialize as empty array if no value
+            contacts = [];
+        }
+
+        // Function to add a contact
+        function addContact() {
+            const contactName = contactInput.value.trim();
+            if (contactName && !contacts.includes(contactName)) {
+                contacts.push(contactName);
+                contactInput.value = '';
+                renderContacts();
+                updateContactsJson();
+                console.log('Contact added:', contactName);
+                console.log('Current contacts:', contacts);
+                console.log('JSON value:', contactsJsonInput.value);
+            } else if (!contactName) {
+                console.log('Contact name is empty');
+            } else {
+                console.log('Contact already exists:', contactName);
+            }
+        }
+
+        // Function to remove a contact
+        function removeContact(index) {
+            contacts.splice(index, 1);
+            renderContacts();
+            updateContactsJson();
+        }
+
+        // Function to render contacts as tags
+        function renderContacts() {
+            contactsContainer.innerHTML = '';
+            contacts.forEach((contact, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'badge bg-primary d-flex align-items-center p-2';
+                tag.innerHTML = `
+                    <span>${contact}</span>
+                    <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove"></button>
+                `;
+                tag.querySelector('.btn-close').addEventListener('click', () => removeContact(index));
+                contactsContainer.appendChild(tag);
+            });
+        }
+
+        // Function to update the hidden input with JSON
+        function updateContactsJson() {
+            const jsonValue = JSON.stringify(contacts);
+            contactsJsonInput.value = jsonValue;
+            console.log('Updated contacts JSON input value:', jsonValue);
+        }
+
+        // Event listeners
+        addContactBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent any default action
+            console.log('Add button clicked');
+            addContact();
+        });
+
+        contactInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
+                console.log('Enter key pressed');
+                addContact();
+            }
+        });
+
+        // Log initial state
+        console.log('Initial contacts JSON input value:', contactsJsonInput.value);
+        console.log('Initial contacts array:', contacts);
+    });
+</script>
 {% endblock %}

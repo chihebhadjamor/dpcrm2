@@ -208,6 +208,23 @@ class AccountController extends AbstractWebController
         );
     }
 
+    #[Route('/accounts/{id}/contacts', name: 'app_account_contacts', methods: ['GET'])]
+    public function getAccountContacts(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Find the account
+        $account = $entityManager->getRepository(Account::class)->find($id);
+
+        if (!$account) {
+            return new JsonResponse(['error' => 'Account not found'], 404);
+        }
+
+        // Get the contacts
+        $contacts = $account->getContacts() ?? [];
+
+        // Return the contacts
+        return new JsonResponse($contacts);
+    }
+
     #[Route('/accounts/{id}/actions', name: 'app_account_actions')]
     public function getAccountActions(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -261,6 +278,11 @@ class AccountController extends AbstractWebController
         // Create a new account
         $account = new Account();
         $account->setName($name);
+
+        // If a contact is provided, add it to the account's contacts
+        if ($contact) {
+            $account->addContact($contact);
+        }
 
         // Save to database
         $entityManager->persist($account);
@@ -319,10 +341,16 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Owner is required'], 400);
         }
 
+        // Get the contact from the request
+        $contact = $request->request->get('contact');
+        if (!$contact) {
+            return new JsonResponse(['error' => 'Contact is required'], 400);
+        }
+
         // Create a new action
         $action = new Action();
         $action->setTitle($request->request->get('title'));
-        $action->setContact($request->request->get('contact'));
+        $action->setContact($contact);
         $action->setCreatedAt(new \DateTime()); // Explicitly set createdAt
 
         // Handle next step date

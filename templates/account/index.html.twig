@@ -107,7 +107,9 @@
                                 <td>
                                     <input type="text" class="form-control" id="account-name" name="name" placeholder="Account Name" required>
                                 </td>
-                                <!-- Contact field removed as it's now managed at the Action level -->
+                                <td>
+                                    <input type="text" class="form-control" id="account-contact" name="contact" placeholder="Initial Contact">
+                                </td>
                                 <td>
                                     <!-- Next Action Date field removed -->
                                 </td>
@@ -191,7 +193,10 @@
                                 <tr id="action-form-row" style="display: none;">
                                     <td><i>New</i></td>
                                     <td>
-                                        <input type="text" class="form-control" id="action-contact" name="contact" placeholder="Contact">
+                                        <select class="form-control" id="action-contact" name="contact" required>
+                                            <option value="">Select Contact</option>
+                                            <!-- Account contacts will be loaded here -->
+                                        </select>
                                     </td>
                                     <td>
                                         <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
@@ -370,6 +375,7 @@
                 // Create FormData object
                 const formData = new FormData();
                 formData.append('name', document.getElementById('account-name').value);
+                formData.append('contact', document.getElementById('account-contact').value);
 
                 // Send request to create account
                 fetch('/accounts/create-ajax', {
@@ -722,6 +728,33 @@
                 // Show actions table container
                 document.getElementById('actions-table-container').style.display = 'block';
 
+                // Fetch contacts for this account
+                fetch(`/accounts/${accountId}/contacts`)
+                    .then(response => response.json())
+                    .then(contacts => {
+                        // Populate the contacts dropdown
+                        const contactSelect = document.getElementById('action-contact');
+                        contactSelect.innerHTML = '<option value="">Select Contact</option>';
+
+                        if (contacts && contacts.length > 0) {
+                            contacts.forEach(contact => {
+                                const option = document.createElement('option');
+                                option.value = contact;
+                                option.textContent = contact;
+                                contactSelect.appendChild(option);
+                            });
+                        } else {
+                            // If no contacts, add a default option
+                            const option = document.createElement('option');
+                            option.value = "No contacts available";
+                            option.textContent = "No contacts available";
+                            contactSelect.appendChild(option);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching contacts:', error);
+                    });
+
                 // Fetch actions for this account
                 fetch(`/accounts/${accountId}/actions`)
                     .then(response => response.json())
@@ -886,6 +919,12 @@
                 const title = document.getElementById('action-title').value;
                 if (!title) {
                     alert('Title is required');
+                    return;
+                }
+
+                const contact = document.getElementById('action-contact').value;
+                if (!contact) {
+                    alert('Contact is required');
                     return;
                 }
 

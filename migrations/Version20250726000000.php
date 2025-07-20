@@ -8,24 +8,24 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Remove priority column from account table
+ * Add contacts field to Account entity
  */
 final class Version20250726000000 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Remove priority column from account table';
+        return 'Add contacts field to Account entity';
     }
 
     public function up(Schema $schema): void
     {
-        // Remove priority column from account table
-        $this->addSql('ALTER TABLE account DROP priority');
+        // Add contacts field to account table as JSON
+        $this->addSql('ALTER TABLE account ADD contacts JSON DEFAULT NULL');
     }
 
     public function down(Schema $schema): void
     {
-        // Add priority column back to account table
-        $this->addSql('ALTER TABLE account ADD priority VARCHAR(50) NOT NULL');
+        // Remove contacts field from account table
+        $this->addSql('ALTER TABLE account DROP COLUMN IF EXISTS contacts');
     }
 }

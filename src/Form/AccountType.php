@@ -7,8 +7,10 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\CallbackTransformer;
 
 class AccountType extends AbstractType
 {
@@ -33,7 +35,30 @@ class AccountType extends AbstractType
                 'label' => 'Status',
                 'choices' => Account::getAvailableStatuses(),
                 'attr' => ['class' => 'form-select mb-3']
+            ])
+            ->add('contacts', HiddenType::class, [
+                'attr' => ['id' => 'account_contacts_json'],
+                'required' => false,
             ]);
+
+        // Add a data transformer to convert between array and JSON string
+        $builder->get('contacts')
+            ->addModelTransformer(new CallbackTransformer(
+                // Transform array to string (entity to form)
+                function ($contactsArray) {
+                    if (null === $contactsArray) {
+                        return '';
+                    }
+                    return json_encode($contactsArray);
+                },
+                // Transform string to array (form to entity)
+                function ($contactsJson) {
+                    if (!$contactsJson) {
+                        return [];
+                    }
+                    return json_decode($contactsJson, true);
+                }
+            ));
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -41,7 +41,8 @@ class Account implements ArrayAccess
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $context = null;
 
-
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $contacts = [];
 
     #[ORM\OneToMany(mappedBy: 'account', targetEntity: Action::class, cascade: ['persist', 'remove'])]
     private Collection $actions;
@@ -173,6 +174,64 @@ class Account implements ArrayAccess
     public function setContext(?string $context): static
     {
         $this->context = $context;
+
+        return $this;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getContacts(): ?array
+    {
+        return $this->contacts;
+    }
+
+    /**
+     * @param array|null $contacts
+     * @return static
+     */
+    public function setContacts(?array $contacts): static
+    {
+        $this->contacts = $contacts;
+
+        return $this;
+    }
+
+    /**
+     * Add a contact to the contacts array
+     *
+     * @param string $contact
+     * @return static
+     */
+    public function addContact(string $contact): static
+    {
+        if (!$this->contacts) {
+            $this->contacts = [];
+        }
+
+        if (!in_array($contact, $this->contacts)) {
+            $this->contacts[] = $contact;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove a contact from the contacts array
+     *
+     * @param string $contact
+     * @return static
+     */
+    public function removeContact(string $contact): static
+    {
+        if ($this->contacts) {
+            $key = array_search($contact, $this->contacts);
+            if ($key !== false) {
+                unset($this->contacts[$key]);
+                // Reindex the array
+                $this->contacts = array_values($this->contacts);
+            }
+        }
 
         return $this;
     }
