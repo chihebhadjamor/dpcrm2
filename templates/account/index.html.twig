@@ -29,12 +29,57 @@
         text-decoration: line-through;
         font-style: italic;
     }
+
+    /* Split view layout */
+    .split-view-container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .accounts-column {
+        width: 40%;
+        padding-right: 15px;
+    }
+
+    .actions-column {
+        width: 60%;
+    }
+
+    /* Responsive design for smaller screens */
+    @media (max-width: 992px) {
+        .accounts-column, .actions-column {
+            width: 100%;
+        }
+
+        .accounts-column {
+            margin-bottom: 20px;
+            padding-right: 0;
+        }
+    }
+
+    /* Adjust font sizes for better readability */
+    .accounts-column .table {
+        font-size: 1.05rem;
+    }
+
+    /* Empty actions placeholder */
+    .actions-placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="row mb-4">
-    <div class="col-12">
+<div class="split-view-container mb-4">
+    <!-- Left Column: Accounts List (40% width) -->
+    <div class="accounts-column">
         <div class="card">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Accounts List</h4>
@@ -49,134 +94,142 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Account Name</th>
-                                <th>Contact</th>
                                 <th>Next Action</th>
                                 <th>Next Action Date</th>
                                 <th>Owner</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                    <tbody>
-                        <!-- Form row for creating new account -->
-                        <tr id="account-form-row" style="display: none;">
-                            <td><i>New</i></td>
-                            <td>
-                                <input type="text" class="form-control" id="account-name" name="name" placeholder="Account Name" required>
-                            </td>
-                            <!-- Contact field removed as it's now managed at the Action level -->
-                            <td>
-                                <!-- Next Action Date field removed -->
-                            </td>
-                            <td>
-                                <!-- New account has no actions yet -->
-                            </td>
-                            <td>
-                                <!-- Owner will be set to current user -->
-                            </td>
-                            <td>
-                                <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
-                                <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
-                            </td>
-                        </tr>
-                        {% for account in accounts %}
-                            <tr class="account-row" data-account-id="{{ account.id }}" style="cursor: pointer;">
-                                <td>{{ account.id }}</td>
-                                <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
-                                <td>{% if contactInfo[account.id] is defined %}{{ contactInfo[account.id] }}{% endif %}</td>
+                        <tbody>
+                            <!-- Form row for creating new account -->
+                            <tr id="account-form-row" style="display: none;">
+                                <td><i>New</i></td>
                                 <td>
-                                    {% if nextActions[account.id] is defined %}
-                                        {{ nextActions[account.id].title }}
-                                    {% endif %}
+                                    <input type="text" class="form-control" id="account-name" name="name" placeholder="Account Name" required>
+                                </td>
+                                <!-- Contact field removed as it's now managed at the Action level -->
+                                <td>
+                                    <!-- Next Action Date field removed -->
                                 </td>
                                 <td>
-                                    {% if nextActions[account.id] is defined %}
-                                        {{ nextActions[account.id].nextStepDate|date('Y-m-d') }}
-                                    {% endif %}
+                                    <!-- New account has no actions yet -->
                                 </td>
-                                <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
                                 <td>
-                                    <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
+                                    <!-- Owner will be set to current user -->
+                                </td>
+                                <td>
+                                    <button type="button" id="save-account-btn" class="btn btn-sm btn-success text-white">Save</button>
+                                    <button type="button" id="cancel-account-btn" class="btn btn-sm btn-secondary">Cancel</button>
                                 </td>
                             </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="8" class="text-center">No accounts found</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <!-- Actions Table Section -->
-                <div id="actions-section" class="mt-4" style="display: none;">
-                    <div class="card">
-                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h4 class="mb-0" id="actions-header">Account Actions</h4>
-                            <button type="button" class="btn btn-light" id="create-action-btn">
-                                <i class="fas fa-plus"></i> Create Action
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div style="max-height: 20vh; overflow-y: auto;">
-                                <table id="actions-table" class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Type</th>
-                                            <th>Contact</th>
-                                            <th>Action</th>
-                                            <th>Action Date</th>
-                                            <th>Created At</th>
-                                            <th>Owner</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="actions-tbody">
-                                        <!-- Form row for creating new actions -->
-                                        <tr id="action-form-row" style="display: none;">
-                                            <td><i>New</i></td>
-                                            <td>
-                                                <select class="form-control" id="action-type" name="type" required>
-                                                    <option value="Appel">Appel</option>
-                                                    <option value="Email">Email</option>
-                                                    <option value="RDV">RDV</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control" id="action-contact" name="contact" placeholder="Contact">
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
-                                            </td>
-                                            <td>
-                                                <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
-                                            </td>
-                                            <td>Now</td>
-                                            <td>
-                                                <select class="form-control" id="action-owner" name="owner" required>
-                                                    <option value="">Select Owner</option>
-                                                    <!-- Users will be loaded here -->
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <!-- New actions are not closed by default -->
-                                            </td>
-                                            <td>
-                                                <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
-                                                <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
-                                            </td>
-                                        </tr>
-                                        <!-- Actions will be loaded here -->
-                                    </tbody>
-                                    </table>
+                            {% for account in accounts %}
+                                <tr class="account-row" data-account-id="{{ account.id }}" style="cursor: pointer;">
+                                    <td>{{ account.id }}</td>
+                                    <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
+                                    <td>
+                                        {% if nextActions[account.id] is defined %}
+                                            {{ nextActions[account.id].title }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if nextActions[account.id] is defined %}
+                                            {{ nextActions[account.id].nextStepDate|date('Y-m-d') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
+                                    <td>
+                                        <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No accounts found</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                            </div>
-                            <div id="no-actions-message" class="text-center" style="display: none;">
-                                <p>No actions found for this account</p>
-                            </div>
-                        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Actions View (60% width) -->
+    <div class="actions-column">
+        <!-- Actions Table Section -->
+        <div id="actions-section">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0" id="actions-header">Account Actions</h4>
+                    <button type="button" class="btn btn-light" id="create-action-btn" disabled>
+                        <i class="fas fa-plus"></i> Create Action
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Placeholder when no account is selected -->
+                    <div id="actions-placeholder" class="actions-placeholder">
+                        <p>Select an account to see its actions</p>
+                    </div>
+
+                    <!-- Actions table container -->
+                    <div id="actions-table-container" style="display: none; max-height: 70vh; overflow-y: auto;">
+                        <table id="actions-table" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Contact</th>
+                                    <th>Action</th>
+                                    <th>Action Date</th>
+                                    <th>Created At</th>
+                                    <th>Owner</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="actions-tbody">
+                                <!-- Form row for creating new actions -->
+                                <tr id="action-form-row" style="display: none;">
+                                    <td><i>New</i></td>
+                                    <td>
+                                        <select class="form-control" id="action-type" name="type" required>
+                                            <option value="Appel">Appel</option>
+                                            <option value="Email">Email</option>
+                                            <option value="RDV">RDV</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" id="action-contact" name="contact" placeholder="Contact">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" id="action-title" name="title" placeholder="Title" required>
+                                    </td>
+                                    <td>
+                                        <input type="date" class="form-control" id="action-next-step-date" name="nextStepDate">
+                                    </td>
+                                    <td>Now</td>
+                                    <td>
+                                        <select class="form-control" id="action-owner" name="owner" required>
+                                            <option value="">Select Owner</option>
+                                            <!-- Users will be loaded here -->
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <!-- New actions are not closed by default -->
+                                    </td>
+                                    <td>
+                                        <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
+                                        <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                                    </td>
+                                </tr>
+                                <!-- Actions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="no-actions-message" class="text-center" style="display: none;">
+                        <p>No actions found for this account</p>
                     </div>
                 </div>
             </div>
@@ -235,7 +288,6 @@
                 row.innerHTML = `
                     <td>${account.id}</td>
                     <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
-                    <td>${account.contact || ''}</td>
                     <td>${account.nextAction || ''}</td>
                     <td>${account.nextStepDate || ''}</td>
                     <td>${account.actionOwner || ''}</td>
@@ -357,7 +409,6 @@
                         <td class="editable" data-field="name" data-account-id="${data.id}">${data.name}</td>
                         <td></td>
                         <td></td>
-                        <td></td>
                         <td>${data.actionOwner || ''}</td>
                         <td>
                             <a href="/accounts/${data.id}/edit" class="btn btn-sm btn-outline-success">
@@ -375,11 +426,49 @@
 
                     // Attach event listeners to the new row
                     row.addEventListener('click', function(e) {
-                        if (!e.target.closest('button')) {
-                            loadAccountActions(data.id);
+                        if (!e.target.closest('button') && !isEditing) {
+                            // Remove active class from all rows
+                            document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                            // Add active class to clicked row
+                            this.classList.add('table-primary');
+
+                            // Get account ID and name
+                            const accountId = this.getAttribute('data-account-id');
+                            const accountName = this.querySelector('td[data-field="name"]').textContent;
+                            currentAccountId = accountId;
+
+                            // Update the actions header
+                            const actionsHeader = document.getElementById('actions-header');
+                            if (actionsHeader) {
+                                actionsHeader.textContent = `Actions for ${accountName}`;
+                            }
+
+                            // Hide placeholder and enable create action button
+                            document.getElementById('actions-placeholder').style.display = 'none';
+                            document.getElementById('create-action-btn').disabled = false;
+
+                            // Show actions table container
+                            document.getElementById('actions-table-container').style.display = 'block';
+
+                            // Show no actions message since this is a new account
+                            noActionsMessage.style.display = 'block';
+
+                            // Clear any existing actions
+                            allAccountActions = [];
+
+                            // Save the form row
+                            const formRow = document.getElementById('action-form-row');
+                            const formRowDisplay = formRow.style.display;
+
+                            // Clear previous actions
+                            actionsTbody.innerHTML = '';
+
+                            // Re-add the form row to the tbody
+                            actionsTbody.appendChild(formRow);
+                            formRow.style.display = formRowDisplay;
                         }
                     });
-
                 })
                 .catch(error => {
                     console.error('Error creating account:', error);
@@ -605,6 +694,10 @@
                 `;
                 actionsTbody.appendChild(row);
             });
+
+            // Show the actions table container and hide the placeholder
+            document.getElementById('actions-table-container').style.display = 'block';
+            document.getElementById('actions-placeholder').style.display = 'none';
         }
 
         // Add click event listener to each account row
@@ -634,15 +727,19 @@
                     actionsHeader.textContent = `Actions for ${accountName}`;
                 }
 
+                // Hide placeholder and enable create action button
+                document.getElementById('actions-placeholder').style.display = 'none';
+                document.getElementById('create-action-btn').disabled = false;
+
+                // Show actions table container
+                document.getElementById('actions-table-container').style.display = 'block';
+
                 // Fetch actions for this account
                 fetch(`/accounts/${accountId}/actions`)
                     .then(response => response.json())
                     .then(data => {
                         // Store all actions (already sorted by createdAt DESC from the server)
                         allAccountActions = data;
-
-                        // Show actions section
-                        actionsSection.style.display = 'block';
 
                         if (data.length > 0) {
                             // Hide no actions message
@@ -657,7 +754,6 @@
                     })
                     .catch(error => {
                         console.error('Error fetching actions:', error);
-                        actionsSection.style.display = 'block';
 
                         // Save the form row
                         const formRow = document.getElementById('action-form-row');
@@ -763,6 +859,10 @@
                     return;
                 }
 
+                // Make sure the actions table container is visible
+                document.getElementById('actions-table-container').style.display = 'block';
+                document.getElementById('actions-placeholder').style.display = 'none';
+
                 // Show the form row
                 actionFormRow.style.display = 'table-row';
 
@@ -781,6 +881,11 @@
                 document.getElementById('action-next-step-date').value = '';
                 document.getElementById('action-type').value = 'Appel';
                 document.getElementById('action-owner').value = '';
+
+                // If there are no actions, show the no actions message
+                if (allAccountActions.length === 0) {
+                    noActionsMessage.style.display = 'block';
+                }
             });
 
             // Handle save button
@@ -828,6 +933,7 @@
 
                     // Reset form fields
                     document.getElementById('action-title').value = '';
+                    document.getElementById('action-contact').value = '';
                     document.getElementById('action-next-step-date').value = '';
                     document.getElementById('action-type').value = 'Appel';
                     document.getElementById('action-owner').value = '';
@@ -846,6 +952,17 @@
 
                     // Display all actions
                     renderActions(allAccountActions);
+
+                    // Refresh the accounts list to reflect the new action
+                    fetch('/accounts/list-ajax')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update the accounts table with the new data
+                            updateAccountsTable(data);
+                        })
+                        .catch(error => {
+                            console.error('Error refreshing accounts list:', error);
+                        });
                 })
                 .catch(error => {
                     console.error('Error creating action:', error);
