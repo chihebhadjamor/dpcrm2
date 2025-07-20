@@ -275,9 +275,8 @@ class UserController extends AbstractWebController
                 return new JsonResponse([]);
             }
 
-            // Group actions by account and get the most recent one for each account
+            // Return all actions for the user, not just the most recent one for each account
             $accountActions = [];
-            $processedAccounts = [];
 
             foreach ($actions as $action) {
                 $account = $action->getAccount();
@@ -287,23 +286,16 @@ class UserController extends AbstractWebController
                     continue;
                 }
 
-                $accountId = $account->getId();
-
-                // Only process each account once (to get the most recent action)
-                if (!in_array($accountId, $processedAccounts)) {
-                    $accountActions[] = [
-                        'id' => $action->getId(),
-                        'accountId' => $accountId,
-                        'accountName' => $account->getName(),
-                        'lastAction' => $action->getTitle(),
-                        'priority' => $account->getPriority(),
-                        'nextStep' => $account->getNextStep(),
-                        'closed' => $action->isClosed(),
-                        'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
-                    ];
-
-                    $processedAccounts[] = $accountId;
-                }
+                $accountActions[] = [
+                    'id' => $action->getId(),
+                    'accountId' => $account->getId(),
+                    'accountName' => $account->getName(),
+                    'lastAction' => $action->getTitle(),
+                    'priority' => $account->getPriority(),
+                    'nextStep' => $account->getNextStep(),
+                    'closed' => $action->isClosed(),
+                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                ];
             }
 
             return new JsonResponse($accountActions);

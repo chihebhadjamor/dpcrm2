@@ -342,6 +342,11 @@
                                 // Add account actions to table
                                 data.forEach(action => {
                                     const row = document.createElement('tr');
+                                    // Add class for closed actions to make them visually distinct
+                                    if (action.closed) {
+                                        row.classList.add('text-muted');
+                                        row.style.textDecoration = 'line-through';
+                                    }
                                     row.innerHTML = `
                                         <td>${action.id}</td>
                                         <td>${action.accountName}</td>
