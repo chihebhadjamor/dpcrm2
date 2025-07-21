@@ -82,6 +82,20 @@
         font-size: 1.2rem;
         color: #6c757d;
     }
+
+    /* Notes count badge */
+    .notes-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        margin-left: 5px;
+    }
 </style>
 {% endblock %}
 
@@ -198,7 +212,7 @@
                                     <th>Owner</th>
                                     <th>Status</th>
                                     <th>Actions</th>
-                                    <th>Notes</th>
+                                    <th>Notes <span id="notes-badge-container"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="actions-tbody">
@@ -276,6 +290,27 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the notes badge container to be empty
+        const badgeContainer = document.getElementById('notes-badge-container');
+        if (badgeContainer) {
+            badgeContainer.innerHTML = '';
+        }
+        // Function to update the notes badge
+        function updateNotesBadge(actions) {
+            const badgeContainer = document.getElementById('notes-badge-container');
+            if (!badgeContainer) return;
+
+            // Count non-empty notes
+            const nonEmptyNotesCount = actions.filter(action => action.notes && action.notes.trim() !== '').length;
+
+            // Update the badge
+            if (nonEmptyNotesCount > 0) {
+                badgeContainer.innerHTML = `<span class="notes-badge">${nonEmptyNotesCount}</span>`;
+            } else {
+                badgeContainer.innerHTML = '';
+            }
+        }
+
         // Function to show notifications
         function showNotification(message, type = 'danger', duration = 5000) {
             const notification = document.createElement('div');
@@ -360,6 +395,9 @@
                         notesIcon.setAttribute('data-notes', data.notes || '');
                     }
                 }
+
+                // Update the notes badge
+                updateNotesBadge(allAccountActions);
             })
             .catch(error => {
                 console.error('Error updating notes:', error);
@@ -826,6 +864,9 @@
                     // Store all actions (already sorted by createdAt DESC from the server)
                     allAccountActions = data;
 
+                    // Update the notes badge
+                    updateNotesBadge(data);
+
                     if (data.length > 0) {
                         // Hide no actions message
                         noActionsMessage.style.display = 'none';
@@ -835,6 +876,12 @@
                     } else {
                         // Show no actions message
                         noActionsMessage.style.display = 'block';
+
+                        // Clear the notes badge
+                        const badgeContainer = document.getElementById('notes-badge-container');
+                        if (badgeContainer) {
+                            badgeContainer.innerHTML = '';
+                        }
 
                         // Save the form row
                         const formRow = document.getElementById('action-form-row');
@@ -1246,6 +1293,9 @@
 
                     // Display all actions
                     renderActions(allAccountActions);
+
+                    // Update the notes badge
+                    updateNotesBadge(allAccountActions);
 
                     // Refresh the accounts list to reflect the new action
                     fetch('/accounts/list-ajax')
