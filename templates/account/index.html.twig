@@ -567,10 +567,10 @@
                             const accountName = this.querySelector('td[data-field="name"]').textContent;
                             currentAccountId = accountId;
 
-                            // Update the actions header
+                            // Update the actions header - new account has no actions
                             const actionsHeader = document.getElementById('actions-header');
                             if (actionsHeader) {
-                                actionsHeader.textContent = `Actions for ${accountName}`;
+                                actionsHeader.textContent = `Actions for ${accountName} (No action expected)`;
                             }
 
                             // Hide placeholder and enable create action button
@@ -778,7 +778,8 @@
             const accountRow = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
             const accountName = accountRow ? accountRow.querySelector('td[data-field="name"]').textContent : 'Unknown Account';
 
-            // Update the actions header with the account name
+            // Set the initial actions header with the account name
+            // The count of open actions will be added when the actions are loaded
             const actionsHeader = document.getElementById('actions-header');
             if (actionsHeader) {
                 actionsHeader.textContent = `Actions for ${accountName}`;
@@ -879,13 +880,16 @@
             actionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
 
-            // Update the actions header with closed/total count
-            const closedCount = actions.filter(action => action.closed).length;
-            const totalCount = actions.length;
+            // Update the actions header with open actions count
+            const openCount = actions.filter(action => !action.closed).length;
             const actionsHeader = document.getElementById('actions-header');
             if (actionsHeader) {
                 const accountName = actionsHeader.textContent.split('(')[0].trim();
-                actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
+                if (openCount > 0) {
+                    actionsHeader.textContent = `${accountName} (${openCount} Open)`;
+                } else {
+                    actionsHeader.textContent = `${accountName} (No action expected)`;
+                }
             }
 
             // Add actions to table after the form row
@@ -1056,13 +1060,16 @@
                         notesCell.innerHTML = `<i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${data.id}" data-notes="${data.notes ? data.notes.replace(/"/g, '&quot;') : ''}"></i>`;
                     }
 
-                    // Update the actions header with closed/total count
-                    const closedCount = allAccountActions.filter(action => action.closed).length;
-                    const totalCount = allAccountActions.length;
+                    // Update the actions header with open actions count
+                    const openCount = allAccountActions.filter(action => !action.closed).length;
                     const actionsHeader = document.getElementById('actions-header');
                     if (actionsHeader) {
                         const accountName = actionsHeader.textContent.split('(')[0].trim();
-                        actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
+                        if (openCount > 0) {
+                            actionsHeader.textContent = `${accountName} (${openCount} Open)`;
+                        } else {
+                            actionsHeader.textContent = `${accountName} (No action expected)`;
+                        }
                     }
 
                     // Show a success notification based on the current state
