@@ -195,6 +195,9 @@
 
 <!-- User creation is now handled inline in the table -->
 
+<!-- Notification container for non-blocking messages -->
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 300px;"></div>
+
 <!-- Notes Modal -->
 <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -218,6 +221,27 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Function to show notifications
+        function showNotification(message, type = 'danger', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show`;
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            const container = document.getElementById('notification-container');
+            container.appendChild(notification);
+
+            // Auto-dismiss after duration
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300); // Wait for fade out animation
+            }, duration);
+        }
+
         // Initialize the notes modal
         const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
 
@@ -277,7 +301,7 @@
             })
             .catch(error => {
                 console.error('Error updating notes:', error);
-                alert('Error updating notes. Please try again.');
+                showNotification('Error updating notes. Please try again.', 'danger');
             });
         });
 
@@ -321,19 +345,19 @@
                 // Validate required fields
                 const username = document.getElementById('user-username').value;
                 if (!username) {
-                    alert('Username is required');
+                    showNotification('Username is required', 'warning');
                     return;
                 }
 
                 const email = document.getElementById('user-email').value;
                 if (!email) {
-                    alert('Email is required');
+                    showNotification('Email is required', 'warning');
                     return;
                 }
 
                 const password = document.getElementById('user-password').value;
                 if (!password) {
-                    alert('Password is required');
+                    showNotification('Password is required', 'warning');
                     return;
                 }
 
@@ -496,7 +520,7 @@
                                             <td>${action.accountName}</td>
                                             <td>${action.lastAction}</td>
                                             <td>${action.nextStepDate || action.nextStep || ''}</td>
-                                            <td><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                            <td><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
                                             <td class="text-center">
                                                 <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
                                             </td>
@@ -541,7 +565,7 @@
                 })
                 .catch(error => {
                     console.error('Error creating user:', error);
-                    alert('Error creating user. Please try again.');
+                    showNotification('Error creating user. Please try again.', 'danger');
                 });
             });
         }
@@ -645,7 +669,7 @@
                                     <td ${cellStyle}>${action.accountName}</td>
                                     <td ${cellStyle}>${action.lastAction}</td>
                                     <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                    <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                    <td ${cellStyle}><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
                                     <td ${cellStyle} class="text-center">
                                         <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
                                     </td>
@@ -688,6 +712,72 @@
             });
         });
 
+        // Add event delegation for action closed checkboxes
+        accountActionsTbody.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('action-closed-checkbox')) {
+                const actionId = e.target.getAttribute('data-action-id');
+                const isChecked = e.target.checked;
+                const row = e.target.closest('tr');
+
+                // Send request to toggle closed status
+                fetch(`/actions/${actionId}/toggle-closed`, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update the row's status classes
+                    // First, remove all status classes
+                    row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
+
+                    // Add appropriate class based on closed status
+                    if (data.closed) {
+                        row.classList.add('action-closed');
+                        // The action-closed class handles the styling
+                    } else {
+                        // For reopened actions, check if it's overdue or upcoming
+
+                        // Check if action is overdue or upcoming
+                        const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                        if (actionDate) {
+                            // Calculate days difference
+                            const timeDiff = actionDate.getTime() - today.getTime();
+                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                            if (daysDiff <= 0) {
+                                // Overdue actions (today or past)
+                                row.classList.add('action-overdue');
+                            } else if (daysDiff <= 7) {
+                                // Upcoming actions (within next 7 days)
+                                row.classList.add('action-upcoming');
+                            }
+                        }
+                    }
+
+                    // Update the Closed column header with count
+                    const allRows = accountActionsTbody.querySelectorAll('tr');
+                    const closedCount = accountActionsTbody.querySelectorAll('tr.action-closed').length;
+                    const totalCount = allRows.length;
+                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
+                    if (closedHeader) {
+                        closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error toggling action status:', error);
+                    showNotification('Error updating action. Please try again.', 'danger');
+                    // Reset checkbox to its previous state
+                    e.target.checked = !isChecked;
+                });
+            }
+        });
     });
 </script>
 {% endblock %}
