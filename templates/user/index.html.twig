@@ -42,9 +42,9 @@
         background-color: #e2f0e2 !important;
     }
 
-    /* Center align the Closed column */
-    #account-actions-table th:nth-child(5),
-    #account-actions-table td:nth-child(5) {
+    /* Center align the Action Status column */
+    #account-actions-table th:nth-child(6),
+    #account-actions-table td:nth-child(6) {
         text-align: center;
     }
 
@@ -172,8 +172,9 @@
                                             <th>ID</th>
                                             <th>Account</th>
                                             <th>Action</th>
+                                            <th>Contact</th>
                                             <th>Action Date</th>
-                                            <th>Closed (0/0)</th>
+                                            <th>Status</th>
                                             <th>Notes</th>
                                         </tr>
                                     </thead>
@@ -475,12 +476,12 @@
                                         noAccountActionsMessage.style.display = 'none';
                                     }
 
-                                    // Update the Closed column header with count
+                                    // Update the Status column header with count
                                     const closedCount = data.filter(action => action.closed).length;
                                     const totalCount = data.length;
-                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
-                                    if (closedHeader) {
-                                        closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    if (statusHeader) {
+                                        statusHeader.textContent = `Status`;
                                     }
 
                                     // Add account actions to table
@@ -516,9 +517,10 @@
                                         const hasNotes = action.notes && action.notes.trim() !== '';
 
                                         row.innerHTML = `
-                                            <td>${action.accountId}</td>
+                                            <td>${action.id}</td>
                                             <td>${action.accountName}</td>
                                             <td>${action.lastAction}</td>
+                                            <td>${action.contact || ''}</td>
                                             <td>${action.nextStepDate || action.nextStep || ''}</td>
                                             <td><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
                                             <td class="text-center">
@@ -548,10 +550,10 @@
                                     // Clear previous account actions
                                     accountActionsTbody.innerHTML = '';
 
-                                    // Reset the Closed column header to default
-                                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
-                                    if (closedHeader) {
-                                        closedHeader.textContent = 'Closed (0/0)';
+                                    // Reset the Status column header to default
+                                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                                    if (statusHeader) {
+                                        statusHeader.textContent = 'Status';
                                     }
 
                                     if (noAccountActionsMessage) {
@@ -639,12 +641,12 @@
                                 noAccountActionsMessage.style.display = 'none';
                             }
 
-                            // Update the Closed column header with count
+                            // Update the Status column header with count
                             const closedCount = data.filter(action => action.closed).length;
                             const totalCount = data.length;
-                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
-                            if (closedHeader) {
-                                closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                            const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            if (statusHeader) {
+                                statusHeader.textContent = `Status`;
                             }
 
                             // Add account actions to table
@@ -665,9 +667,10 @@
                                 const hasNotes = action.notes && action.notes.trim() !== '';
 
                                 row.innerHTML = `
-                                    <td ${cellStyle}>${action.accountId}</td>
+                                    <td ${cellStyle}>${action.id}</td>
                                     <td ${cellStyle}>${action.accountName}</td>
                                     <td ${cellStyle}>${action.lastAction}</td>
+                                    <td ${cellStyle}>${action.contact || ''}</td>
                                     <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
                                     <td ${cellStyle}><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
                                     <td ${cellStyle} class="text-center">
@@ -697,10 +700,10 @@
                             // Clear previous account actions
                             accountActionsTbody.innerHTML = '';
 
-                            // Reset the Closed column header to default
-                            const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
-                            if (closedHeader) {
-                                closedHeader.textContent = 'Closed (0/0)';
+                            // Reset the Status column header to default
+                            const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                            if (statusHeader) {
+                                statusHeader.textContent = 'Status';
                             }
 
                             if (noAccountActionsMessage) {
@@ -761,13 +764,13 @@
                         }
                     }
 
-                    // Update the Closed column header with count
+                    // Update the Status column header with count
                     const allRows = accountActionsTbody.querySelectorAll('tr');
                     const closedCount = accountActionsTbody.querySelectorAll('tr.action-closed').length;
                     const totalCount = allRows.length;
-                    const closedHeader = document.querySelector('#account-actions-table thead th:nth-child(5)');
-                    if (closedHeader) {
-                        closedHeader.textContent = `Closed (${closedCount}/${totalCount})`;
+                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
+                    if (statusHeader) {
+                        statusHeader.textContent = `Status`;
                     }
                 })
                 .catch(error => {

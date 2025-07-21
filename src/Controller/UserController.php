@@ -285,6 +285,7 @@ class UserController extends AbstractWebController
                     'accountId' => $account->getId(),
                     'accountName' => $account->getName(),
                     'lastAction' => $action->getTitle(),
+                    'contact' => $action->getContact(),
                     'priority' => '', // Priority column has been removed from Account entity
                     'nextStep' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Keep field name for backward compatibility
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Add new field with more descriptive name
