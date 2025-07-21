@@ -679,9 +679,6 @@
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
                                    data-action-id="${action.id}">
-                            <label class="form-check-label">
-                                ${action.closed ? 'Closed on ' + action.dateClosed : 'Open'}
-                            </label>
                         </div>
                     </td>
                     <td></td>
@@ -822,18 +819,8 @@
                         // Update the row's closed status
                         if (data.closed) {
                             row.classList.add('action-closed');
-                            // Update the label
-                            const label = row.querySelector('.form-check-label');
-                            if (label) {
-                                label.textContent = `Closed on ${data.dateClosed}`;
-                            }
                         } else {
                             row.classList.remove('action-closed');
-                            // Update the label
-                            const label = row.querySelector('.form-check-label');
-                            if (label) {
-                                label.textContent = 'Open';
-                            }
                         }
 
                         // Update the actions header with closed/total count
