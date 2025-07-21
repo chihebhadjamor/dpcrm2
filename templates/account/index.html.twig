@@ -242,6 +242,35 @@
 </div>
 
 <!-- Action creation is now handled inline in the table -->
+
+<!-- Action Close Confirmation Modal -->
+<div class="modal fade" id="closeActionModal" tabindex="-1" aria-labelledby="closeActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="closeActionModalLabel">Close Action Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="action-summary mb-3">
+                    <p><strong>Account:</strong> <span id="modal-account-name"></span></p>
+                    <p><strong>Action:</strong> <span id="modal-action-title"></span></p>
+                    <p><strong>Contact:</strong> <span id="modal-action-contact"></span></p>
+                </div>
+                <p>Are you sure you want to close this action?</p>
+                <div class="form-group">
+                    <label for="action-notes" class="form-label">Notes:</label>
+                    <textarea class="form-control" id="action-notes" rows="3" placeholder="Add notes about this action closure (optional)"></textarea>
+                </div>
+                <input type="hidden" id="action-id-to-close">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-primary" id="confirm-close-action">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -697,10 +726,14 @@
                 // Set data attribute for action ID
                 row.setAttribute('data-action-id', action.id);
 
+                // Check if action has notes
+                const hasNotes = action.notes && action.notes.trim() !== '';
+                const notesIcon = hasNotes ? '<i class="fas fa-comment-alt text-info ml-2" title="This action has notes"></i>' : '';
+
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td>${action.contact || ''}</td>
-                    <td>${action.title}</td>
+                    <td>${action.title} ${notesIcon}</td>
                     <td>${action.nextStepDate || ''}</td>
                     <td>${action.owner}</td>
                     <td>
@@ -820,25 +853,118 @@
         });
 
 
+        // Initialize Bootstrap modal
+        const closeActionModal = new bootstrap.Modal(document.getElementById('closeActionModal'));
+
+        // Handle confirm close action button
+        document.getElementById('confirm-close-action').addEventListener('click', function() {
+            const actionId = document.getElementById('action-id-to-close').value;
+            const notes = document.getElementById('action-notes').value;
+
+            // Send request to close action with notes
+            fetch(`/actions/${actionId}/close-with-notes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `notes=${encodeURIComponent(notes)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Close the modal
+                closeActionModal.hide();
+
+                // Reset the form
+                document.getElementById('action-notes').value = '';
+
+                // Find the action in our stored actions array
+                const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                if (actionIndex !== -1) {
+                    // Update the action in our stored array
+                    allAccountActions[actionIndex] = data;
+
+                    // Find the row in the table
+                    const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+
+                    // Update the row's status classes
+                    // First, remove all status classes
+                    row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
+
+                    // Add closed class
+                    row.classList.add('action-closed');
+
+                    // Update the row content to show notes icon if needed
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 3) {
+                        const titleCell = cells[2];
+                        const title = data.title;
+                        const hasNotes = data.notes && data.notes.trim() !== '';
+                        const notesIcon = hasNotes ? '<i class="fas fa-comment-alt text-info ml-2" title="This action has notes"></i>' : '';
+                        titleCell.innerHTML = `${title} ${notesIcon}`;
+                    }
+
+                    // Update the actions header with closed/total count
+                    const closedCount = allAccountActions.filter(action => action.closed).length;
+                    const totalCount = allAccountActions.length;
+                    const actionsHeader = document.getElementById('actions-header');
+                    if (actionsHeader) {
+                        const accountName = actionsHeader.textContent.split('(')[0].trim();
+                        actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
+                    }
+
+                    // Refresh the accounts list to reflect the updated action status
+                    fetch('/accounts/list-ajax')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update the accounts table with the new data
+                            updateAccountsTable(data);
+                        })
+                        .catch(error => {
+                            console.error('Error refreshing accounts list:', error);
+                        });
+                }
+            })
+            .catch(error => {
+                console.error('Error closing action with notes:', error);
+                alert('Error updating action. Please try again.');
+                closeActionModal.hide();
+            });
+        });
+
         // Add event delegation for action closed checkboxes
         actionsTbody.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('action-closed-checkbox')) {
                 const actionId = e.target.getAttribute('data-action-id');
+                const isChecked = e.target.checked;
 
-                // Send request to toggle closed status
-                fetch(`/actions/${actionId}/toggle-closed`, {
-                    method: 'POST'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Find the action in our stored actions array
-                    const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
-                    if (actionIndex !== -1) {
+                // Find the action in our stored actions array
+                const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                if (actionIndex === -1) {
+                    console.error('Action not found in stored actions');
+                    return;
+                }
+
+                const action = allAccountActions[actionIndex];
+
+                // If unchecking (reopening), directly send request
+                // If checking (closing), show confirmation modal
+                if (!isChecked) {
+                    // Reopening an action - directly send request
+                    fetch(`/actions/${actionId}/toggle-closed`, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
                         // Update the action in our stored array
                         allAccountActions[actionIndex] = data;
 
@@ -849,27 +975,22 @@
                         // First, remove all status classes
                         row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
 
-                        if (data.closed) {
-                            // Add closed class
-                            row.classList.add('action-closed');
-                        } else {
-                            // Check if action is overdue or upcoming
-                            const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0); // Set to beginning of day
+                        // Check if action is overdue or upcoming
+                        const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Set to beginning of day
 
-                            if (actionDate) {
-                                // Calculate days difference
-                                const timeDiff = actionDate.getTime() - today.getTime();
-                                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        if (actionDate) {
+                            // Calculate days difference
+                            const timeDiff = actionDate.getTime() - today.getTime();
+                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-                                if (daysDiff <= 0) {
-                                    // Overdue actions (today or past)
-                                    row.classList.add('action-overdue');
-                                } else if (daysDiff <= 7) {
-                                    // Upcoming actions (within next 7 days)
-                                    row.classList.add('action-upcoming');
-                                }
+                            if (daysDiff <= 0) {
+                                // Overdue actions (today or past)
+                                row.classList.add('action-overdue');
+                            } else if (daysDiff <= 7) {
+                                // Upcoming actions (within next 7 days)
+                                row.classList.add('action-upcoming');
                             }
                         }
 
@@ -882,8 +1003,7 @@
                             actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
                         }
 
-                        // Refresh the accounts list to reflect the updated action status
-                        // Instead of reloading the entire page, fetch only the updated accounts data
+                        // Refresh the accounts list
                         fetch('/accounts/list-ajax')
                             .then(response => response.json())
                             .then(data => {
@@ -893,14 +1013,31 @@
                             .catch(error => {
                                 console.error('Error refreshing accounts list:', error);
                             });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error toggling action closed status:', error);
-                    alert('Error updating action. Please try again.');
-                    // Reset checkbox to its previous state
-                    e.target.checked = !e.target.checked;
-                });
+                    })
+                    .catch(error => {
+                        console.error('Error reopening action:', error);
+                        alert('Error updating action. Please try again.');
+                        // Reset checkbox to its previous state
+                        e.target.checked = true;
+                    });
+                } else {
+                    // Closing an action - show confirmation modal
+
+                    // Reset the checkbox state until confirmed
+                    e.target.checked = false;
+
+                    // Get account name
+                    const accountName = document.getElementById('actions-header').textContent.split('(')[0].trim().replace('Actions for ', '');
+
+                    // Populate modal with action details
+                    document.getElementById('modal-account-name').textContent = accountName;
+                    document.getElementById('modal-action-title').textContent = action.title;
+                    document.getElementById('modal-action-contact').textContent = action.contact || 'N/A';
+                    document.getElementById('action-id-to-close').value = actionId;
+
+                    // Show the modal
+                    closeActionModal.show();
+                }
             }
         });
 

@@ -514,11 +514,55 @@ class AccountController extends AbstractWebController
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'notes' => $action->getNotes()
             ]);
         } catch (\Exception $e) {
             // Log the detailed error
             error_log('Error toggling action closed status: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+
+            // Return error response
+            return new JsonResponse(['error' => 'Error updating action. Please try again.'], 400);
+        }
+    }
+
+    #[Route('/actions/{id}/close-with-notes', name: 'app_action_close_with_notes', methods: ['POST'])]
+    public function closeActionWithNotes(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Find the action
+        $action = $entityManager->getRepository(Action::class)->find($id);
+
+        if (!$action) {
+            return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        try {
+            // Get notes from request
+            $notes = $request->request->get('notes');
+
+            // Close the action and set notes
+            $action->close();
+            $action->setNotes($notes);
+
+            // Save to database
+            $entityManager->flush();
+
+            // Return the updated action data
+            return new JsonResponse([
+                'id' => $action->getId(),
+                'title' => $action->getTitle(),
+                'contact' => $action->getContact(),
+                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
+            ]);
+        } catch (\Exception $e) {
+            // Log the detailed error
+            error_log('Error closing action with notes: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
 
             // Return error response
             return new JsonResponse(['error' => 'Error updating action. Please try again.'], 400);

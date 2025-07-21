@@ -48,6 +48,9 @@ class Action
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $contact = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $notes = null;
+
     #[ORM\OneToMany(mappedBy: 'action', targetEntity: History::class, cascade: ['persist', 'remove'])]
     private Collection $histories;
 
@@ -220,6 +223,18 @@ class Action
     public function setContact(?string $contact): static
     {
         $this->contact = $contact;
+
+        return $this;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
+    public function setNotes(?string $notes): static
+    {
+        $this->notes = $notes;
 
         return $this;
     }
