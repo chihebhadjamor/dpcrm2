@@ -724,7 +724,11 @@
 
                 // Send request to toggle closed status
                 fetch(`/actions/${actionId}/toggle-closed`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -741,8 +745,24 @@
                     if (data.closed) {
                         row.classList.add('action-closed');
                         // The action-closed class handles the styling
+
+                        // Update the checkbox to checked state
+                        e.target.checked = true;
+
+                        // Apply strikethrough and other styling for closed actions
+                        row.style.textDecoration = 'line-through';
+                        row.style.color = '#6c757d';
+                        row.style.fontStyle = 'italic';
                     } else {
                         // For reopened actions, check if it's overdue or upcoming
+
+                        // Update the checkbox to unchecked state
+                        e.target.checked = false;
+
+                        // Remove strikethrough and other styling for reopened actions
+                        row.style.textDecoration = '';
+                        row.style.color = '';
+                        row.style.fontStyle = '';
 
                         // Check if action is overdue or upcoming
                         const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
@@ -772,6 +792,9 @@
                     if (statusHeader) {
                         statusHeader.textContent = `Status`;
                     }
+
+                    // Show a success notification
+                    showNotification(`Action ${data.id} ${data.closed ? 'closed' : 'reopened'} successfully`, 'success', 3000);
                 })
                 .catch(error => {
                     console.error('Error toggling action status:', error);
