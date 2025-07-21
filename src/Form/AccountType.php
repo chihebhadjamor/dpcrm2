@@ -21,16 +21,6 @@ class AccountType extends AbstractType
                 'label' => 'Account Name',
                 'attr' => ['class' => 'form-control mb-3']
             ])
-            ->add('website', UrlType::class, [
-                'label' => 'Website',
-                'required' => false,
-                'attr' => ['class' => 'form-control mb-3']
-            ])
-            ->add('phone', TextType::class, [
-                'label' => 'Phone Number',
-                'required' => false,
-                'attr' => ['class' => 'form-control mb-3']
-            ])
             ->add('status', ChoiceType::class, [
                 'label' => 'Status',
                 'choices' => Account::getAvailableStatuses(),

@@ -26,12 +26,6 @@ class Account implements ArrayAccess
 
 
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Url]
-    private ?string $website = null;
-
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $phone = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
@@ -120,29 +114,6 @@ class Account implements ArrayAccess
         return $this;
     }
 
-    public function getWebsite(): ?string
-    {
-        return $this->website;
-    }
-
-    public function setWebsite(?string $website): static
-    {
-        $this->website = $website;
-
-        return $this;
-    }
-
-    public function getPhone(): ?string
-    {
-        return $this->phone;
-    }
-
-    public function setPhone(?string $phone): static
-    {
-        $this->phone = $phone;
-
-        return $this;
-    }
 
     public function getStatus(): ?string
     {

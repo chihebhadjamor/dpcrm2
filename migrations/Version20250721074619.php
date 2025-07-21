@@ -8,25 +8,26 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Remove website and phone fields from Account entity
+ * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250721000000 extends AbstractMigration
+final class Version20250721074619 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Remove website and phone fields from Account entity';
+        return '';
     }
 
     public function up(Schema $schema): void
     {
-        // Drop website and phone columns from account table
+        // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE account DROP website');
         $this->addSql('ALTER TABLE account DROP phone');
     }
 
     public function down(Schema $schema): void
     {
-        // Add website and phone columns back to account table
+        // this down() migration is auto-generated, please modify it to your needs
+        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE account ADD website VARCHAR(255) DEFAULT NULL');
         $this->addSql('ALTER TABLE account ADD phone VARCHAR(50) DEFAULT NULL');
     }
