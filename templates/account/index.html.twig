@@ -195,6 +195,7 @@
                                     <th>Owner</th>
                                     <th>Status</th>
                                     <th>Actions</th>
+                                    <th>Notes</th>
                                 </tr>
                             </thead>
                             <tbody id="actions-tbody">
@@ -226,6 +227,9 @@
                                         <button type="button" id="save-action-btn" class="btn btn-sm btn-info text-white">Save</button>
                                         <button type="button" id="cancel-action-btn" class="btn btn-sm btn-secondary">Cancel</button>
                                     </td>
+                                    <td>
+                                        <!-- Notes column (empty for new actions) -->
+                                    </td>
                                 </tr>
                                 <!-- Actions will be loaded here -->
                             </tbody>
@@ -242,6 +246,24 @@
 </div>
 
 <!-- Action creation is now handled inline in the table -->
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="notesModalLabel">Action Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="notes-content" class="p-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Action Close Confirmation Modal -->
 <div class="modal fade" id="closeActionModal" tabindex="-1" aria-labelledby="closeActionModalLabel" aria-hidden="true">
@@ -276,6 +298,23 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the notes modal
+        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+        // Add event delegation for notes icons
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('notes-icon')) {
+                const notes = e.target.getAttribute('data-notes');
+                const notesContent = document.getElementById('notes-content');
+
+                // Set the notes content in the modal
+                notesContent.innerHTML = notes ? notes.replace(/\n/g, '<br>') : '';
+
+                // Show the modal
+                notesModal.show();
+            }
+        });
+
         // Get all account rows
         const accountRows = document.querySelectorAll('.account-row');
         const actionsSection = document.getElementById('actions-section');
@@ -733,7 +772,7 @@
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td>${action.contact || ''}</td>
-                    <td>${action.title} ${notesIcon}</td>
+                    <td>${action.title}</td>
                     <td>${action.nextStepDate || ''}</td>
                     <td>${action.owner}</td>
                     <td>
@@ -744,6 +783,9 @@
                         </div>
                     </td>
                     <td></td>
+                    <td class="text-center">
+                        ${hasNotes ? '<i class="fas fa-comment-alt text-info notes-icon" style="cursor: pointer;" data-action-id="' + action.id + '" data-notes="' + action.notes.replace(/"/g, '&quot;') + '"></i>' : ''}
+                    </td>
                 `;
                 actionsTbody.appendChild(row);
             });
@@ -900,12 +942,12 @@
 
                     // Update the row content to show notes icon if needed
                     const cells = row.querySelectorAll('td');
-                    if (cells.length >= 3) {
-                        const titleCell = cells[2];
-                        const title = data.title;
+                    if (cells.length >= 8) {
+                        const notesCell = cells[7]; // 8th cell (index 7) is the Notes column
                         const hasNotes = data.notes && data.notes.trim() !== '';
-                        const notesIcon = hasNotes ? '<i class="fas fa-comment-alt text-info ml-2" title="This action has notes"></i>' : '';
-                        titleCell.innerHTML = `${title} ${notesIcon}`;
+                        notesCell.innerHTML = hasNotes ?
+                            '<i class="fas fa-comment-alt text-info notes-icon" style="cursor: pointer;" data-action-id="' + data.id + '" data-notes="' + data.notes.replace(/"/g, '&quot;') + '"></i>' :
+                            '';
                     }
 
                     // Update the actions header with closed/total count
@@ -992,6 +1034,16 @@
                                 // Upcoming actions (within next 7 days)
                                 row.classList.add('action-upcoming');
                             }
+                        }
+
+                        // Update the notes icon if needed
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 8) {
+                            const notesCell = cells[7]; // 8th cell (index 7) is the Notes column
+                            const hasNotes = data.notes && data.notes.trim() !== '';
+                            notesCell.innerHTML = hasNotes ?
+                                '<i class="fas fa-comment-alt text-info notes-icon" style="cursor: pointer;" data-action-id="' + data.id + '" data-notes="' + data.notes.replace(/"/g, '&quot;') + '"></i>' :
+                                '';
                         }
 
                         // Update the actions header with closed/total count

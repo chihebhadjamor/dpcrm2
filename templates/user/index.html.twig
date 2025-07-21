@@ -174,6 +174,7 @@
                                             <th>Action</th>
                                             <th>Action Date</th>
                                             <th>Closed (0/0)</th>
+                                            <th>Notes</th>
                                         </tr>
                                     </thead>
                                     <tbody id="account-actions-tbody">
@@ -194,9 +195,44 @@
 
 <!-- User creation is now handled inline in the table -->
 
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="notesModalLabel">Action Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="notes-content" class="p-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the notes modal
+        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+        // Add event delegation for notes icons
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('notes-icon')) {
+                const notes = e.target.getAttribute('data-notes');
+                const notesContent = document.getElementById('notes-content');
+
+                // Set the notes content in the modal
+                notesContent.innerHTML = notes ? notes.replace(/\n/g, '<br>') : '';
+
+                // Show the modal
+                notesModal.show();
+            }
+        });
+
         // Get all user rows
         const userRows = document.querySelectorAll('.user-row');
 
@@ -404,12 +440,18 @@
                                             }
                                         }
 
+                                        // Check if action has notes
+                                        const hasNotes = action.notes && action.notes.trim() !== '';
+
                                         row.innerHTML = `
                                             <td>${action.accountId}</td>
                                             <td>${action.accountName}</td>
                                             <td>${action.lastAction}</td>
                                             <td>${action.nextStepDate || action.nextStep || ''}</td>
                                             <td><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                            <td class="text-center">
+                                                ${hasNotes ? '<i class="fas fa-comment-alt text-info notes-icon" style="cursor: pointer;" data-action-id="' + action.id + '" data-notes="' + action.notes.replace(/"/g, '&quot;') + '"></i>' : ''}
+                                            </td>
                                         `;
                                         accountActionsTbody.appendChild(row);
                                     });
@@ -547,12 +589,18 @@
                                 // Apply cell-level styling for closed actions
                                 const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
 
+                                // Check if action has notes
+                                const hasNotes = action.notes && action.notes.trim() !== '';
+
                                 row.innerHTML = `
                                     <td ${cellStyle}>${action.accountId}</td>
                                     <td ${cellStyle}>${action.accountName}</td>
                                     <td ${cellStyle}>${action.lastAction}</td>
                                     <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
                                     <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                    <td ${cellStyle} class="text-center">
+                                        ${hasNotes ? '<i class="fas fa-comment-alt text-info notes-icon" style="cursor: pointer;" data-action-id="' + action.id + '" data-notes="' + action.notes.replace(/"/g, '&quot;') + '"></i>' : ''}
+                                    </td>
                                 `;
                                 accountActionsTbody.appendChild(row);
                             });
