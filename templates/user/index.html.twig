@@ -20,6 +20,22 @@
         #backlog-table th:nth-child(6),
         #backlog-table td:nth-child(6) { text-align: center; }
 
+        /* Notes badge styling */
+        #notes-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+            padding: 0;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-weight: bold;
+        }
+
         /* Responsive layout */
         @media (max-width: 768px) {
             .user-list-column, .backlog-column { width: 100%; float: none; padding: 0; }
@@ -91,7 +107,7 @@
                                         <th>Contact</th>
                                         <th>Action Date</th>
                                         <th>Status</th>
-                                        <th>Notes</th>
+                                        <th>Notes <span id="notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
                                     </thead>
                                     <tbody id="backlog-tbody">
@@ -162,9 +178,30 @@
                 backlogTbody.innerHTML = ''; // Clear existing content
                 if (userBacklogActions.length === 0) {
                     noActionsMessage.style.display = 'block';
+                    // Hide notes badge when no actions
+                    document.getElementById('notes-badge').style.display = 'none';
                     return;
                 }
                 noActionsMessage.style.display = 'none';
+
+                // Calculate total non-empty notes count by account
+                const accountNotesMap = {};
+                userBacklogActions.forEach(action => {
+                    if (action.accountNotesCount > 0) {
+                        accountNotesMap[action.accountId] = action.accountNotesCount;
+                    }
+                });
+
+                // Update the notes badge
+                const notesBadge = document.getElementById('notes-badge');
+                const totalNotes = Object.values(accountNotesMap).reduce((sum, count) => sum + count, 0);
+
+                if (totalNotes > 0) {
+                    notesBadge.textContent = totalNotes;
+                    notesBadge.style.display = 'inline-block';
+                } else {
+                    notesBadge.style.display = 'none';
+                }
 
                 userBacklogActions.forEach(action => {
                     const row = document.createElement('tr');
@@ -194,7 +231,8 @@
                 </td>
                 <td class="text-center">
                     <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
-                       data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
+                       data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"
+                       data-account-id="${action.accountId}"></i>
                 </td>
             `;
                     backlogTbody.appendChild(row);
@@ -299,7 +337,30 @@
 
                     const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
                     if (actionIndex !== -1) {
+                        // Store the previous account ID and notes status
+                        const accountId = userBacklogActions[actionIndex].accountId;
+                        const hadNotesBefore = !!(userBacklogActions[actionIndex].notes && userBacklogActions[actionIndex].notes.trim());
+                        const hasNotesNow = !!(updatedAction.notes && updatedAction.notes.trim());
+
+                        // Update the action with the response data
                         userBacklogActions[actionIndex] = updatedAction;
+
+                        // Ensure accountId is preserved (in case it's not returned by the API)
+                        userBacklogActions[actionIndex].accountId = accountId;
+
+                        // Update accountNotesCount for all actions with the same accountId
+                        if (hadNotesBefore !== hasNotesNow) {
+                            userBacklogActions.forEach(action => {
+                                if (action.accountId === accountId) {
+                                    // Increment or decrement the account notes count
+                                    if (hasNotesNow && !hadNotesBefore) {
+                                        action.accountNotesCount = (action.accountNotesCount || 0) + 1;
+                                    } else if (!hasNotesNow && hadNotesBefore) {
+                                        action.accountNotesCount = Math.max(0, (action.accountNotesCount || 0) - 1);
+                                    }
+                                }
+                            });
+                        }
                     }
 
                     renderBacklog();

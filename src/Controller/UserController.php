@@ -267,12 +267,29 @@ class UserController extends AbstractWebController
                 return new JsonResponse([]);
             }
 
+            // Count non-empty notes per account
+            $accountNotesCount = [];
+            foreach ($actions as $action) {
+                $account = $action->getAccount();
+                $accountId = $account ? $account->getId() : 'N/A';
+
+                // Only count non-empty notes
+                if (!empty($action->getNotes())) {
+                    if (!isset($accountNotesCount[$accountId])) {
+                        $accountNotesCount[$accountId] = 0;
+                    }
+                    $accountNotesCount[$accountId]++;
+                }
+            }
+
             $accountActions = [];
             foreach ($actions as $action) {
                 $account = $action->getAccount();
+                $accountId = $account ? $account->getId() : 'N/A';
 
                 $accountActions[] = [
                     'id' => $action->getId(),
+                    'accountId' => $accountId,
                     'accountName' => $account ? $account->getName() : 'N/A',
                     'lastAction' => $action->getTitle(),
                     'contact' => $action->getContact(), // Ensure contact is included
@@ -280,7 +297,8 @@ class UserController extends AbstractWebController
                     'closed' => $action->isClosed(),
                     'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
                     'notes' => $action->getNotes(),
-                    'hasNotes' => !empty($action->getNotes())
+                    'hasNotes' => !empty($action->getNotes()),
+                    'accountNotesCount' => isset($accountNotesCount[$accountId]) ? $accountNotesCount[$accountId] : 0
                 ];
             }
 
