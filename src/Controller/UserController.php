@@ -251,11 +251,11 @@ class UserController extends AbstractWebController
             }
 
             // Get actions where the user is the owner
-            // This ensures we get all actions owned by the user
             // Order by closed ASC (open actions first) and then by createdAt DESC
             $queryBuilder = $entityManager->createQueryBuilder();
-            $queryBuilder->select('a')
-                ->from(Action::class, 'a')
+            $queryBuilder->select('a', 'acct') // Also select the account to ensure it's loaded
+            ->from(Action::class, 'a')
+                ->leftJoin('a.account', 'acct') // Use leftJoin to include actions without an account
                 ->where('a.owner = :user')
                 ->orderBy('a.closed', 'ASC')
                 ->addOrderBy('a.createdAt', 'DESC')
@@ -264,31 +264,19 @@ class UserController extends AbstractWebController
             $actions = $queryBuilder->getQuery()->getResult();
 
             if (empty($actions)) {
-                // Return an empty array when the user has no actions
-                // The frontend will display a message: "This user has no actions to display."
                 return new JsonResponse([]);
             }
 
-            // Return all actions for the user, not just the most recent one for each account
             $accountActions = [];
-
             foreach ($actions as $action) {
                 $account = $action->getAccount();
 
-                // Skip actions without an associated account
-                if (!$account) {
-                    continue;
-                }
-
                 $accountActions[] = [
                     'id' => $action->getId(),
-                    'accountId' => $account->getId(),
-                    'accountName' => $account->getName(),
+                    'accountName' => $account ? $account->getName() : 'N/A',
                     'lastAction' => $action->getTitle(),
-                    'contact' => $action->getContact(),
-                    'priority' => '', // Priority column has been removed from Account entity
-                    'nextStep' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Keep field name for backward compatibility
-                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Add new field with more descriptive name
+                    'contact' => $action->getContact(), // Ensure contact is included
+                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'closed' => $action->isClosed(),
                     'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
                     'notes' => $action->getNotes(),
@@ -298,7 +286,9 @@ class UserController extends AbstractWebController
 
             return new JsonResponse($accountActions);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'An error occurred while fetching account actions: ' . $e->getMessage()], 500);
+            // Log the error for debugging
+            error_log('Error fetching user account actions: ' . $e->getMessage());
+            return new JsonResponse(['error' => 'An error occurred while fetching account actions.'], 500);
         }
     }
 

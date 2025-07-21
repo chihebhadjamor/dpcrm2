@@ -3,828 +3,314 @@
 {% block title %}Users{% endblock %}
 
 {% block stylesheets %}
-<style>
-    .editable {
-        /* Removed cursor: pointer to indicate cells are not directly editable */
-    }
+    <style>
+        /* General styles */
+        .user-list-column { width: 35%; float: left; padding-right: 15px; }
+        .backlog-column { width: 65%; float: left; padding-left: 15px; }
+        .user-row.selected { background-color: #e2f0e2 !important; }
+        .loading-spinner { display: none; text-align: center; padding: 20px; }
+        .loading-spinner i { font-size: 2rem; }
 
-    .editable:hover {
-        background-color: #f8f9fa;
-        position: relative;
-    }
+        /* Action status styling */
+        .action-closed { background-color: #e6e6e6 !important; font-style: italic; text-decoration: line-through; }
+        .action-overdue { background-color: #ffcccc !important; }
+        .action-upcoming { background-color: #fff2cc !important; }
 
-    /* Two-column layout styles */
-    .user-list-column {
-        width: 35%;
-        float: left;
-        padding-right: 15px;
-    }
+        /* Center align status column */
+        #backlog-table th:nth-child(6),
+        #backlog-table td:nth-child(6) { text-align: center; }
 
-    .backlog-column {
-        width: 65%;
-        float: left;
-        padding-left: 15px;
-    }
-
-    /* Loading indicator */
-    .loading-spinner {
-        display: none;
-        text-align: center;
-        padding: 20px;
-    }
-
-    .loading-spinner i {
-        font-size: 2rem;
-    }
-
-    /* Selected user highlight */
-    .user-row.selected {
-        background-color: #e2f0e2 !important;
-    }
-
-    /* Center align the Action Status column */
-    #account-actions-table th:nth-child(6),
-    #account-actions-table td:nth-child(6) {
-        text-align: center;
-    }
-
-    /* Action status styling */
-    .action-overdue {
-        background-color: #ffcccc !important; /* Red background for overdue actions */
-    }
-
-    .action-upcoming {
-        background-color: #fff2cc !important; /* Yellow background for upcoming actions */
-    }
-
-    .action-closed {
-        background-color: #e6e6e6 !important; /* Gray background for closed actions */
-        font-style: italic;
-        text-decoration: line-through;
-    }
-
-    /* Responsive layout for smaller screens */
-    @media (max-width: 768px) {
-        .user-list-column, .backlog-column {
-            width: 100%;
-            float: none;
-            padding: 0;
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            .user-list-column, .backlog-column { width: 100%; float: none; padding: 0; }
+            .backlog-column { margin-top: 20px; }
         }
-
-        .backlog-column {
-            margin-top: 20px;
-        }
-    }
-</style>
+    </style>
 {% endblock %}
 
 {% block body %}
-{# Hidden inputs for CSRF tokens #}
-<input type="hidden" id="csrf_token_create_user" value="{{ csrf_token('create_user') }}">
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
 
-<div class="row mb-4">
-    <div class="clearfix">
-        <!-- Left Column: User List -->
-        <div class="user-list-column">
-            <div class="card">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Users List</h4>
-                    <button type="button" class="btn btn-light" id="create-user-btn">
-                        <i class="fas fa-plus"></i> Create User
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
+    <div class="row mb-4">
+        <div class="clearfix">
+            <div class="user-list-column">
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Users List</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Username</th>
                                     <th>Email</th>
-                                    <th>Actions</th>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Form row for creating new user -->
-                                <tr id="user-form-row" style="display: none;">
-                                    <td><i>New</i></td>
-                                    <td>
-                                        <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
-                                    </td>
-                                    <td>
-                                        <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
-                                    </td>
-                                    <td>
-                                        <button type="button" id="save-user-btn" class="btn btn-sm btn-success text-white">Save</button>
-                                        <button type="button" id="cancel-user-btn" class="btn btn-sm btn-secondary">Cancel</button>
-                                    </td>
-                                </tr>
+                                </thead>
+                                <tbody>
                                 {% for user in users %}
-                                    <tr class="user-row" data-user-id="{{ user.id }}" style="cursor: pointer;">
+                                    <tr class="user-row" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
                                         <td>{{ user.id }}</td>
-                                        <td class="editable" data-field="username" data-user-id="{{ user.id }}">{{ user.username }}</td>
-                                        <td class="editable" data-field="email" data-user-id="{{ user.id }}">{{ user.email }}</td>
-                                        <td>
-                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                        </td>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
                                     </tr>
                                 {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center">No users found</td>
+                                        <td colspan="3" class="text-center">No users found</td>
                                     </tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Right Column: User Backlog -->
-        <div class="backlog-column">
-            <!-- Initial message when no user is selected -->
-            <div id="no-user-selected-message" class="card">
-                <div class="card-body text-center">
-                    <p class="mb-0">Select a user to view his/her backlog.</p>
-                </div>
-            </div>
-
-            <!-- Loading indicator -->
-            <div id="loading-spinner" class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading backlog...</p>
-            </div>
-
-            <!-- Account Actions Section -->
-            <div id="account-actions-section" style="display: none;">
-                <div class="card">
+            <div class="backlog-column">
+                <div id="backlog-container" class="card">
                     <div class="card-header bg-success text-white">
-                        <h4 class="mb-0" id="account-actions-header">Backlog of User</h4>
+                        <h4 class="mb-0" id="backlog-header">Backlog</h4>
                     </div>
                     <div class="card-body">
-                        <div style="max-height: 70vh; overflow-y: auto;">
-                            <div class="table-responsive">
-                                <table id="account-actions-table" class="table table-striped">
+                        <div id="no-user-selected-message" class="text-center">
+                            <p class="mb-0">Select a user to view their backlog.</p>
+                        </div>
+                        <div id="loading-spinner" class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading backlog...</p>
+                        </div>
+                        <div id="backlog-content" style="display: none;">
+                            <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                                <table id="backlog-table" class="table table-striped">
                                     <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Account</th>
-                                            <th>Action</th>
-                                            <th>Contact</th>
-                                            <th>Action Date</th>
-                                            <th>Status</th>
-                                            <th>Notes</th>
-                                        </tr>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Account</th>
+                                        <th>Action</th>
+                                        <th>Contact</th>
+                                        <th>Action Date</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                    </tr>
                                     </thead>
-                                    <tbody id="account-actions-tbody">
-                                        <!-- Account actions will be loaded here -->
+                                    <tbody id="backlog-tbody">
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                        <div id="no-account-actions-message" class="text-center" style="display: none;">
-                            <p>This user has no actions to display.</p>
+                            <div id="no-actions-message" class="text-center mt-3" style="display: none;">
+                                <p>This user has no actions to display.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- User creation is now handled inline in the table -->
-
-<!-- Notification container for non-blocking messages -->
-<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 300px;"></div>
-
-<!-- Notes Modal -->
-<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="notesModalLabel">Action Notes</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <textarea id="notes-content" class="form-control" rows="5"></textarea>
-                <input type="hidden" id="action-id-for-notes">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="save-notes-btn">Save</button>
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Action Notes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="notes-content" class="form-control" rows="5"></textarea>
+                    <input type="hidden" id="action-id-for-notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-notes-btn">Save</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-{% block javascripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Function to show notifications
-        function showNotification(message, type = 'danger', duration = 5000) {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} alert-dismissible fade show`;
-            notification.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-
-            const container = document.getElementById('notification-container');
-            container.appendChild(notification);
-
-            // Auto-dismiss after duration
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    container.removeChild(notification);
-                }, 300); // Wait for fade out animation
-            }, duration);
-        }
-
-        // Initialize the notes modal
-        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
-
-        // Add event delegation for notes icons
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('notes-icon')) {
-                const notes = e.target.getAttribute('data-notes');
-                const actionId = e.target.getAttribute('data-action-id');
-                const notesContent = document.getElementById('notes-content');
-                const actionIdInput = document.getElementById('action-id-for-notes');
-
-                // Set the notes content in the modal
-                notesContent.value = notes || '';
-                actionIdInput.value = actionId;
-
-                // Show the modal
-                notesModal.show();
-            }
-        });
-
-        // Handle save notes button click
-        document.getElementById('save-notes-btn').addEventListener('click', function() {
-            const actionId = document.getElementById('action-id-for-notes').value;
-            const notes = document.getElementById('notes-content').value;
-
-            // Send request to update notes
-            fetch(`/actions/${actionId}/update-notes`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `notes=${encodeURIComponent(notes)}`
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Close the modal
-                notesModal.hide();
-
-                // Find the notes icon for this action
-                const notesIcon = document.querySelector(`.notes-icon[data-action-id="${actionId}"]`);
-                if (notesIcon) {
-                    // Update the icon color based on whether there are notes
-                    if (data.notes && data.notes.trim() !== '') {
-                        notesIcon.style.color = 'red';
-                    } else {
-                        notesIcon.style.color = '';
-                    }
-
-                    // Update the data-notes attribute
-                    notesIcon.setAttribute('data-notes', data.notes || '');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating notes:', error);
-                showNotification('Error updating notes. Please try again.', 'danger');
-            });
-        });
-
-        // Get all user rows
-        const userRows = document.querySelectorAll('.user-row');
-
-        // Account actions elements
-        const accountActionsSection = document.getElementById('account-actions-section');
-        const accountActionsTbody = document.getElementById('account-actions-tbody');
-        const noAccountActionsMessage = document.getElementById('no-account-actions-message');
-
-        // Handle create user button click
-        const createUserBtn = document.getElementById('create-user-btn');
-        const userFormRow = document.getElementById('user-form-row');
-        const saveUserBtn = document.getElementById('save-user-btn');
-        const cancelUserBtn = document.getElementById('cancel-user-btn');
-
-        if (createUserBtn) {
-            // Show the form row when Create User button is clicked
-            createUserBtn.addEventListener('click', function() {
-                // Show the form row
-                userFormRow.style.display = 'table-row';
-
-                // Focus on the username input
-                document.getElementById('user-username').focus();
-            });
-
-            // Handle cancel button
-            cancelUserBtn.addEventListener('click', function() {
-                // Hide the form row
-                userFormRow.style.display = 'none';
-
-                // Reset form fields
-                document.getElementById('user-username').value = '';
-                document.getElementById('user-email').value = '';
-                document.getElementById('user-password').value = '';
-            });
-
-            // Handle save button
-            saveUserBtn.addEventListener('click', function() {
-                // Validate required fields
-                const username = document.getElementById('user-username').value;
-                if (!username) {
-                    showNotification('Username is required', 'warning');
-                    return;
-                }
-
-                const email = document.getElementById('user-email').value;
-                if (!email) {
-                    showNotification('Email is required', 'warning');
-                    return;
-                }
-
-                const password = document.getElementById('user-password').value;
-                if (!password) {
-                    showNotification('Password is required', 'warning');
-                    return;
-                }
-
-                // Create FormData object
-                const formData = new FormData();
-                formData.append('username', username);
-                formData.append('email', email);
-                formData.append('password', password);
-
-                // Add CSRF token
-                const csrfToken = document.getElementById('csrf_token_create_user').value;
-                formData.append('_token', csrfToken);
-
-                // Send request to create user
-                fetch('/users/create-ajax', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Hide the form row
-                    userFormRow.style.display = 'none';
-
-                    // Reset form fields
-                    document.getElementById('user-username').value = '';
-                    document.getElementById('user-email').value = '';
-                    document.getElementById('user-password').value = '';
-
-                    // Add the new user to the table
-                    const row = document.createElement('tr');
-                    row.className = 'user-row';
-                    row.setAttribute('data-user-id', data.id);
-                    row.style.cursor = 'pointer';
-                    row.innerHTML = `
-                        <td>${data.id}</td>
-                        <td class="editable" data-field="username" data-user-id="${data.id}">${data.username}</td>
-                        <td class="editable" data-field="email" data-user-id="${data.id}">${data.email}</td>
-                        <td>
-                            <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                        </td>
-                    `;
-
-                    // Add the new row after the form row
-                    if (userFormRow.nextSibling) {
-                        userFormRow.parentNode.insertBefore(row, userFormRow.nextSibling);
-                    } else {
-                        userFormRow.parentNode.appendChild(row);
-                    }
-
-                    // Attach event listeners to the new row
-                    row.addEventListener('click', function(e) {
-                        // Don't process if clicking on a button within the row
-                        if (e.target.closest('button') || e.target.closest('a')) {
-                            return;
-                        }
-
-                        // Remove selected class from all rows
-                        document.querySelectorAll('.user-row').forEach(r => r.classList.remove('selected', 'table-primary'));
-
-                        // Add selected class to clicked row
-                        this.classList.add('selected', 'table-primary');
-
-                        // Get user ID from data attribute
-                        const userId = this.getAttribute('data-user-id');
-
-                        // Get username from the row (second cell contains username)
-                        const username = this.querySelector('td:nth-child(2)').textContent;
-
-                        // Update the header with the username
-                        const accountActionsHeader = document.getElementById('account-actions-header');
-                        if (accountActionsHeader) {
-                            accountActionsHeader.textContent = `Backlog of ${username}`;
-                        }
-
-                        // Hide the "no user selected" message
-                        if (noUserSelectedMessage) {
-                            noUserSelectedMessage.style.display = 'none';
-                        }
-
-                        // Show loading spinner
-                        if (loadingSpinner) {
-                            loadingSpinner.style.display = 'block';
-                        }
-
-                        // Hide account actions section while loading
-                        if (accountActionsSection) {
-                            accountActionsSection.style.display = 'none';
-                        }
-
-                        // Fetch account actions for this user
-                        fetch(`/users/${userId}/account-actions`)
-                            .then(response => response.json())
-                            .then(data => {
-                                // Hide loading spinner
-                                if (loadingSpinner) {
-                                    loadingSpinner.style.display = 'none';
-                                }
-
-                                // Clear previous account actions
-                                accountActionsTbody.innerHTML = '';
-
-                                // Show account actions section
-                                accountActionsSection.style.display = 'block';
-
-                                if (data.length > 0) {
-                                    // Hide no account actions message
-                                    if (noAccountActionsMessage) {
-                                        noAccountActionsMessage.style.display = 'none';
-                                    }
-
-                                    // Update the Status column header with count
-                                    const closedCount = data.filter(action => action.closed).length;
-                                    const totalCount = data.length;
-                                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                                    if (statusHeader) {
-                                        statusHeader.textContent = `Status`;
-                                    }
-
-                                    // Add account actions to table
-                                    data.forEach(action => {
-                                        const row = document.createElement('tr');
-
-                                        // Check action status and apply appropriate class
-                                        if (action.closed) {
-                                            // Closed actions
-                                            row.classList.add('action-closed');
-                                        } else {
-                                            // Check if action is overdue or upcoming
-                                            const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0); // Set to beginning of day
-
-                                            if (actionDate) {
-                                                // Calculate days difference
-                                                const timeDiff = actionDate.getTime() - today.getTime();
-                                                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-                                                if (daysDiff <= 0) {
-                                                    // Overdue actions (today or past)
-                                                    row.classList.add('action-overdue');
-                                                } else if (daysDiff <= 7) {
-                                                    // Upcoming actions (within next 7 days)
-                                                    row.classList.add('action-upcoming');
-                                                }
-                                            }
-                                        }
-
-                                        // Check if action has notes
-                                        const hasNotes = action.notes && action.notes.trim() !== '';
-
-                                        row.innerHTML = `
-                                            <td>${action.id}</td>
-                                            <td>${action.accountName}</td>
-                                            <td>${action.lastAction}</td>
-                                            <td>${action.contact || ''}</td>
-                                            <td>${action.nextStepDate || action.nextStep || ''}</td>
-                                            <td><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
-                                            <td class="text-center">
-                                                <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
-                                            </td>
-                                        `;
-                                        accountActionsTbody.appendChild(row);
-                                    });
-                                } else {
-                                    // Show no account actions message
-                                    if (noAccountActionsMessage) {
-                                        noAccountActionsMessage.style.display = 'block';
-                                    }
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching account actions:', error);
-
-                                // Hide loading spinner
-                                if (loadingSpinner) {
-                                    loadingSpinner.style.display = 'none';
-                                }
-
-                                if (accountActionsSection) {
-                                    accountActionsSection.style.display = 'block';
-
-                                    // Clear previous account actions
-                                    accountActionsTbody.innerHTML = '';
-
-                                    // Reset the Status column header to default
-                                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                                    if (statusHeader) {
-                                        statusHeader.textContent = 'Status';
-                                    }
-
-                                    if (noAccountActionsMessage) {
-                                        noAccountActionsMessage.style.display = 'block';
-                                        noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
-                                    }
-                                }
-                            });
-                    });
-
-                })
-                .catch(error => {
-                    console.error('Error creating user:', error);
-                    showNotification('Error creating user. Please try again.', 'danger');
-                });
-            });
-        }
-
-
-
-
-        // Get references to new elements
-        const noUserSelectedMessage = document.getElementById('no-user-selected-message');
-        const loadingSpinner = document.getElementById('loading-spinner');
-
-        // Add click event listener to each user row
-        userRows.forEach(row => {
-            row.addEventListener('click', function(e) {
-                // Don't process if clicking on a button within the row
-                if (e.target.closest('button') || e.target.closest('a')) {
-                    return;
-                }
-
-                // Remove selected class from all rows
-                userRows.forEach(r => r.classList.remove('selected', 'table-primary'));
-
-                // Add selected class to clicked row
-                this.classList.add('selected', 'table-primary');
-
-                // Get user ID from data attribute
-                const userId = this.getAttribute('data-user-id');
-
-                // Get username from the row (second cell contains username)
-                const username = this.querySelector('td:nth-child(2)').textContent;
-
-                // Update the header with the username
-                const accountActionsHeader = document.getElementById('account-actions-header');
-                if (accountActionsHeader) {
-                    accountActionsHeader.textContent = `Backlog of ${username}`;
-                }
-
-                // Hide the "no user selected" message
-                if (noUserSelectedMessage) {
-                    noUserSelectedMessage.style.display = 'none';
-                }
-
-                // Show loading spinner
-                if (loadingSpinner) {
-                    loadingSpinner.style.display = 'block';
-                }
-
-                // Hide account actions section while loading
-                if (accountActionsSection) {
-                    accountActionsSection.style.display = 'none';
-                }
-
-                // Fetch account actions for this user
-                fetch(`/users/${userId}/account-actions`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Hide loading spinner
-                        if (loadingSpinner) {
-                            loadingSpinner.style.display = 'none';
-                        }
-
-                        // Clear previous account actions
-                        accountActionsTbody.innerHTML = '';
-
-                        // Show account actions section
-                        accountActionsSection.style.display = 'block';
-
-                        if (data.length > 0) {
-                            // Hide no account actions message
-                            if (noAccountActionsMessage) {
-                                noAccountActionsMessage.style.display = 'none';
-                            }
-
-                            // Update the Status column header with count
-                            const closedCount = data.filter(action => action.closed).length;
-                            const totalCount = data.length;
-                            const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                            if (statusHeader) {
-                                statusHeader.textContent = `Status`;
-                            }
-
-                            // Add account actions to table
-                            data.forEach(action => {
-                                const row = document.createElement('tr');
-                                // Add class for closed actions to make them visually distinct
-                                if (action.closed) {
-                                    row.classList.add('text-muted');
-                                    row.style.textDecoration = 'line-through';
-                                    row.style.color = '#6c757d'; // Explicitly set gray color
-                                    row.style.fontStyle = 'italic'; // Add italic styling
-                                }
-
-                                // Apply cell-level styling for closed actions
-                                const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
-
-                                // Check if action has notes
-                                const hasNotes = action.notes && action.notes.trim() !== '';
-
-                                row.innerHTML = `
-                                    <td ${cellStyle}>${action.id}</td>
-                                    <td ${cellStyle}>${action.accountName}</td>
-                                    <td ${cellStyle}>${action.lastAction}</td>
-                                    <td ${cellStyle}>${action.contact || ''}</td>
-                                    <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                    <td ${cellStyle}><input type="checkbox" class="action-closed-checkbox" ${action.closed ? 'checked' : ''} data-action-id="${action.id}"></td>
-                                    <td ${cellStyle} class="text-center">
-                                        <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
-                                    </td>
-                                `;
-                                accountActionsTbody.appendChild(row);
-                            });
-                        } else {
-                            // Show no account actions message
-                            if (noAccountActionsMessage) {
-                                noAccountActionsMessage.style.display = 'block';
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching account actions:', error);
-
-                        // Hide loading spinner
-                        if (loadingSpinner) {
-                            loadingSpinner.style.display = 'none';
-                        }
-
-                        if (accountActionsSection) {
-                            accountActionsSection.style.display = 'block';
-
-                            // Clear previous account actions
-                            accountActionsTbody.innerHTML = '';
-
-                            // Reset the Status column header to default
-                            const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                            if (statusHeader) {
-                                statusHeader.textContent = 'Status';
-                            }
-
-                            if (noAccountActionsMessage) {
-                                noAccountActionsMessage.style.display = 'block';
-                                noAccountActionsMessage.innerHTML = '<p>Error loading account actions. Please try again.</p>';
-                            }
-                        }
-                    });
-            });
-        });
-
-        // Add event delegation for action closed checkboxes
-        accountActionsTbody.addEventListener('change', function(e) {
-            if (e.target && e.target.classList.contains('action-closed-checkbox')) {
-                const actionId = e.target.getAttribute('data-action-id');
-                const isChecked = e.target.checked;
-                const row = e.target.closest('tr');
-
-                // Disable the checkbox immediately to prevent multiple clicks
-                e.target.disabled = true;
-
-                // Add a visual indicator that the action is being processed
-                const originalOpacity = row.style.opacity || '1';
-                row.style.opacity = '0.7';
-
-                // Send request to toggle closed status
-                fetch(`/actions/${actionId}/toggle-closed`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Update the row's status classes
-                    // First, remove all status classes
-                    row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
-
-                    // Add appropriate class based on closed status
-                    if (data.closed) {
-                        row.classList.add('action-closed');
-                        // The action-closed class handles the styling
-
-                        // Update the checkbox to checked state
-                        e.target.checked = true;
-
-                        // Apply strikethrough and other styling for closed actions
-                        row.style.textDecoration = 'line-through';
-                        row.style.color = '#6c757d';
-                        row.style.fontStyle = 'italic';
-                    } else {
-                        // For reopened actions, check if it's overdue or upcoming
-
-                        // Update the checkbox to unchecked state
-                        e.target.checked = false;
-
-                        // Remove strikethrough and other styling for reopened actions
-                        row.style.textDecoration = '';
-                        row.style.color = '';
-                        row.style.fontStyle = '';
-
-                        // Check if action is overdue or upcoming
-                        const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Set to beginning of day
-
-                        if (actionDate) {
-                            // Calculate days difference
-                            const timeDiff = actionDate.getTime() - today.getTime();
-                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-                            if (daysDiff <= 0) {
-                                // Overdue actions (today or past)
-                                row.classList.add('action-overdue');
-                            } else if (daysDiff <= 7) {
-                                // Upcoming actions (within next 7 days)
-                                row.classList.add('action-upcoming');
-                            }
-                        }
-                    }
-
-                    // Update the Status column header with count
-                    const allRows = accountActionsTbody.querySelectorAll('tr');
-                    const closedCount = accountActionsTbody.querySelectorAll('tr.action-closed').length;
-                    const totalCount = allRows.length;
-                    const statusHeader = document.querySelector('#account-actions-table thead th:nth-child(6)');
-                    if (statusHeader) {
-                        statusHeader.textContent = `Status`;
-                    }
-
-                    // Show a success notification based on the current state
-                    if (data.closed) {
-                        showNotification(`Action ${data.id} closed successfully`, 'success', 3000);
-                    } else {
-                        showNotification(`Action ${data.id} reopened successfully`, 'success', 3000);
-                    }
-
-                    // Re-enable the checkbox and restore opacity after successful update
-                    e.target.disabled = false;
-                    row.style.opacity = originalOpacity;
-                })
-                .catch(error => {
-                    console.error('Error toggling action status:', error);
-                    showNotification('Error updating action. Please try again.', 'danger');
-                    // Reset checkbox to its previous state
-                    e.target.checked = !isChecked;
-
-                    // Re-enable the checkbox and restore opacity after error
-                    e.target.disabled = false;
-                    row.style.opacity = originalOpacity;
-                });
-            }
-        });
-    });
-</script>
 {% endblock %}
 
+{% block javascripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- STATE MANAGEMENT ---
+            let userBacklogActions = [];
+            let currentUserId = null;
+            const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+            // --- DOM ELEMENTS ---
+            const backlogContainer = document.getElementById('backlog-container');
+            const backlogHeader = document.getElementById('backlog-header');
+            const backlogContent = document.getElementById('backlog-content');
+            const backlogTbody = document.getElementById('backlog-tbody');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const noUserMessage = document.getElementById('no-user-selected-message');
+            const noActionsMessage = document.getElementById('no-actions-message');
+            const userRows = document.querySelectorAll('.user-row');
+
+            // --- NOTIFICATION UTILITY ---
+            function showNotification(message, type = 'success', duration = 3000) {
+                const container = document.getElementById('notification-container');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.role = 'alert';
+                alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                container.appendChild(alert);
+                setTimeout(() => new bootstrap.Alert(alert).close(), duration);
+            }
+
+            // --- RENDERING LOGIC ---
+            function renderBacklog() {
+                backlogTbody.innerHTML = ''; // Clear existing content
+                if (userBacklogActions.length === 0) {
+                    noActionsMessage.style.display = 'block';
+                    return;
+                }
+                noActionsMessage.style.display = 'none';
+
+                userBacklogActions.forEach(action => {
+                    const row = document.createElement('tr');
+
+                    // Determine row classes for styling
+                    row.className = '';
+                    if (action.closed) {
+                        row.classList.add('action-closed');
+                    } else if (action.nextStepDate) {
+                        const actionDate = new Date(action.nextStepDate);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const daysDiff = Math.ceil((actionDate - today) / (1000 * 3600 * 24));
+                        if (daysDiff < 0) row.classList.add('action-overdue');
+                        else if (daysDiff <= 7) row.classList.add('action-upcoming');
+                    }
+
+                    row.innerHTML = `
+                <td>${action.id}</td>
+                <td>${action.accountName || 'N/A'}</td>
+                <td>${action.lastAction || ''}</td>
+                <td>${action.contact || ''}</td>
+                <td>${action.nextStepDate || ''}</td>
+                <td>
+                    <input class="form-check-input action-status-checkbox" type="checkbox"
+                           data-action-id="${action.id}" ${action.closed ? 'checked' : ''}>
+                </td>
+                <td class="text-center">
+                    <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
+                       data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
+                </td>
+            `;
+                    backlogTbody.appendChild(row);
+                });
+            }
+
+            // --- DATA FETCHING ---
+            async function fetchAndRenderBacklog(userId) {
+                currentUserId = userId;
+                loadingSpinner.style.display = 'block';
+                noUserMessage.style.display = 'none';
+                backlogContent.style.display = 'none';
+
+                try {
+                    const response = await fetch(`/users/${userId}/account-actions`);
+                    if (!response.ok) throw new Error('Failed to fetch backlog.');
+
+                    userBacklogActions = await response.json();
+                    renderBacklog();
+                    backlogContent.style.display = 'block';
+                } catch (error) {
+                    console.error('Error fetching backlog:', error);
+                    showNotification('Could not load user backlog.', 'danger');
+                    noUserMessage.style.display = 'block'; // Show a message in the main area
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+
+            // 1. User row clicks
+            userRows.forEach(row => {
+                row.addEventListener('click', () => {
+                    userRows.forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                    const userId = row.dataset.userId;
+                    const username = row.dataset.username;
+                    backlogHeader.textContent = `Backlog of ${username}`;
+                    fetchAndRenderBacklog(userId);
+                });
+            });
+
+            // 2. Action Status Toggle (using event delegation)
+            backlogTbody.addEventListener('change', async (e) => {
+                if (!e.target.classList.contains('action-status-checkbox')) return;
+
+                const checkbox = e.target;
+                const actionId = checkbox.dataset.actionId;
+                checkbox.disabled = true; // Prevent rapid clicks
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/toggle-closed`, { method: 'POST' });
+                    if (!response.ok) throw new Error('Status update failed.');
+
+                    const updatedAction = await response.json();
+
+                    // Find and update the action in our local state array
+                    const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        userBacklogActions[actionIndex] = updatedAction;
+                    }
+
+                    renderBacklog(); // Re-render the whole table from the updated state
+                    const message = updatedAction.closed ? 'closed' : 'reopened';
+                    showNotification(`Action ${actionId} ${message} successfully.`, 'success');
+
+                } catch (error) {
+                    console.error('Error toggling action status:', error);
+                    showNotification('Error updating status.', 'danger');
+                    checkbox.checked = !checkbox.checked; // Revert checkbox on failure
+                } finally {
+                    // Re-find the checkbox in the newly rendered DOM and enable it
+                    const newCheckbox = backlogTbody.querySelector(`.action-status-checkbox[data-action-id="${actionId}"]`);
+                    if (newCheckbox) newCheckbox.disabled = false;
+                }
+            });
+
+            // 3. Notes Modal Logic (using event delegation)
+            backlogTbody.addEventListener('click', e => {
+                if (!e.target.classList.contains('notes-icon')) return;
+
+                const icon = e.target;
+                document.getElementById('action-id-for-notes').value = icon.dataset.actionId;
+                document.getElementById('notes-content').value = icon.dataset.notes || '';
+                notesModal.show();
+            });
+
+            document.getElementById('save-notes-btn').addEventListener('click', async () => {
+                const actionId = document.getElementById('action-id-for-notes').value;
+                const notes = document.getElementById('notes-content').value;
+                const formData = new URLSearchParams({ notes });
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-notes`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) throw new Error('Failed to save notes.');
+
+                    const updatedAction = await response.json();
+
+                    const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        userBacklogActions[actionIndex] = updatedAction;
+                    }
+
+                    renderBacklog();
+                    notesModal.hide();
+                    showNotification('Notes saved successfully.', 'success');
+
+                } catch (error) {
+                    console.error('Error saving notes:', error);
+                    showNotification('Could not save notes.', 'danger');
+                }
+            });
+        });
+    </script>
 {% endblock %}
