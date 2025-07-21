@@ -48,6 +48,21 @@
         text-align: center;
     }
 
+    /* Action status styling */
+    .action-overdue {
+        background-color: #ffcccc !important; /* Red background for overdue actions */
+    }
+
+    .action-upcoming {
+        background-color: #fff2cc !important; /* Yellow background for upcoming actions */
+    }
+
+    .action-closed {
+        background-color: #e6e6e6 !important; /* Gray background for closed actions */
+        font-style: italic;
+        text-decoration: line-through;
+    }
+
     /* Responsive layout for smaller screens */
     @media (max-width: 768px) {
         .user-list-column, .backlog-column {
@@ -363,23 +378,38 @@
                                     // Add account actions to table
                                     data.forEach(action => {
                                         const row = document.createElement('tr');
-                                        // Add class for closed actions to make them visually distinct
+
+                                        // Check action status and apply appropriate class
                                         if (action.closed) {
-                                            row.classList.add('text-muted');
-                                            row.style.textDecoration = 'line-through';
-                                            row.style.color = '#6c757d'; // Explicitly set gray color
-                                            row.style.fontStyle = 'italic'; // Add italic styling
+                                            // Closed actions
+                                            row.classList.add('action-closed');
+                                        } else {
+                                            // Check if action is overdue or upcoming
+                                            const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                                            if (actionDate) {
+                                                // Calculate days difference
+                                                const timeDiff = actionDate.getTime() - today.getTime();
+                                                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                                                if (daysDiff <= 0) {
+                                                    // Overdue actions (today or past)
+                                                    row.classList.add('action-overdue');
+                                                } else if (daysDiff <= 7) {
+                                                    // Upcoming actions (within next 7 days)
+                                                    row.classList.add('action-upcoming');
+                                                }
+                                            }
                                         }
 
-                                        // Apply cell-level styling for closed actions
-                                        const cellStyle = action.closed ? 'style="color: #6c757d;"' : '';
-
                                         row.innerHTML = `
-                                            <td ${cellStyle}>${action.accountId}</td>
-                                            <td ${cellStyle}>${action.accountName}</td>
-                                            <td ${cellStyle}>${action.lastAction}</td>
-                                            <td ${cellStyle}>${action.nextStepDate || action.nextStep || ''}</td>
-                                            <td ${cellStyle}><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
+                                            <td>${action.accountId}</td>
+                                            <td>${action.accountName}</td>
+                                            <td>${action.lastAction}</td>
+                                            <td>${action.nextStepDate || action.nextStep || ''}</td>
+                                            <td><input type="checkbox" ${action.closed ? 'checked' : ''} disabled></td>
                                         `;
                                         accountActionsTbody.appendChild(row);
                                     });

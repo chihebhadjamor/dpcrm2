@@ -18,10 +18,19 @@
         cursor: text;
     }
 
+    /* Action status styling */
+    .action-overdue {
+        background-color: #ffcccc !important; /* Red background for overdue actions */
+    }
+
+    .action-upcoming {
+        background-color: #fff2cc !important; /* Yellow background for upcoming actions */
+    }
+
     /* Style for closed actions */
     .action-closed {
         opacity: 0.7;
-        background-color: #f8f9fa !important;
+        background-color: #e6e6e6 !important; /* Gray background for closed actions */
     }
 
     /* Add strikethrough and italic for text in closed action cells */
@@ -660,9 +669,29 @@
             actions.forEach(action => {
                 const row = document.createElement('tr');
 
-                // Add closed class to row if action is closed
+                // Check action status and apply appropriate class
                 if (action.closed) {
+                    // Closed actions
                     row.classList.add('action-closed');
+                } else {
+                    // Check if action is overdue or upcoming
+                    const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                    if (actionDate) {
+                        // Calculate days difference
+                        const timeDiff = actionDate.getTime() - today.getTime();
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                        if (daysDiff <= 0) {
+                            // Overdue actions (today or past)
+                            row.classList.add('action-overdue');
+                        } else if (daysDiff <= 7) {
+                            // Upcoming actions (within next 7 days)
+                            row.classList.add('action-upcoming');
+                        }
+                    }
                 }
 
                 // Set data attribute for action ID
@@ -816,11 +845,32 @@
                         // Find the row in the table
                         const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
 
-                        // Update the row's closed status
+                        // Update the row's status classes
+                        // First, remove all status classes
+                        row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
+
                         if (data.closed) {
+                            // Add closed class
                             row.classList.add('action-closed');
                         } else {
-                            row.classList.remove('action-closed');
+                            // Check if action is overdue or upcoming
+                            const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                            if (actionDate) {
+                                // Calculate days difference
+                                const timeDiff = actionDate.getTime() - today.getTime();
+                                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                                if (daysDiff <= 0) {
+                                    // Overdue actions (today or past)
+                                    row.classList.add('action-overdue');
+                                } else if (daysDiff <= 7) {
+                                    // Upcoming actions (within next 7 days)
+                                    row.classList.add('action-upcoming');
+                                }
+                            }
                         }
 
                         // Update the actions header with closed/total count
