@@ -255,7 +255,9 @@ class AccountController extends AbstractWebController
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
             ];
         }
 
@@ -383,7 +385,9 @@ class AccountController extends AbstractWebController
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
             ]);
         } catch (\Exception $e) {
             // Log the detailed error
@@ -515,7 +519,8 @@ class AccountController extends AbstractWebController
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
                 'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
-                'notes' => $action->getNotes()
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
             ]);
         } catch (\Exception $e) {
             // Log the detailed error
