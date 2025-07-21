@@ -289,7 +289,9 @@ class UserController extends AbstractWebController
                     'nextStep' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Keep field name for backward compatibility
                     'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : '', // Add new field with more descriptive name
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                    'notes' => $action->getNotes(),
+                    'hasNotes' => !empty($action->getNotes())
                 ];
             }
 
