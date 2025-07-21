@@ -513,6 +513,8 @@ class AccountController extends AbstractWebController
             return new JsonResponse([
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -556,6 +558,8 @@ class AccountController extends AbstractWebController
             return new JsonResponse([
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -598,6 +602,8 @@ class AccountController extends AbstractWebController
             return new JsonResponse([
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
                 'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
