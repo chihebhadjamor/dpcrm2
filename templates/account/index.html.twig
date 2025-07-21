@@ -343,8 +343,8 @@
             });
         });
 
-        // Get all account rows
-        const accountRows = document.querySelectorAll('.account-row');
+        // Get all account rows - using a function to always get the current set
+        const getAccountRows = () => document.querySelectorAll('.account-row');
         const actionsSection = document.getElementById('actions-section');
         const actionsTbody = document.getElementById('actions-tbody');
         const noActionsMessage = document.getElementById('no-actions-message');
@@ -409,8 +409,12 @@
                         // Add active class to clicked row
                         this.classList.add('table-primary');
 
-                        // Load account actions
-                        loadAccountActions(account.id);
+                        // Get account ID and update currentAccountId
+                        const accountId = this.getAttribute('data-account-id');
+                        currentAccountId = accountId;
+
+                        // Load account actions for the clicked account
+                        loadAccountActions(accountId);
                     }
                 });
             });
@@ -739,6 +743,105 @@
         // Variable to store all actions for the current account
         let allAccountActions = [];
 
+        // Function to load actions for a specific account
+        function loadAccountActions(accountId) {
+            if (!accountId) {
+                console.error('No account ID provided');
+                return;
+            }
+
+            // Get account name from the row
+            const accountRow = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
+            const accountName = accountRow ? accountRow.querySelector('td[data-field="name"]').textContent : 'Unknown Account';
+
+            // Update the actions header with the account name
+            const actionsHeader = document.getElementById('actions-header');
+            if (actionsHeader) {
+                actionsHeader.textContent = `Actions for ${accountName}`;
+            }
+
+            // Hide placeholder and enable create action button
+            document.getElementById('actions-placeholder').style.display = 'none';
+            document.getElementById('create-action-btn').disabled = false;
+
+            // Show actions table container
+            document.getElementById('actions-table-container').style.display = 'block';
+
+            // Fetch contacts for this account
+            fetch(`/accounts/${accountId}/contacts`)
+                .then(response => response.json())
+                .then(contacts => {
+                    // Populate the contacts dropdown
+                    const contactSelect = document.getElementById('action-contact');
+                    contactSelect.innerHTML = '<option value="">Select Contact</option>';
+
+                    if (contacts && contacts.length > 0) {
+                        contacts.forEach(contact => {
+                            const option = document.createElement('option');
+                            option.value = contact;
+                            option.textContent = contact;
+                            contactSelect.appendChild(option);
+                        });
+                    } else {
+                        // If no contacts, add a default option
+                        const option = document.createElement('option');
+                        option.value = "No contacts available";
+                        option.textContent = "No contacts available";
+                        contactSelect.appendChild(option);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching contacts:', error);
+                });
+
+            // Fetch actions for this account
+            fetch(`/accounts/${accountId}/actions`)
+                .then(response => response.json())
+                .then(data => {
+                    // Store all actions (already sorted by createdAt DESC from the server)
+                    allAccountActions = data;
+
+                    if (data.length > 0) {
+                        // Hide no actions message
+                        noActionsMessage.style.display = 'none';
+
+                        // Show all actions
+                        renderActions(data);
+                    } else {
+                        // Show no actions message
+                        noActionsMessage.style.display = 'block';
+
+                        // Save the form row
+                        const formRow = document.getElementById('action-form-row');
+                        const formRowDisplay = formRow.style.display;
+
+                        // Clear previous actions
+                        actionsTbody.innerHTML = '';
+
+                        // Re-add the form row to the tbody
+                        actionsTbody.appendChild(formRow);
+                        formRow.style.display = formRowDisplay;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching actions:', error);
+
+                    // Save the form row
+                    const formRow = document.getElementById('action-form-row');
+                    const formRowDisplay = formRow.style.display;
+
+                    // Clear previous actions
+                    actionsTbody.innerHTML = '';
+
+                    // Re-add the form row to the tbody
+                    actionsTbody.appendChild(formRow);
+                    formRow.style.display = formRowDisplay;
+
+                    noActionsMessage.style.display = 'block';
+                    noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
+                });
+        }
+
         // Function to render actions in the table
         function renderActions(actions) {
             // Save the form row
@@ -824,7 +927,7 @@
         }
 
         // Add click event listener to each account row
-        accountRows.forEach(row => {
+        getAccountRows().forEach(row => {
             row.addEventListener('click', function(e) {
                 // If we're editing, don't trigger row selection
                 if (isEditing) {
@@ -832,7 +935,7 @@
                 }
 
                 // Remove active class from all rows
-                accountRows.forEach(r => r.classList.remove('table-primary'));
+                document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
 
                 // Add active class to clicked row
                 this.classList.add('table-primary');
@@ -841,84 +944,8 @@
                 const accountId = this.getAttribute('data-account-id');
                 currentAccountId = accountId;
 
-                // Get account name from the row
-                const accountName = this.querySelector('td[data-field="name"]').textContent;
-
-                // Update the actions header with the account name
-                const actionsHeader = document.getElementById('actions-header');
-                if (actionsHeader) {
-                    actionsHeader.textContent = `Actions for ${accountName}`;
-                }
-
-                // Hide placeholder and enable create action button
-                document.getElementById('actions-placeholder').style.display = 'none';
-                document.getElementById('create-action-btn').disabled = false;
-
-                // Show actions table container
-                document.getElementById('actions-table-container').style.display = 'block';
-
-                // Fetch contacts for this account
-                fetch(`/accounts/${accountId}/contacts`)
-                    .then(response => response.json())
-                    .then(contacts => {
-                        // Populate the contacts dropdown
-                        const contactSelect = document.getElementById('action-contact');
-                        contactSelect.innerHTML = '<option value="">Select Contact</option>';
-
-                        if (contacts && contacts.length > 0) {
-                            contacts.forEach(contact => {
-                                const option = document.createElement('option');
-                                option.value = contact;
-                                option.textContent = contact;
-                                contactSelect.appendChild(option);
-                            });
-                        } else {
-                            // If no contacts, add a default option
-                            const option = document.createElement('option');
-                            option.value = "No contacts available";
-                            option.textContent = "No contacts available";
-                            contactSelect.appendChild(option);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching contacts:', error);
-                    });
-
-                // Fetch actions for this account
-                fetch(`/accounts/${accountId}/actions`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Store all actions (already sorted by createdAt DESC from the server)
-                        allAccountActions = data;
-
-                        if (data.length > 0) {
-                            // Hide no actions message
-                            noActionsMessage.style.display = 'none';
-
-                            // Show all actions
-                            renderActions(data);
-                        } else {
-                            // Show no actions message
-                            noActionsMessage.style.display = 'block';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching actions:', error);
-
-                        // Save the form row
-                        const formRow = document.getElementById('action-form-row');
-                        const formRowDisplay = formRow.style.display;
-
-                        // Clear previous actions
-                        actionsTbody.innerHTML = '';
-
-                        // Re-add the form row to the tbody
-                        actionsTbody.appendChild(formRow);
-                        formRow.style.display = formRowDisplay;
-
-                        noActionsMessage.style.display = 'block';
-                        noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
-                    });
+                // Load account actions
+                loadAccountActions(accountId);
             });
         });
 
@@ -1006,6 +1033,40 @@
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
+
+                            // Ensure the current account remains selected and clickable
+                            const selectedRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
+                            if (selectedRow) {
+                                selectedRow.classList.add('table-primary');
+                            }
+
+                            // Reattach event listeners to all account rows
+                            getAccountRows().forEach(row => {
+                                // Remove existing event listeners (to avoid duplicates)
+                                const newRow = row.cloneNode(true);
+                                row.parentNode.replaceChild(newRow, row);
+
+                                // Add click event listener to the new row
+                                newRow.addEventListener('click', function(e) {
+                                    // If we're editing, don't trigger row selection
+                                    if (isEditing) {
+                                        return;
+                                    }
+
+                                    // Remove active class from all rows
+                                    document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                                    // Add active class to clicked row
+                                    this.classList.add('table-primary');
+
+                                    // Get account ID from data attribute
+                                    const accountId = this.getAttribute('data-account-id');
+                                    currentAccountId = accountId;
+
+                                    // Load account actions
+                                    loadAccountActions(accountId);
+                                });
+                            });
                         })
                         .catch(error => {
                             console.error('Error refreshing accounts list:', error);
@@ -1136,6 +1197,40 @@
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
+
+                            // Ensure the current account remains selected and clickable
+                            const selectedRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
+                            if (selectedRow) {
+                                selectedRow.classList.add('table-primary');
+                            }
+
+                            // Reattach event listeners to all account rows
+                            getAccountRows().forEach(row => {
+                                // Remove existing event listeners (to avoid duplicates)
+                                const newRow = row.cloneNode(true);
+                                row.parentNode.replaceChild(newRow, row);
+
+                                // Add click event listener to the new row
+                                newRow.addEventListener('click', function(e) {
+                                    // If we're editing, don't trigger row selection
+                                    if (isEditing) {
+                                        return;
+                                    }
+
+                                    // Remove active class from all rows
+                                    document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                                    // Add active class to clicked row
+                                    this.classList.add('table-primary');
+
+                                    // Get account ID from data attribute
+                                    const accountId = this.getAttribute('data-account-id');
+                                    currentAccountId = accountId;
+
+                                    // Load account actions
+                                    loadAccountActions(accountId);
+                                });
+                            });
                         })
                         .catch(error => {
                             console.error('Error refreshing accounts list:', error);
