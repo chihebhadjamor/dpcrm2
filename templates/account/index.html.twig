@@ -86,6 +86,9 @@
 {% endblock %}
 
 {% block body %}
+<!-- Notification container for displaying alerts -->
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 <div class="split-view-container mb-4">
     <!-- Left Column: Accounts List (40% width) -->
     <div class="accounts-column">
@@ -273,6 +276,27 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Function to show notifications
+        function showNotification(message, type = 'danger', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show`;
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            const container = document.getElementById('notification-container');
+            container.appendChild(notification);
+
+            // Auto-dismiss after duration
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300); // Wait for fade out animation
+            }, duration);
+        }
+
         // Initialize the notes modal
         const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
 
@@ -339,7 +363,7 @@
             })
             .catch(error => {
                 console.error('Error updating notes:', error);
-                alert('Error updating notes. Please try again.');
+                showNotification('Error updating notes. Please try again.', 'danger');
             });
         });
 
@@ -958,10 +982,23 @@
                 const actionId = e.target.getAttribute('data-action-id');
                 const isChecked = e.target.checked;
 
+                // Find the row in the table
+                const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+
+                // Disable the checkbox immediately to prevent multiple clicks
+                e.target.disabled = true;
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
                 // Find the action in our stored actions array
                 const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
                 if (actionIndex === -1) {
                     console.error('Action not found in stored actions');
+                    // Re-enable the checkbox and restore opacity
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
                     return;
                 }
 
@@ -978,9 +1015,6 @@
                 .then(data => {
                     // Update the action in our stored array
                     allAccountActions[actionIndex] = data;
-
-                    // Find the row in the table
-                    const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
 
                     // Update the row's status classes
                     // First, remove all status classes
@@ -1010,6 +1044,10 @@
                         }
                     }
 
+                    // Re-enable the checkbox and restore opacity after successful update
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
+
                     // Update the notes icon if needed
                     const cells = row.querySelectorAll('td');
                     if (cells.length >= 8) {
@@ -1025,6 +1063,13 @@
                     if (actionsHeader) {
                         const accountName = actionsHeader.textContent.split('(')[0].trim();
                         actionsHeader.textContent = `${accountName} (${closedCount}/${totalCount} Closed)`;
+                    }
+
+                    // Show a success notification based on the current state
+                    if (data.closed) {
+                        showNotification(`Action ${data.id} closed successfully`, 'success', 3000);
+                    } else {
+                        showNotification(`Action ${data.id} reopened successfully`, 'success', 3000);
                     }
 
                     // Refresh the accounts list
@@ -1074,9 +1119,13 @@
                 })
                 .catch(error => {
                     console.error('Error toggling action status:', error);
-                    alert('Error updating action. Please try again.');
+                    // Use showNotification instead of alert
+                    showNotification('Error updating action. Please try again.', 'danger');
                     // Reset checkbox to its previous state
                     e.target.checked = !isChecked;
+                    // Re-enable the checkbox and restore opacity after error
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
                 });
             }
         });

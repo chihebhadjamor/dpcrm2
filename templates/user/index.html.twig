@@ -722,6 +722,13 @@
                 const isChecked = e.target.checked;
                 const row = e.target.closest('tr');
 
+                // Disable the checkbox immediately to prevent multiple clicks
+                e.target.disabled = true;
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
                 // Send request to toggle closed status
                 fetch(`/actions/${actionId}/toggle-closed`, {
                     method: 'POST',
@@ -799,12 +806,20 @@
                     } else {
                         showNotification(`Action ${data.id} reopened successfully`, 'success', 3000);
                     }
+
+                    // Re-enable the checkbox and restore opacity after successful update
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
                 })
                 .catch(error => {
                     console.error('Error toggling action status:', error);
                     showNotification('Error updating action. Please try again.', 'danger');
                     // Reset checkbox to its previous state
                     e.target.checked = !isChecked;
+
+                    // Re-enable the checkbox and restore opacity after error
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
                 });
             }
         });
