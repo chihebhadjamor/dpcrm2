@@ -13,17 +13,24 @@
 
         /* Action status styling */
         .action-closed,
-        .table-striped > tbody > tr.action-closed {
+        .table-striped > tbody > tr.action-closed,
+        table.table-striped > tbody > tr.action-closed {
             background-color: #e6e6e6 !important;
             font-style: italic;
             text-decoration: line-through;
         }
         .action-overdue,
-        .table-striped > tbody > tr.action-overdue {
+        .table-striped > tbody > tr.action-overdue,
+        table.table-striped > tbody > tr.action-overdue,
+        .table-striped > tbody > tr.action-overdue > td,
+        table.table-striped > tbody > tr.action-overdue > td {
             background-color: #ffcccc !important;
         }
         .action-upcoming,
-        .table-striped > tbody > tr.action-upcoming {
+        .table-striped > tbody > tr.action-upcoming,
+        table.table-striped > tbody > tr.action-upcoming,
+        .table-striped > tbody > tr.action-upcoming > td,
+        table.table-striped > tbody > tr.action-upcoming > td {
             background-color: #fff2cc !important;
         }
 
