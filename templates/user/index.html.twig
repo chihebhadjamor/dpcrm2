@@ -12,9 +12,20 @@
         .loading-spinner i { font-size: 2rem; }
 
         /* Action status styling */
-        .action-closed { background-color: #e6e6e6 !important; font-style: italic; text-decoration: line-through; }
-        .action-overdue { background-color: #ffcccc !important; }
-        .action-upcoming { background-color: #fff2cc !important; }
+        .action-closed,
+        .table-striped > tbody > tr.action-closed {
+            background-color: #e6e6e6 !important;
+            font-style: italic;
+            text-decoration: line-through;
+        }
+        .action-overdue,
+        .table-striped > tbody > tr.action-overdue {
+            background-color: #ffcccc !important;
+        }
+        .action-upcoming,
+        .table-striped > tbody > tr.action-upcoming {
+            background-color: #fff2cc !important;
+        }
 
         /* Center align status column */
         #backlog-table th:nth-child(6),
