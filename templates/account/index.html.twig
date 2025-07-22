@@ -962,11 +962,11 @@
                         const timeDiff = actionDate.getTime() - today.getTime();
                         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-                        if (daysDiff <= 0) {
-                            // Overdue actions (today or past)
+                        if (daysDiff < 0) {
+                            // Overdue actions (past dates only)
                             row.classList.add('action-overdue');
                         } else if (daysDiff <= 7) {
-                            // Upcoming actions (within next 7 days)
+                            // Upcoming actions (today or within next 7 days)
                             row.classList.add('action-upcoming');
                         }
                     }
