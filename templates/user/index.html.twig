@@ -46,12 +46,18 @@
 {% block body %}
     <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
 
+    {# Add CSRF token for user creation #}
+    <input type="hidden" name="_token" id="csrf_token" value="{{ csrf_token('create_user') }}">
+
     <div class="row mb-4">
         <div class="clearfix">
             <div class="user-list-column">
                 <div class="card">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Users List</h4>
+                        <button type="button" class="btn btn-light" id="create-user-btn">
+                            <i class="fas fa-plus"></i> Create User
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -61,18 +67,41 @@
                                     <th>ID</th>
                                     <th>Username</th>
                                     <th>Email</th>
+                                    <th>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
+                                <!-- Form row for creating new user -->
+                                <tr id="user-form-row" style="display: none;">
+                                    <td><i>New</i></td>
+                                    <td>
+                                        <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
+                                    </td>
+                                    <td>
+                                        <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                                    </td>
+                                    <td>
+                                        <div class="mb-2">
+                                            <input type="password" class="form-control" id="user-password" name="password" placeholder="Password" required>
+                                        </div>
+                                        <button type="button" id="save-user-btn" class="btn btn-sm btn-success text-white">Save</button>
+                                        <button type="button" id="cancel-user-btn" class="btn btn-sm btn-secondary">Cancel</button>
+                                    </td>
+                                </tr>
                                 {% for user in users %}
                                     <tr class="user-row" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
                                         <td>{{ user.id }}</td>
                                         <td>{{ user.username }}</td>
                                         <td>{{ user.email }}</td>
+                                        <td>
+                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </td>
                                     </tr>
                                 {% else %}
                                     <tr>
-                                        <td colspan="3" class="text-center">No users found</td>
+                                        <td colspan="4" class="text-center">No users found</td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -170,6 +199,131 @@
             let userBacklogActions = [];
             let currentUserId = null;
             const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+            // --- USER CREATION LOGIC ---
+            const createUserBtn = document.getElementById('create-user-btn');
+            const userFormRow = document.getElementById('user-form-row');
+            const saveUserBtn = document.getElementById('save-user-btn');
+            const cancelUserBtn = document.getElementById('cancel-user-btn');
+
+            if (createUserBtn) {
+                // Show the form row when Create User button is clicked
+                createUserBtn.addEventListener('click', function() {
+                    // Show the form row
+                    userFormRow.style.display = 'table-row';
+
+                    // Focus on the username input
+                    document.getElementById('user-username').focus();
+                });
+
+                // Handle cancel button
+                cancelUserBtn.addEventListener('click', function() {
+                    // Hide the form row
+                    userFormRow.style.display = 'none';
+
+                    // Reset form fields
+                    document.getElementById('user-username').value = '';
+                    document.getElementById('user-email').value = '';
+                    document.getElementById('user-password').value = '';
+                });
+
+                // Handle save button
+                saveUserBtn.addEventListener('click', function() {
+                    // Validate required fields
+                    const username = document.getElementById('user-username').value;
+                    const email = document.getElementById('user-email').value;
+                    const password = document.getElementById('user-password').value;
+
+                    if (!username) {
+                        showNotification('Username is required', 'danger');
+                        return;
+                    }
+
+                    if (!email) {
+                        showNotification('Email is required', 'danger');
+                        return;
+                    }
+
+                    if (!password) {
+                        showNotification('Password is required', 'danger');
+                        return;
+                    }
+
+                    // Create FormData object
+                    const formData = new FormData();
+                    formData.append('username', username);
+                    formData.append('email', email);
+                    formData.append('password', password);
+
+                    // Get CSRF token from hidden input
+                    const token = document.getElementById('csrf_token').value;
+                    formData.append('_token', token);
+
+                    // Send request to create user
+                    fetch('/users/create-ajax', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Hide the form row
+                        userFormRow.style.display = 'none';
+
+                        // Reset form fields
+                        document.getElementById('user-username').value = '';
+                        document.getElementById('user-email').value = '';
+                        document.getElementById('user-password').value = '';
+
+                        // Add the new user to the table
+                        const row = document.createElement('tr');
+                        row.className = 'user-row';
+                        row.setAttribute('data-user-id', data.id);
+                        row.setAttribute('data-username', data.username);
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td>${data.id}</td>
+                            <td>${data.username}</td>
+                            <td>${data.email}</td>
+                            <td>
+                                <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            </td>
+                        `;
+
+                        // Add the new row after the form row
+                        if (userFormRow.nextSibling) {
+                            userFormRow.parentNode.insertBefore(row, userFormRow.nextSibling);
+                        } else {
+                            userFormRow.parentNode.appendChild(row);
+                        }
+
+                        // Add click event listener to the new row
+                        row.addEventListener('click', function() {
+                            userRows.forEach(r => r.classList.remove('selected'));
+                            this.classList.add('selected');
+                            const userId = this.dataset.userId;
+                            const username = this.dataset.username;
+                            backlogHeader.textContent = `Backlog of ${username}`;
+                            fetchAndRenderBacklog(userId);
+                        });
+
+                        // Show success notification
+                        showNotification('User created successfully', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error creating user:', error);
+                        showNotification(error.message || 'Error creating user. Please try again.', 'danger');
+                    });
+                });
+            }
 
             // --- DOM ELEMENTS ---
             const backlogContainer = document.getElementById('backlog-container');
