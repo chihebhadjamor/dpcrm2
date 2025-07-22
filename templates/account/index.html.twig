@@ -199,7 +199,7 @@
                                     <th>Owner</th>
                                     <th>Status</th>
                                     <th>Actions</th>
-                                    <th>Notes</th>
+                                    <th>Notes <span id="open-notes-badge-container"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="open-actions-tbody">
@@ -297,24 +297,45 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the notes badge container to be empty
-        const badgeContainer = document.getElementById('notes-badge-container');
-        if (badgeContainer) {
-            badgeContainer.innerHTML = '';
+        // Initialize both notes badge containers to be empty
+        const closedBadgeContainer = document.getElementById('notes-badge-container');
+        if (closedBadgeContainer) {
+            closedBadgeContainer.innerHTML = '';
         }
-        // Function to update the notes badge
+
+        const openBadgeContainer = document.getElementById('open-notes-badge-container');
+        if (openBadgeContainer) {
+            openBadgeContainer.innerHTML = '';
+        }
+        // Function to update the notes badges for both open and closed actions
         function updateNotesBadge(actions) {
-            const badgeContainer = document.getElementById('notes-badge-container');
-            if (!badgeContainer) return;
+            const openBadgeContainer = document.getElementById('open-notes-badge-container');
+            const closedBadgeContainer = document.getElementById('notes-badge-container');
 
-            // Count non-empty notes
-            const nonEmptyNotesCount = actions.filter(action => action.notes && action.notes.trim() !== '').length;
+            if (!openBadgeContainer || !closedBadgeContainer) return;
 
-            // Update the badge
-            if (nonEmptyNotesCount > 0) {
-                badgeContainer.innerHTML = `<span class="notes-badge">${nonEmptyNotesCount}</span>`;
+            // Separate actions into open and closed
+            const openActions = actions.filter(action => !action.closed);
+            const closedActions = actions.filter(action => action.closed);
+
+            // Count non-empty notes for open actions
+            const openNonEmptyNotesCount = openActions.filter(action => action.notes && action.notes.trim() !== '').length;
+
+            // Count non-empty notes for closed actions
+            const closedNonEmptyNotesCount = closedActions.filter(action => action.notes && action.notes.trim() !== '').length;
+
+            // Update the open actions badge
+            if (openNonEmptyNotesCount > 0) {
+                openBadgeContainer.innerHTML = `<span class="notes-badge">${openNonEmptyNotesCount}</span>`;
             } else {
-                badgeContainer.innerHTML = '';
+                openBadgeContainer.innerHTML = '';
+            }
+
+            // Update the closed actions badge
+            if (closedNonEmptyNotesCount > 0) {
+                closedBadgeContainer.innerHTML = `<span class="notes-badge">${closedNonEmptyNotesCount}</span>`;
+            } else {
+                closedBadgeContainer.innerHTML = '';
             }
         }
 
@@ -1113,6 +1134,9 @@
 
                     // Re-render all actions to ensure proper sorting and placement
                     renderActions(allAccountActions);
+
+                    // Update the notes badges
+                    updateNotesBadge(allAccountActions);
 
                     // Show a success notification based on the current state
                     if (data.closed) {
