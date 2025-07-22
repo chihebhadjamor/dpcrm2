@@ -1052,13 +1052,40 @@
                     // Update the action in our stored array
                     allAccountActions[actionIndex] = data;
 
-                    // Update the row's status classes
-                    // First, remove all status classes
-                    row.classList.remove('action-closed', 'action-overdue', 'action-upcoming');
+                    // Sort the actions array based on the new status
+                    // Primary sort: By Status (Open actions first, Closed actions last)
+                    // Secondary sort: By Action Date in ascending order
+                    allAccountActions.sort((a, b) => {
+                        // First sort by closed status
+                        if (a.closed !== b.closed) {
+                            return a.closed ? 1 : -1; // Open actions first
+                        }
 
-                    // Add appropriate class based on closed status
+                        // Then sort by nextStepDate (ascending)
+                        const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31); // Default to far future if null
+                        const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
+                        return dateA - dateB;
+                    });
+
+                    // Remove the row from its current position
+                    row.remove();
+
+                    // Find the new position for the row
+                    const newIndex = allAccountActions.findIndex(a => a.id == actionId);
+
+                    // Get the row that should come after our row
+                    let nextRow = null;
+                    if (newIndex < allAccountActions.length - 1) {
+                        nextRow = document.querySelector(`tr[data-action-id="${allAccountActions[newIndex + 1].id}"]`);
+                    }
+
+                    // Create a new row with updated styling
+                    const newRow = document.createElement('tr');
+                    newRow.setAttribute('data-action-id', data.id);
+
+                    // Set appropriate class based on closed status
                     if (data.closed) {
-                        row.classList.add('action-closed');
+                        newRow.classList.add('action-closed');
                     } else {
                         // Check if action is overdue or upcoming
                         const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
@@ -1070,27 +1097,50 @@
                             const timeDiff = actionDate.getTime() - today.getTime();
                             const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-                            if (daysDiff <= 0) {
-                                // Overdue actions (today or past)
-                                row.classList.add('action-overdue');
+                            if (daysDiff < 0) {
+                                // Overdue actions (past dates only)
+                                newRow.classList.add('action-overdue');
                             } else if (daysDiff <= 7) {
-                                // Upcoming actions (within next 7 days)
-                                row.classList.add('action-upcoming');
+                                // Upcoming actions (today or within next 7 days)
+                                newRow.classList.add('action-upcoming');
                             }
                         }
                     }
 
-                    // Re-enable the checkbox and restore opacity after successful update
-                    e.target.disabled = false;
-                    row.style.opacity = originalOpacity;
+                    // Set the row content
+                    const hasNotes = data.notes && data.notes.trim() !== '';
+                    newRow.innerHTML = `
+                        <td>${data.id}</td>
+                        <td>${data.contact || ''}</td>
+                        <td>${data.title}</td>
+                        <td>${data.nextStepDate || ''}</td>
+                        <td>${data.owner}</td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input action-closed-checkbox" type="checkbox"
+                                       ${data.closed ? 'checked' : ''}
+                                       data-action-id="${data.id}">
+                            </div>
+                        </td>
+                        <td></td>
+                        <td class="text-center">
+                            <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${data.id}" data-notes="${data.notes ? data.notes.replace(/"/g, '&quot;') : ''}"></i>
+                        </td>
+                    `;
 
-                    // Update the notes icon if needed
-                    const cells = row.querySelectorAll('td');
-                    if (cells.length >= 8) {
-                        const notesCell = cells[7]; // 8th cell (index 7) is the Notes column
-                        const hasNotes = data.notes && data.notes.trim() !== '';
-                        notesCell.innerHTML = `<i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${data.id}" data-notes="${data.notes ? data.notes.replace(/"/g, '&quot;') : ''}"></i>`;
+                    // Insert the row in the correct position
+                    if (nextRow) {
+                        actionsTbody.insertBefore(newRow, nextRow);
+                    } else {
+                        actionsTbody.appendChild(newRow);
                     }
+
+                    // Re-enable the checkbox and restore opacity after successful update
+                    const newCheckbox = newRow.querySelector('.action-closed-checkbox');
+                    if (newCheckbox) {
+                        newCheckbox.disabled = false;
+                    }
+                    newRow.style.opacity = originalOpacity;
 
                     // Update the actions header with open actions count
                     const openCount = allAccountActions.filter(action => !action.closed).length;

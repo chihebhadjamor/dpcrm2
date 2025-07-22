@@ -183,6 +183,21 @@
                 }
                 noActionsMessage.style.display = 'none';
 
+                // Sort the actions array based on status and date
+                // Primary sort: By Status (Open actions first, Closed actions last)
+                // Secondary sort: By Action Date in ascending order
+                userBacklogActions.sort((a, b) => {
+                    // First sort by closed status
+                    if (a.closed !== b.closed) {
+                        return a.closed ? 1 : -1; // Open actions first
+                    }
+
+                    // Then sort by nextStepDate (ascending)
+                    const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31); // Default to far future if null
+                    const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
+                    return dateA - dateB;
+                });
+
                 // Calculate total non-empty notes count by account
                 const accountNotesMap = {};
                 userBacklogActions.forEach(action => {

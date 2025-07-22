@@ -251,14 +251,14 @@ class UserController extends AbstractWebController
             }
 
             // Get actions where the user is the owner
-            // Order by closed ASC (open actions first) and then by createdAt DESC
+            // Order by closed ASC (open actions first) and then by nextStepDate ASC (earliest dates first)
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a', 'acct') // Also select the account to ensure it's loaded
             ->from(Action::class, 'a')
                 ->leftJoin('a.account', 'acct') // Use leftJoin to include actions without an account
                 ->where('a.owner = :user')
                 ->orderBy('a.closed', 'ASC')
-                ->addOrderBy('a.createdAt', 'DESC')
+                ->addOrderBy('a.nextStepDate', 'ASC')
                 ->setParameter('user', $user);
 
             $actions = $queryBuilder->getQuery()->getResult();
