@@ -211,6 +211,7 @@
                     // Determine row classes for styling
                     row.className = '';
                     if (action.closed) {
+                        // Closed actions - this styling takes precedence over date-based styling
                         row.classList.add('action-closed');
                     } else if (action.nextStepDate) {
                         const actionDate = new Date(action.nextStepDate);

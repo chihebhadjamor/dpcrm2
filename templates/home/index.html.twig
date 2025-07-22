@@ -17,6 +17,23 @@
         background-color: #f8f9fa;
         font-weight: bold;
     }
+
+    /* Action status styling */
+    .action-overdue {
+        background-color: #ffcccc !important; /* Red background for overdue actions */
+    }
+
+    .action-upcoming {
+        background-color: #fff2cc !important; /* Yellow background for upcoming actions */
+    }
+
+    /* Style for closed actions */
+    .action-closed {
+        opacity: 0.7;
+        background-color: #e6e6e6 !important; /* Gray background for closed actions */
+        text-decoration: line-through;
+        font-style: italic;
+    }
 </style>
 {% endblock %}
 
@@ -123,9 +140,23 @@
                                 <td>${action.closed ? 'Closed on ' + action.dateClosed : 'Open'}</td>
                             `;
 
-                            // Add a class to the row if the action is closed
+                            // Determine row classes for styling
                             if (action.closed) {
-                                row.classList.add('table-secondary');
+                                // Closed actions - this styling takes precedence over date-based styling
+                                row.classList.add('action-closed');
+                            } else if (action.nextStepDate) {
+                                const actionDate = new Date(action.nextStepDate);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0); // Set to beginning of day
+                                const daysDiff = Math.ceil((actionDate - today) / (1000 * 3600 * 24));
+
+                                if (daysDiff < 0) {
+                                    // Overdue actions (past dates only)
+                                    row.classList.add('action-overdue');
+                                } else if (daysDiff <= 7) {
+                                    // Upcoming actions (today or within next 7 days)
+                                    row.classList.add('action-upcoming');
+                                }
                             }
                             myActionsTbody.appendChild(row);
                         });

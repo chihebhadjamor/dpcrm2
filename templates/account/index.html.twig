@@ -949,10 +949,10 @@
 
                 // Check action status and apply appropriate class
                 if (action.closed) {
-                    // Closed actions
+                    // Closed actions - this styling takes precedence over date-based styling
                     row.classList.add('action-closed');
                 } else {
-                    // Check if action is overdue or upcoming
+                    // For non-closed actions, check if action is overdue or upcoming
                     const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
                     const today = new Date();
                     today.setHours(0, 0, 0, 0); // Set to beginning of day
