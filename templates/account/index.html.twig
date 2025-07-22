@@ -1053,7 +1053,7 @@
                         <input class="form-check-input action-closed-checkbox" type="checkbox"
                                ${action.closed ? 'checked' : ''}
                                data-action-id="${action.id}">
-                        ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toLocaleDateString()}</div>` : ''}
+                        ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
                     </div>
                 </td>
                 <td></td>
