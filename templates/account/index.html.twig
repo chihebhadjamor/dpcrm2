@@ -250,7 +250,6 @@
                                     <th>Action Date</th>
                                     <th>Owner</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
                                     <th>Notes <span id="notes-badge-container"></span></th>
                                 </tr>
                             </thead>
@@ -1042,25 +1041,49 @@
             // Check if action has notes
             const hasNotes = action.notes && action.notes.trim() !== '';
 
-            row.innerHTML = `
-                <td>${action.id}</td>
-                <td>${action.contact || ''}</td>
-                <td>${action.title}</td>
-                <td>${action.nextStepDate || ''}</td>
-                <td>${action.owner}</td>
-                <td>
-                    <div class="form-check">
-                        <input class="form-check-input action-closed-checkbox" type="checkbox"
-                               ${action.closed ? 'checked' : ''}
-                               data-action-id="${action.id}">
-                        ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
-                    </div>
-                </td>
-                <td></td>
-                <td class="text-center">
-                    <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
-                </td>
-            `;
+            // Different HTML structure for open vs closed actions
+            if (action.closed) {
+                // Closed actions - no Actions column
+                row.innerHTML = `
+                    <td>${action.id}</td>
+                    <td>${action.contact || ''}</td>
+                    <td>${action.title}</td>
+                    <td>${action.nextStepDate || ''}</td>
+                    <td>${action.owner}</td>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input action-closed-checkbox" type="checkbox"
+                                   ${action.closed ? 'checked' : ''}
+                                   data-action-id="${action.id}">
+                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
+                    </td>
+                `;
+            } else {
+                // Open actions - include Actions column
+                row.innerHTML = `
+                    <td>${action.id}</td>
+                    <td>${action.contact || ''}</td>
+                    <td>${action.title}</td>
+                    <td>${action.nextStepDate || ''}</td>
+                    <td>${action.owner}</td>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input action-closed-checkbox" type="checkbox"
+                                   ${action.closed ? 'checked' : ''}
+                                   data-action-id="${action.id}">
+                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
+                        </div>
+                    </td>
+                    <td></td>
+                    <td class="text-center">
+                        <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
+                    </td>
+                `;
+            }
             return row;
         }
 
