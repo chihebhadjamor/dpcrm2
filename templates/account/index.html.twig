@@ -187,7 +187,9 @@
 
                     <!-- Actions table container -->
                     <div id="actions-table-container" style="display: none; max-height: 70vh; overflow-y: auto;">
-                        <table id="actions-table" class="table table-striped">
+                        <!-- Open Actions Table -->
+                        <h3>Open Actions</h3>
+                        <table id="open-actions-table" class="table table-striped mb-4">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -197,10 +199,10 @@
                                     <th>Owner</th>
                                     <th>Status</th>
                                     <th>Actions</th>
-                                    <th>Notes <span id="notes-badge-container"></span></th>
+                                    <th>Notes</th>
                                 </tr>
                             </thead>
-                            <tbody id="actions-tbody">
+                            <tbody id="open-actions-tbody">
                                 <!-- Form row for creating new actions -->
                                 <tr id="action-form-row" style="display: none;">
                                     <td><i>New</i></td>
@@ -233,7 +235,27 @@
                                         <!-- Notes column (empty for new actions) -->
                                     </td>
                                 </tr>
-                                <!-- Actions will be loaded here -->
+                                <!-- Open actions will be loaded here -->
+                            </tbody>
+                        </table>
+
+                        <!-- Closed Actions Table -->
+                        <h3>Closed Actions</h3>
+                        <table id="closed-actions-table" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Contact</th>
+                                    <th>Action</th>
+                                    <th>Action Date</th>
+                                    <th>Owner</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                    <th>Notes <span id="notes-badge-container"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="closed-actions-tbody">
+                                <!-- Closed actions will be loaded here -->
                             </tbody>
                         </table>
                     </div>
@@ -899,21 +921,44 @@
                 });
         }
 
-        // Function to render actions in the table
+        // Function to render actions in the tables
         function renderActions(actions) {
             // Save the form row
             const formRow = document.getElementById('action-form-row');
             const formRowDisplay = formRow.style.display;
 
-            // Clear previous actions
-            actionsTbody.innerHTML = '';
+            // Get references to both table bodies
+            const openActionsTbody = document.getElementById('open-actions-tbody');
+            const closedActionsTbody = document.getElementById('closed-actions-tbody');
 
-            // Re-add the form row to the tbody
-            actionsTbody.appendChild(formRow);
+            // Clear previous actions from both tables
+            openActionsTbody.innerHTML = '';
+            closedActionsTbody.innerHTML = '';
+
+            // Re-add the form row to the open actions tbody
+            openActionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
 
+            // Separate actions into open and closed
+            const openActions = actions.filter(action => !action.closed);
+            const closedActions = actions.filter(action => action.closed);
+
+            // Sort open actions by date in ascending order (soonest first)
+            openActions.sort((a, b) => {
+                const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31);
+                const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
+                return dateA - dateB;
+            });
+
+            // Sort closed actions by date in descending order (most recently closed first)
+            closedActions.sort((a, b) => {
+                const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(0);
+                const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(0);
+                return dateB - dateA;
+            });
+
             // Update the actions header with open actions count
-            const openCount = actions.filter(action => !action.closed).length;
+            const openCount = openActions.length;
             const actionsHeader = document.getElementById('actions-header');
             if (actionsHeader) {
                 const accountName = actionsHeader.textContent.split('(')[0].trim();
@@ -924,66 +969,77 @@
                 }
             }
 
-            // Add actions to table after the form row
-            actions.forEach(action => {
-                const row = document.createElement('tr');
+            // Add open actions to the open actions table
+            openActions.forEach(action => {
+                const row = createActionRow(action);
+                openActionsTbody.appendChild(row);
+            });
 
-                // Check action status and apply appropriate class
-                if (action.closed) {
-                    // Closed actions - this styling takes precedence over date-based styling
-                    row.classList.add('action-closed');
-                } else {
-                    // For non-closed actions, check if action is overdue or upcoming
-                    const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0); // Set to beginning of day
-
-                    if (actionDate) {
-                        // Calculate days difference
-                        const timeDiff = actionDate.getTime() - today.getTime();
-                        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-                        if (daysDiff < 0) {
-                            // Overdue actions (past dates only)
-                            row.classList.add('action-overdue');
-                        } else if (daysDiff <= 7) {
-                            // Upcoming actions (today or within next 7 days)
-                            row.classList.add('action-upcoming');
-                        }
-                    }
-                }
-
-                // Set data attribute for action ID
-                row.setAttribute('data-action-id', action.id);
-
-                // Check if action has notes
-                const hasNotes = action.notes && action.notes.trim() !== '';
-                const notesIcon = hasNotes ? '<i class="fas fa-comment-alt text-info ml-2" title="This action has notes"></i>' : '';
-
-                row.innerHTML = `
-                    <td>${action.id}</td>
-                    <td>${action.contact || ''}</td>
-                    <td>${action.title}</td>
-                    <td>${action.nextStepDate || ''}</td>
-                    <td>${action.owner}</td>
-                    <td>
-                        <div class="form-check">
-                            <input class="form-check-input action-closed-checkbox" type="checkbox"
-                                   ${action.closed ? 'checked' : ''}
-                                   data-action-id="${action.id}">
-                        </div>
-                    </td>
-                    <td></td>
-                    <td class="text-center">
-                        <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
-                    </td>
-                `;
-                actionsTbody.appendChild(row);
+            // Add closed actions to the closed actions table
+            closedActions.forEach(action => {
+                const row = createActionRow(action);
+                closedActionsTbody.appendChild(row);
             });
 
             // Show the actions table container and hide the placeholder
             document.getElementById('actions-table-container').style.display = 'block';
             document.getElementById('actions-placeholder').style.display = 'none';
+        }
+
+        // Helper function to create an action row
+        function createActionRow(action) {
+            const row = document.createElement('tr');
+
+            // Check action status and apply appropriate class
+            if (action.closed) {
+                // Closed actions - this styling takes precedence over date-based styling
+                row.classList.add('action-closed');
+            } else {
+                // For non-closed actions, check if action is overdue or upcoming
+                const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                if (actionDate) {
+                    // Calculate days difference
+                    const timeDiff = actionDate.getTime() - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    if (daysDiff < 0) {
+                        // Overdue actions (past dates only)
+                        row.classList.add('action-overdue');
+                    } else if (daysDiff <= 7) {
+                        // Upcoming actions (today or within next 7 days)
+                        row.classList.add('action-upcoming');
+                    }
+                }
+            }
+
+            // Set data attribute for action ID
+            row.setAttribute('data-action-id', action.id);
+
+            // Check if action has notes
+            const hasNotes = action.notes && action.notes.trim() !== '';
+
+            row.innerHTML = `
+                <td>${action.id}</td>
+                <td>${action.contact || ''}</td>
+                <td>${action.title}</td>
+                <td>${action.nextStepDate || ''}</td>
+                <td>${action.owner}</td>
+                <td>
+                    <div class="form-check">
+                        <input class="form-check-input action-closed-checkbox" type="checkbox"
+                               ${action.closed ? 'checked' : ''}
+                               data-action-id="${action.id}">
+                    </div>
+                </td>
+                <td></td>
+                <td class="text-center">
+                    <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"></i>
+                </td>
+            `;
+            return row;
         }
 
         // Add click event listener to each account row
@@ -1012,13 +1068,13 @@
 
         // Confirmation modal and related code removed as per requirements
 
-        // Add event delegation for action closed checkboxes
-        actionsTbody.addEventListener('change', function(e) {
+        // Add event delegation for action closed checkboxes to both tables
+        document.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('action-closed-checkbox')) {
                 const actionId = e.target.getAttribute('data-action-id');
                 const isChecked = e.target.checked;
 
-                // Find the row in the table
+                // Find the row in either table
                 const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
 
                 // Disable the checkbox immediately to prevent multiple clicks
@@ -1052,107 +1108,11 @@
                     // Update the action in our stored array
                     allAccountActions[actionIndex] = data;
 
-                    // Sort the actions array based on the new status
-                    // Primary sort: By Status (Open actions first, Closed actions last)
-                    // Secondary sort: By Action Date in ascending order
-                    allAccountActions.sort((a, b) => {
-                        // First sort by closed status
-                        if (a.closed !== b.closed) {
-                            return a.closed ? 1 : -1; // Open actions first
-                        }
-
-                        // Then sort by nextStepDate (ascending)
-                        const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31); // Default to far future if null
-                        const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
-                        return dateA - dateB;
-                    });
-
                     // Remove the row from its current position
                     row.remove();
 
-                    // Find the new position for the row
-                    const newIndex = allAccountActions.findIndex(a => a.id == actionId);
-
-                    // Get the row that should come after our row
-                    let nextRow = null;
-                    if (newIndex < allAccountActions.length - 1) {
-                        nextRow = document.querySelector(`tr[data-action-id="${allAccountActions[newIndex + 1].id}"]`);
-                    }
-
-                    // Create a new row with updated styling
-                    const newRow = document.createElement('tr');
-                    newRow.setAttribute('data-action-id', data.id);
-
-                    // Set appropriate class based on closed status
-                    if (data.closed) {
-                        newRow.classList.add('action-closed');
-                    } else {
-                        // Check if action is overdue or upcoming
-                        const actionDate = data.nextStepDate ? new Date(data.nextStepDate) : null;
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Set to beginning of day
-
-                        if (actionDate) {
-                            // Calculate days difference
-                            const timeDiff = actionDate.getTime() - today.getTime();
-                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-                            if (daysDiff < 0) {
-                                // Overdue actions (past dates only)
-                                newRow.classList.add('action-overdue');
-                            } else if (daysDiff <= 7) {
-                                // Upcoming actions (today or within next 7 days)
-                                newRow.classList.add('action-upcoming');
-                            }
-                        }
-                    }
-
-                    // Set the row content
-                    const hasNotes = data.notes && data.notes.trim() !== '';
-                    newRow.innerHTML = `
-                        <td>${data.id}</td>
-                        <td>${data.contact || ''}</td>
-                        <td>${data.title}</td>
-                        <td>${data.nextStepDate || ''}</td>
-                        <td>${data.owner}</td>
-                        <td>
-                            <div class="form-check">
-                                <input class="form-check-input action-closed-checkbox" type="checkbox"
-                                       ${data.closed ? 'checked' : ''}
-                                       data-action-id="${data.id}">
-                            </div>
-                        </td>
-                        <td></td>
-                        <td class="text-center">
-                            <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${hasNotes ? 'color: red;' : ''}" data-action-id="${data.id}" data-notes="${data.notes ? data.notes.replace(/"/g, '&quot;') : ''}"></i>
-                        </td>
-                    `;
-
-                    // Insert the row in the correct position
-                    if (nextRow) {
-                        actionsTbody.insertBefore(newRow, nextRow);
-                    } else {
-                        actionsTbody.appendChild(newRow);
-                    }
-
-                    // Re-enable the checkbox and restore opacity after successful update
-                    const newCheckbox = newRow.querySelector('.action-closed-checkbox');
-                    if (newCheckbox) {
-                        newCheckbox.disabled = false;
-                    }
-                    newRow.style.opacity = originalOpacity;
-
-                    // Update the actions header with open actions count
-                    const openCount = allAccountActions.filter(action => !action.closed).length;
-                    const actionsHeader = document.getElementById('actions-header');
-                    if (actionsHeader) {
-                        const accountName = actionsHeader.textContent.split('(')[0].trim();
-                        if (openCount > 0) {
-                            actionsHeader.textContent = `${accountName} (${openCount} Open)`;
-                        } else {
-                            actionsHeader.textContent = `${accountName} (No action expected)`;
-                        }
-                    }
+                    // Re-render all actions to ensure proper sorting and placement
+                    renderActions(allAccountActions);
 
                     // Show a success notification based on the current state
                     if (data.closed) {

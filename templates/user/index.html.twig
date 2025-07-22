@@ -97,7 +97,27 @@
                         </div>
                         <div id="backlog-content" style="display: none;">
                             <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
-                                <table id="backlog-table" class="table table-striped">
+                                <!-- Open Actions Table -->
+                                <h3>Open Actions</h3>
+                                <table id="open-backlog-table" class="table table-striped mb-4">
+                                    <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Account</th>
+                                        <th>Action</th>
+                                        <th>Contact</th>
+                                        <th>Action Date</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="open-backlog-tbody">
+                                    </tbody>
+                                </table>
+
+                                <!-- Closed Actions Table -->
+                                <h3>Closed Actions</h3>
+                                <table id="closed-backlog-table" class="table table-striped">
                                     <thead>
                                     <tr>
                                         <th>ID</th>
@@ -109,7 +129,7 @@
                                         <th>Notes <span id="notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
                                     </thead>
-                                    <tbody id="backlog-tbody">
+                                    <tbody id="closed-backlog-tbody">
                                     </tbody>
                                 </table>
                             </div>
@@ -174,7 +194,14 @@
 
             // --- RENDERING LOGIC ---
             function renderBacklog() {
-                backlogTbody.innerHTML = ''; // Clear existing content
+                // Get references to both table bodies
+                const openBacklogTbody = document.getElementById('open-backlog-tbody');
+                const closedBacklogTbody = document.getElementById('closed-backlog-tbody');
+
+                // Clear existing content in both tables
+                openBacklogTbody.innerHTML = '';
+                closedBacklogTbody.innerHTML = '';
+
                 if (userBacklogActions.length === 0) {
                     noActionsMessage.style.display = 'block';
                     // Hide notes badge when no actions
@@ -183,19 +210,22 @@
                 }
                 noActionsMessage.style.display = 'none';
 
-                // Sort the actions array based on status and date
-                // Primary sort: By Status (Open actions first, Closed actions last)
-                // Secondary sort: By Action Date in ascending order
-                userBacklogActions.sort((a, b) => {
-                    // First sort by closed status
-                    if (a.closed !== b.closed) {
-                        return a.closed ? 1 : -1; // Open actions first
-                    }
+                // Separate actions into open and closed
+                const openActions = userBacklogActions.filter(action => !action.closed);
+                const closedActions = userBacklogActions.filter(action => action.closed);
 
-                    // Then sort by nextStepDate (ascending)
-                    const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31); // Default to far future if null
+                // Sort open actions by date in ascending order (soonest first)
+                openActions.sort((a, b) => {
+                    const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31);
                     const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
                     return dateA - dateB;
+                });
+
+                // Sort closed actions by date in descending order (most recently closed first)
+                closedActions.sort((a, b) => {
+                    const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(0);
+                    const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(0);
+                    return dateB - dateA;
                 });
 
                 // Calculate total non-empty notes count by account
@@ -217,36 +247,53 @@
                     notesBadge.style.display = 'none';
                 }
 
-                userBacklogActions.forEach(action => {
-                    const row = document.createElement('tr');
+                // Render open actions
+                openActions.forEach(action => {
+                    const row = createActionRow(action);
+                    openBacklogTbody.appendChild(row);
+                });
 
-                    // Determine row classes for styling
-                    row.className = '';
-                    if (action.closed) {
-                        // Closed actions - this styling takes precedence over date-based styling
-                        row.classList.add('action-closed');
-                    } else {
-                        // For non-closed actions, check if action is overdue or upcoming
-                        const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Set to beginning of day
+                // Render closed actions
+                closedActions.forEach(action => {
+                    const row = createActionRow(action);
+                    closedBacklogTbody.appendChild(row);
+                });
+            }
 
-                        if (actionDate) {
-                            // Calculate days difference
-                            const timeDiff = actionDate.getTime() - today.getTime();
-                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            // Helper function to create an action row
+            function createActionRow(action) {
+                const row = document.createElement('tr');
 
-                            if (daysDiff < 0) {
-                                // Overdue actions (past dates only)
-                                row.classList.add('action-overdue');
-                            } else if (daysDiff <= 7) {
-                                // Upcoming actions (today or within next 7 days)
-                                row.classList.add('action-upcoming');
-                            }
+                // Determine row classes for styling
+                row.className = '';
+                if (action.closed) {
+                    // Closed actions - this styling takes precedence over date-based styling
+                    row.classList.add('action-closed');
+                } else {
+                    // For non-closed actions, check if action is overdue or upcoming
+                    const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                    if (actionDate) {
+                        // Calculate days difference
+                        const timeDiff = actionDate.getTime() - today.getTime();
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                        if (daysDiff < 0) {
+                            // Overdue actions (past dates only)
+                            row.classList.add('action-overdue');
+                        } else if (daysDiff <= 7) {
+                            // Upcoming actions (today or within next 7 days)
+                            row.classList.add('action-upcoming');
                         }
                     }
+                }
 
-                    row.innerHTML = `
+                // Set data attribute for action ID
+                row.setAttribute('data-action-id', action.id);
+
+                row.innerHTML = `
                 <td>${action.id}</td>
                 <td>${action.accountName || 'N/A'}</td>
                 <td>${action.lastAction || ''}</td>
@@ -262,8 +309,7 @@
                        data-account-id="${action.accountId}"></i>
                 </td>
             `;
-                    backlogTbody.appendChild(row);
-                });
+                return row;
             }
 
             // --- DATA FETCHING ---
@@ -304,12 +350,24 @@
             });
 
             // 2. Action Status Toggle (using event delegation)
-            backlogTbody.addEventListener('change', async (e) => {
+            document.addEventListener('change', async (e) => {
                 if (!e.target.classList.contains('action-status-checkbox')) return;
 
                 const checkbox = e.target;
                 const actionId = checkbox.dataset.actionId;
                 checkbox.disabled = true; // Prevent rapid clicks
+
+                // Find the row in either table
+                const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    checkbox.disabled = false;
+                    return;
+                }
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
 
                 try {
                     const response = await fetch(`/actions/${actionId}/toggle-closed`, { method: 'POST' });
@@ -323,6 +381,9 @@
                         userBacklogActions[actionIndex] = updatedAction;
                     }
 
+                    // Remove the row from its current position
+                    row.remove();
+
                     renderBacklog(); // Re-render the whole table from the updated state
                     const message = updatedAction.closed ? 'closed' : 'reopened';
                     showNotification(`Action ${actionId} ${message} successfully.`, 'success');
@@ -331,15 +392,15 @@
                     console.error('Error toggling action status:', error);
                     showNotification('Error updating status.', 'danger');
                     checkbox.checked = !checkbox.checked; // Revert checkbox on failure
-                } finally {
-                    // Re-find the checkbox in the newly rendered DOM and enable it
-                    const newCheckbox = backlogTbody.querySelector(`.action-status-checkbox[data-action-id="${actionId}"]`);
-                    if (newCheckbox) newCheckbox.disabled = false;
+
+                    // Restore opacity on error
+                    row.style.opacity = originalOpacity;
+                    checkbox.disabled = false;
                 }
             });
 
             // 3. Notes Modal Logic (using event delegation)
-            backlogTbody.addEventListener('click', e => {
+            document.addEventListener('click', e => {
                 if (!e.target.classList.contains('notes-icon')) return;
 
                 const icon = e.target;
