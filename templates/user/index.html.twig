@@ -108,7 +108,7 @@
                                         <th>Contact</th>
                                         <th>Action Date</th>
                                         <th>Status</th>
-                                        <th>Notes</th>
+                                        <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
                                     </thead>
                                     <tbody id="open-backlog-tbody">
@@ -126,7 +126,7 @@
                                         <th>Contact</th>
                                         <th>Action Date</th>
                                         <th>Status</th>
-                                        <th>Notes <span id="notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
+                                        <th>Notes <span id="closed-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
                                     </thead>
                                     <tbody id="closed-backlog-tbody">
@@ -204,8 +204,9 @@
 
                 if (userBacklogActions.length === 0) {
                     noActionsMessage.style.display = 'block';
-                    // Hide notes badge when no actions
-                    document.getElementById('notes-badge').style.display = 'none';
+                    // Hide notes badges when no actions
+                    document.getElementById('open-notes-badge').style.display = 'none';
+                    document.getElementById('closed-notes-badge').style.display = 'none';
                     return;
                 }
                 noActionsMessage.style.display = 'none';
@@ -228,23 +229,40 @@
                     return dateB - dateA;
                 });
 
-                // Calculate total non-empty notes count by account
-                const accountNotesMap = {};
-                userBacklogActions.forEach(action => {
-                    if (action.accountNotesCount > 0) {
-                        accountNotesMap[action.accountId] = action.accountNotesCount;
+                // Calculate separate note counts for open and closed actions
+                let openNotesCount = 0;
+                let closedNotesCount = 0;
+
+                // Count notes for open actions
+                openActions.forEach(action => {
+                    if (action.hasNotes) {
+                        openNotesCount++;
                     }
                 });
 
-                // Update the notes badge
-                const notesBadge = document.getElementById('notes-badge');
-                const totalNotes = Object.values(accountNotesMap).reduce((sum, count) => sum + count, 0);
+                // Count notes for closed actions
+                closedActions.forEach(action => {
+                    if (action.hasNotes) {
+                        closedNotesCount++;
+                    }
+                });
 
-                if (totalNotes > 0) {
-                    notesBadge.textContent = totalNotes;
-                    notesBadge.style.display = 'inline-block';
+                // Update the open notes badge
+                const openNotesBadge = document.getElementById('open-notes-badge');
+                if (openNotesCount > 0) {
+                    openNotesBadge.textContent = openNotesCount;
+                    openNotesBadge.style.display = 'inline-block';
                 } else {
-                    notesBadge.style.display = 'none';
+                    openNotesBadge.style.display = 'none';
+                }
+
+                // Update the closed notes badge
+                const closedNotesBadge = document.getElementById('closed-notes-badge');
+                if (closedNotesCount > 0) {
+                    closedNotesBadge.textContent = closedNotesCount;
+                    closedNotesBadge.style.display = 'inline-block';
+                } else {
+                    closedNotesBadge.style.display = 'none';
                 }
 
                 // Render open actions
