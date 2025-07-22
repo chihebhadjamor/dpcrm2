@@ -11,28 +11,7 @@
         .loading-spinner { display: none; text-align: center; padding: 20px; }
         .loading-spinner i { font-size: 2rem; }
 
-        /* Action status styling */
-        .action-closed,
-        .table-striped > tbody > tr.action-closed,
-        table.table-striped > tbody > tr.action-closed {
-            background-color: #e6e6e6 !important;
-            font-style: italic;
-            text-decoration: line-through;
-        }
-        .action-overdue,
-        .table-striped > tbody > tr.action-overdue,
-        table.table-striped > tbody > tr.action-overdue,
-        .table-striped > tbody > tr.action-overdue > td,
-        table.table-striped > tbody > tr.action-overdue > td {
-            background-color: #ffcccc !important;
-        }
-        .action-upcoming,
-        .table-striped > tbody > tr.action-upcoming,
-        table.table-striped > tbody > tr.action-upcoming,
-        .table-striped > tbody > tr.action-upcoming > td,
-        table.table-striped > tbody > tr.action-upcoming > td {
-            background-color: #fff2cc !important;
-        }
+        {% include 'partials/action_styles.html.twig' %}
 
         /* Center align status column */
         #backlog-table th:nth-child(6),
@@ -231,13 +210,25 @@
                     if (action.closed) {
                         // Closed actions - this styling takes precedence over date-based styling
                         row.classList.add('action-closed');
-                    } else if (action.nextStepDate) {
-                        const actionDate = new Date(action.nextStepDate);
+                    } else {
+                        // For non-closed actions, check if action is overdue or upcoming
+                        const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
                         const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const daysDiff = Math.ceil((actionDate - today) / (1000 * 3600 * 24));
-                        if (daysDiff < 0) row.classList.add('action-overdue');
-                        else if (daysDiff <= 7) row.classList.add('action-upcoming');
+                        today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                        if (actionDate) {
+                            // Calculate days difference
+                            const timeDiff = actionDate.getTime() - today.getTime();
+                            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                            if (daysDiff < 0) {
+                                // Overdue actions (past dates only)
+                                row.classList.add('action-overdue');
+                            } else if (daysDiff <= 7) {
+                                // Upcoming actions (today or within next 7 days)
+                                row.classList.add('action-upcoming');
+                            }
+                        }
                     }
 
                     row.innerHTML = `

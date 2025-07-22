@@ -1,0 +1,30 @@
+/* Action status styling */
+.action-overdue,
+.table-striped > tbody > tr.action-overdue,
+table.table-striped > tbody > tr.action-overdue,
+.table-striped > tbody > tr.action-overdue > td,
+table.table-striped > tbody > tr.action-overdue > td {
+    background-color: #ff6666 !important; /* Brighter red background for overdue actions */
+}
+
+.action-upcoming,
+.table-striped > tbody > tr.action-upcoming,
+table.table-striped > tbody > tr.action-upcoming,
+.table-striped > tbody > tr.action-upcoming > td,
+table.table-striped > tbody > tr.action-upcoming > td {
+    background-color: #fff2cc !important; /* Yellow background for upcoming actions */
+}
+
+/* Style for closed actions */
+.action-closed,
+.table-striped > tbody > tr.action-closed,
+table.table-striped > tbody > tr.action-closed {
+    opacity: 0.7;
+    background-color: #e6e6e6 !important; /* Gray background for closed actions */
+}
+
+/* Add strikethrough and italic for text in closed action cells */
+.action-closed td {
+    text-decoration: line-through;
+    font-style: italic;
+}
