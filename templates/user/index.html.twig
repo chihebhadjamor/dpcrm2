@@ -471,10 +471,13 @@
                 <td>${action.lastAction || ''}</td>
                 <td>${action.contact || ''}</td>
                 <td class="action-date-cell" data-action-id="${action.id}">
-                    <input type="date" class="form-control action-date-picker"
-                        value="${action.nextStepDate || ''}"
-                        data-action-id="${action.id}"
-                        data-original-date="${action.nextStepDate || ''}">
+                    ${action.closed ?
+                        `<span>${action.nextStepDate || ''}</span>` :
+                        `<input type="date" class="form-control action-date-picker"
+                            value="${action.nextStepDate || ''}"
+                            data-action-id="${action.id}"
+                            data-original-date="${action.nextStepDate || ''}">`
+                    }
                 </td>
                 <td>
                     <input class="form-check-input action-status-checkbox" type="checkbox"
