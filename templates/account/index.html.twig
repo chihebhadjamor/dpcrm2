@@ -103,11 +103,11 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Account Name</th>
-                                <th>Next Action</th>
-                                <th>Next Action Date</th>
-                                <th>Owner</th>
+                                <th class="sortable" data-sort="id">ID</th>
+                                <th class="sortable" data-sort="name">Account Name</th>
+                                <th class="sortable" data-sort="nextAction">Next Action</th>
+                                <th class="sortable" data-sort="nextStepDate">Next Action Date</th>
+                                <th class="sortable" data-sort="owner">Owner</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -306,6 +306,82 @@
         if (openBadgeContainer) {
             openBadgeContainer.innerHTML = '';
         }
+
+        // Variables for sorting
+        let currentSortColumn = 'id';
+        let currentSortDirection = 'asc';
+
+        // Add click event listeners to sortable headers
+        document.querySelectorAll('th.sortable').forEach(header => {
+            header.style.cursor = 'pointer';
+            // Add sort indicators
+            header.innerHTML += ' <span class="sort-indicator"></span>';
+
+            header.addEventListener('click', function() {
+                const sortColumn = this.getAttribute('data-sort');
+
+                // Toggle sort direction if clicking the same column
+                if (sortColumn === currentSortColumn) {
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortColumn = sortColumn;
+                    currentSortDirection = 'asc';
+                }
+
+                // Update sort indicators
+                document.querySelectorAll('.sort-indicator').forEach(indicator => {
+                    indicator.textContent = '';
+                });
+
+                const indicator = this.querySelector('.sort-indicator');
+                indicator.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+
+                // Fetch and sort accounts
+                fetch('/accounts/list-ajax')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Sort the data
+                        data.sort((a, b) => {
+                            let valueA, valueB;
+
+                            // Handle different column types
+                            if (sortColumn === 'nextStepDate') {
+                                // Convert dates to timestamps for comparison
+                                valueA = a.nextStepDate ? new Date(a.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
+                                valueB = b.nextStepDate ? new Date(b.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
+                            } else if (sortColumn === 'id') {
+                                valueA = parseInt(a.id);
+                                valueB = parseInt(b.id);
+                            } else {
+                                // For text columns
+                                valueA = (a[sortColumn] || '').toString().toLowerCase();
+                                valueB = (b[sortColumn] || '').toString().toLowerCase();
+                            }
+
+                            // Compare values based on sort direction
+                            if (currentSortDirection === 'asc') {
+                                return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+                            } else {
+                                return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+                            }
+                        });
+
+                        // Update the table with sorted data
+                        updateAccountsTable(data);
+
+                        // Ensure the current account remains selected
+                        if (currentAccountId) {
+                            const selectedRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
+                            if (selectedRow) {
+                                selectedRow.classList.add('table-primary');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching accounts for sorting:', error);
+                    });
+            });
+        });
         // Function to update the notes badges for both open and closed actions
         function updateNotesBadge(actions) {
             const openBadgeContainer = document.getElementById('open-notes-badge-container');
@@ -474,11 +550,30 @@
                     row.classList.add('table-primary');
                 }
 
+                // Apply action styling based on next action date
+                if (account.nextStepDate) {
+                    const actionDate = new Date(account.nextStepDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                    // Calculate days difference
+                    const timeDiff = actionDate.getTime() - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    if (daysDiff < 0) {
+                        // Overdue actions (past dates)
+                        row.classList.add('action-overdue');
+                    } else if (daysDiff <= 7) {
+                        // Upcoming actions (today or within next 7 days)
+                        row.classList.add('action-upcoming');
+                    }
+                }
+
                 row.innerHTML = `
                     <td>${account.id}</td>
                     <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
                     <td>${account.nextAction || ''}</td>
-                    <td>${account.nextStepDate || ''}</td>
+                    <td data-date="${account.nextStepDate || ''}">${account.nextStepDate || ''}</td>
                     <td>${account.actionOwner || ''}</td>
                     <td>
                         <a href="/accounts/${account.id}/edit" class="btn btn-sm btn-outline-success">
@@ -1174,6 +1269,51 @@
 
                     // Show success notification
                     showNotification(`Action date updated successfully`, 'success', 3000);
+
+                    // Refresh the accounts list to reflect the updated next action date
+                    fetch('/accounts/list-ajax')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update the accounts table with the new data
+                            updateAccountsTable(data);
+
+                            // Ensure the current account remains selected and clickable
+                            const selectedRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
+                            if (selectedRow) {
+                                selectedRow.classList.add('table-primary');
+                            }
+
+                            // Reattach event listeners to all account rows
+                            getAccountRows().forEach(row => {
+                                // Remove existing event listeners (to avoid duplicates)
+                                const newRow = row.cloneNode(true);
+                                row.parentNode.replaceChild(newRow, row);
+
+                                // Add click event listener to the new row
+                                newRow.addEventListener('click', function(e) {
+                                    // If we're editing, don't trigger row selection
+                                    if (isEditing) {
+                                        return;
+                                    }
+
+                                    // Remove active class from all rows
+                                    document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                                    // Add active class to clicked row
+                                    this.classList.add('table-primary');
+
+                                    // Get account ID from data attribute
+                                    const accountId = this.getAttribute('data-account-id');
+                                    currentAccountId = accountId;
+
+                                    // Load account actions
+                                    loadAccountActions(accountId);
+                                });
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error refreshing accounts list:', error);
+                        });
                 })
                 .catch(error => {
                     console.error('Error updating action date:', error);
