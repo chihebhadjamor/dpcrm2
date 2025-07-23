@@ -470,7 +470,12 @@
                 <td>${action.accountName || 'N/A'}</td>
                 <td>${action.lastAction || ''}</td>
                 <td>${action.contact || ''}</td>
-                <td>${action.nextStepDate || ''}</td>
+                <td class="action-date-cell" data-action-id="${action.id}">
+                    <input type="date" class="form-control action-date-picker"
+                        value="${action.nextStepDate || ''}"
+                        data-action-id="${action.id}"
+                        data-original-date="${action.nextStepDate || ''}">
+                </td>
                 <td>
                     <input class="form-check-input action-status-checkbox" type="checkbox"
                            data-action-id="${action.id}" ${action.closed ? 'checked' : ''}>
@@ -520,6 +525,73 @@
                     backlogHeader.textContent = `Backlog of ${username}`;
                     fetchAndRenderBacklog(userId);
                 });
+            });
+
+            // Handle date picker changes
+            document.addEventListener('change', async (e) => {
+                if (!e.target.classList.contains('action-date-picker')) return;
+
+                const actionId = e.target.getAttribute('data-action-id');
+                const newDate = e.target.value;
+                const originalDate = e.target.getAttribute('data-original-date');
+
+                // If date hasn't changed, do nothing
+                if (newDate === originalDate) return;
+
+                // Disable the input while processing
+                e.target.disabled = true;
+
+                // Find the row
+                const row = e.target.closest('tr');
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    e.target.disabled = false;
+                    return;
+                }
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-date`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `date=${encodeURIComponent(newDate)}`
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    const data = await response.json();
+
+                    // Update the action in our stored array
+                    const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        userBacklogActions[actionIndex] = data;
+                    }
+
+                    // Update the data-original-date attribute
+                    e.target.setAttribute('data-original-date', newDate);
+
+                    // Re-render the backlog to ensure proper sorting
+                    renderBacklog();
+
+                    // Show success notification
+                    showNotification('Action date updated successfully', 'success');
+
+                } catch (error) {
+                    console.error('Error updating action date:', error);
+                    showNotification('Error updating action date. Please try again.', 'danger');
+
+                    // Reset to original date
+                    e.target.value = originalDate;
+
+                    // Re-enable the input and restore opacity
+                    e.target.disabled = false;
+                    row.style.opacity = originalOpacity;
+                }
             });
 
             // 2. Action Status Toggle (using event delegation)

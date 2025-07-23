@@ -621,4 +621,57 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Error updating notes. Please try again.'], 400);
         }
     }
+
+    #[Route('/actions/{id}/update-date', name: 'app_action_update_date', methods: ['POST'])]
+    public function updateActionDate(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Find the action
+        $action = $entityManager->getRepository(Action::class)->find($id);
+
+        if (!$action) {
+            return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        try {
+            // Get date from request
+            $date = $request->request->get('date');
+
+            if (!$date) {
+                return new JsonResponse(['error' => 'Date is required'], 400);
+            }
+
+            try {
+                // Parse and set the new date
+                $dateTime = new \DateTime($date);
+                $action->setNextStepDate($dateTime);
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => 'Invalid date format'], 400);
+            }
+
+            // Save to database
+            $entityManager->flush();
+
+            // Return the updated action data
+            return new JsonResponse([
+                'id' => $action->getId(),
+                'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'lastAction' => $action->getTitle(),
+                'contact' => $action->getContact(),
+                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
+            ]);
+        } catch (\Exception $e) {
+            // Log the detailed error
+            error_log('Error updating action date: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+
+            // Return error response
+            return new JsonResponse(['error' => 'Error updating date. Please try again.'], 400);
+        }
+    }
 }
