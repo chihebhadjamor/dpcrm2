@@ -475,6 +475,88 @@ class UserController extends AbstractWebController
         }
     }
 
+    #[Route('/user/backlog/update-action-field/{id}', name: 'app_user_backlog_update_action_field', methods: ['POST'])]
+    public function updateBacklogActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    {
+        // Find the action
+        $action = $entityManager->getRepository(Action::class)->find($id);
+
+        if (!$action) {
+            return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        try {
+            // Get field and value from request
+            $fieldName = $request->request->get('fieldName');
+            $newValue = $request->request->get('newValue');
+
+            if (!$fieldName) {
+                return new JsonResponse(['error' => 'Field name is required'], 400);
+            }
+
+            // Update the appropriate field based on fieldName
+            switch ($fieldName) {
+                case 'contact':
+                    $action->setContact($newValue);
+                    break;
+                case 'action':
+                    $action->setTitle($newValue);
+                    break;
+                case 'account':
+                    // For account, we need to find the account entity by name
+                    $account = $entityManager->getRepository(\App\Entity\Account::class)->findOneBy(['name' => $newValue]);
+                    if (!$account) {
+                        // If account doesn't exist, create a new one with basic info
+                        $account = new \App\Entity\Account();
+                        $account->setName($newValue);
+                        $entityManager->persist($account);
+                    }
+                    $action->setAccount($account);
+                    break;
+                case 'date':
+                    try {
+                        // Parse and set the new date
+                        $dateTime = new \DateTime($newValue);
+                        $action->setNextStepDate($dateTime);
+                    } catch (\Exception $e) {
+                        return new JsonResponse(['error' => 'Invalid date format'], 400);
+                    }
+                    break;
+                default:
+                    return new JsonResponse(['error' => 'Invalid field name'], 400);
+            }
+
+            // Save to database
+            $entityManager->flush();
+
+            // Return the updated action data
+            return new JsonResponse([
+                'id' => $action->getId(),
+                'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'accountId' => $action->getAccount() ? $action->getAccount()->getId() : null,
+                'lastAction' => $action->getTitle(),
+                'contact' => $action->getContact(),
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
+                'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'ownerId' => $action->getOwner() ? $action->getOwner()->getId() : null,
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
+            ]);
+        } catch (\Exception $e) {
+            // Log the detailed error
+            error_log('Error updating action field: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+
+            // Return error response
+            return new JsonResponse(['error' => 'Error updating field. Please try again.'], 400);
+        }
+    }
+
     #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {

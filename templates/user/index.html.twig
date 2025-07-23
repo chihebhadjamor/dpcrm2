@@ -472,9 +472,33 @@
 
                 row.innerHTML = `
                 <td>${action.id}</td>
-                <td>${action.accountName || 'N/A'}</td>
-                <td>${action.lastAction || ''}</td>
-                <td>${action.contact || ''}</td>
+                <td class="action-account-cell" data-action-id="${action.id}">
+                    <span>${action.accountName || 'N/A'}</span>
+                    ${action.closed ? '' :
+                        `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-account-btn"
+                            data-action-id="${action.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>`
+                    }
+                </td>
+                <td class="action-title-cell" data-action-id="${action.id}">
+                    <span>${action.lastAction || ''}</span>
+                    ${action.closed ? '' :
+                        `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-title-btn"
+                            data-action-id="${action.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>`
+                    }
+                </td>
+                <td class="action-contact-cell" data-action-id="${action.id}">
+                    <span>${action.contact || ''}</span>
+                    ${action.closed ? '' :
+                        `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-contact-btn"
+                            data-action-id="${action.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>`
+                    }
+                </td>
                 <td class="action-date-cell" data-action-id="${action.id}">
                     <span>${action.nextStepDateFormatted || ''}</span>
                     ${action.closed ? '' :
@@ -770,12 +794,13 @@
                     cancelBtn.disabled = true;
 
                     try {
-                        const response = await fetch(`/actions/${actionId}/update-date`, {
+                        // Use the new backlog update endpoint with the date field
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded',
                             },
-                            body: `date=${encodeURIComponent(newDate)}`
+                            body: `fieldName=date&newValue=${encodeURIComponent(newDate)}`
                         });
 
                         if (!response.ok) throw new Error('Network response was not ok');
@@ -804,6 +829,360 @@
                     } catch (error) {
                         console.error('Error updating action date:', error);
                         showNotification('Error updating action date. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // Handle Edit Account Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-account-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-account-cell');
+                const accountSpan = cell.querySelector('span');
+                const currentAccount = accountSpan.textContent.trim();
+
+                // Create a text input
+                const accountInput = document.createElement('input');
+                accountInput.type = 'text';
+                accountInput.className = 'form-control';
+                accountInput.value = currentAccount === 'N/A' ? '' : currentAccount;
+                accountInput.setAttribute('data-action-id', actionId);
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                accountSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(accountInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the input
+                accountInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    accountSpan.style.display = '';
+                    editBtn.style.display = '';
+                    accountInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newAccount = accountInput.value;
+                    if (!newAccount) {
+                        // If no account entered, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    accountInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=account&newValue=${encodeURIComponent(newAccount)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        const data = await response.json();
+
+                        // Update the action in our stored array
+                        const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                        if (actionIndex !== -1) {
+                            userBacklogActions[actionIndex] = data;
+                        }
+
+                        // Update the account span with the new value
+                        accountSpan.textContent = data.accountName || 'N/A';
+
+                        // Reset the cell to its original state but with the new account
+                        resetCell();
+
+                        // Show success notification
+                        showNotification('Account updated successfully', 'success');
+                    } catch (error) {
+                        console.error('Error updating account:', error);
+                        showNotification('Error updating account. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // Handle Edit Title Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-title-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-title-cell');
+                const titleSpan = cell.querySelector('span');
+                const currentTitle = titleSpan.textContent.trim();
+
+                // Create a text input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.className = 'form-control';
+                titleInput.value = currentTitle;
+                titleInput.setAttribute('data-action-id', actionId);
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                titleSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(titleInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the input
+                titleInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    titleSpan.style.display = '';
+                    editBtn.style.display = '';
+                    titleInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newTitle = titleInput.value;
+                    if (!newTitle) {
+                        // If no title entered, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    titleInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=action&newValue=${encodeURIComponent(newTitle)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        const data = await response.json();
+
+                        // Update the action in our stored array
+                        const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                        if (actionIndex !== -1) {
+                            userBacklogActions[actionIndex] = data;
+                        }
+
+                        // Update the title span with the new value
+                        titleSpan.textContent = data.title || '';
+
+                        // Reset the cell to its original state but with the new title
+                        resetCell();
+
+                        // Show success notification
+                        showNotification('Action updated successfully', 'success');
+                    } catch (error) {
+                        console.error('Error updating action:', error);
+                        showNotification('Error updating action. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // Handle Edit Contact Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-contact-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-contact-cell');
+                const contactSpan = cell.querySelector('span');
+                const currentContact = contactSpan.textContent.trim();
+
+                // Create a text input
+                const contactInput = document.createElement('input');
+                contactInput.type = 'text';
+                contactInput.className = 'form-control';
+                contactInput.value = currentContact;
+                contactInput.setAttribute('data-action-id', actionId);
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                contactSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(contactInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the input
+                contactInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    contactSpan.style.display = '';
+                    editBtn.style.display = '';
+                    contactInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newContact = contactInput.value;
+                    if (!newContact) {
+                        // If no contact entered, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    contactInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=contact&newValue=${encodeURIComponent(newContact)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        const data = await response.json();
+
+                        // Update the action in our stored array
+                        const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                        if (actionIndex !== -1) {
+                            userBacklogActions[actionIndex] = data;
+                        }
+
+                        // Update the contact span with the new value
+                        contactSpan.textContent = data.contact || '';
+
+                        // Reset the cell to its original state but with the new contact
+                        resetCell();
+
+                        // Show success notification
+                        showNotification('Contact updated successfully', 'success');
+                    } catch (error) {
+                        console.error('Error updating contact:', error);
+                        showNotification('Error updating contact. Please try again.', 'danger');
 
                         // Reset the cell
                         resetCell();
