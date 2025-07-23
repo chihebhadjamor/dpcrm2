@@ -376,10 +376,10 @@
                     return dateA - dateB;
                 });
 
-                // Sort closed actions by date in descending order (most recently closed first)
+                // Sort closed actions by dateClosed in descending order (most recently closed first)
                 closedActions.sort((a, b) => {
-                    const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(0);
-                    const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(0);
+                    const dateA = a.dateClosed ? new Date(a.dateClosed) : new Date(0);
+                    const dateB = b.dateClosed ? new Date(b.dateClosed) : new Date(0);
                     return dateB - dateA;
                 });
 
