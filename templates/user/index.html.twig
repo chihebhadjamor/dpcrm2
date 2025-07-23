@@ -65,8 +65,7 @@
                                 <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Username</th>
-                                    <th>Email</th>
+                                    <th>User</th>
                                     <th>Actions</th>
                                 </tr>
                                 </thead>
@@ -75,10 +74,12 @@
                                 <tr id="user-form-row" style="display: none;">
                                     <td><i>New</i></td>
                                     <td>
-                                        <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
-                                    </td>
-                                    <td>
-                                        <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control" id="user-username" name="username" placeholder="Username" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <input type="email" class="form-control" id="user-email" name="email" placeholder="Email" required>
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="mb-2">
@@ -91,8 +92,7 @@
                                 {% for user in users %}
                                     <tr class="user-row" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
                                         <td>{{ user.id }}</td>
-                                        <td>{{ user.username }}</td>
-                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.username }} <span class="text-muted">({{ user.email }})</span></td>
                                         <td>
                                             <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
                                                 <i class="fas fa-edit"></i> Edit
@@ -101,7 +101,7 @@
                                     </tr>
                                 {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center">No users found</td>
+                                        <td colspan="3" class="text-center">No users found</td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -289,8 +289,7 @@
                         row.style.cursor = 'pointer';
                         row.innerHTML = `
                             <td>${data.id}</td>
-                            <td>${data.username}</td>
-                            <td>${data.email}</td>
+                            <td>${data.username} <span class="text-muted">(${data.email})</span></td>
                             <td>
                                 <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
                                     <i class="fas fa-edit"></i> Edit
