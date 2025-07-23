@@ -134,7 +134,7 @@
                                     <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
                                     <td>
                                         {% if nextActions[account.id] is defined %}
-                                            {{ nextActions[account.id].nextStepDate|date('Y-m-d') }}
+                                            {{ nextActions[account.id].nextStepDate|app_date }}
                                         {% endif %}
                                     </td>
                                     <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
@@ -1160,7 +1160,7 @@
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
                                    data-action-id="${action.id}">
-                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
+                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${action.dateClosed}</div>` : ''}
                         </div>
                     </td>
                     <td class="text-center">
@@ -1185,7 +1185,7 @@
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
                                    data-action-id="${action.id}">
-                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${new Date(action.dateClosed).toISOString().split('T')[0]}</div>` : ''}
+                            ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${action.dateClosed}</div>` : ''}
                         </div>
                     </td>
                     <td></td>

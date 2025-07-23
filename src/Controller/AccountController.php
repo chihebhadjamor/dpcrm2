@@ -482,7 +482,7 @@ class AccountController extends AbstractWebController
                 'id' => $accountId,
                 'name' => $account->getName(),
                 'contact' => isset($contactInfo[$accountId]) ? $contactInfo[$accountId] : null,
-                'nextStepDate' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null,
+                'nextStepDate' => $nextAction ? $this->appSettingsService->formatDate($nextAction->getNextStepDate()) : null,
                 'nextAction' => $nextAction ? $nextAction->getTitle() : null,
                 'actionOwner' => $nextAction ? $nextAction->getOwner()->getUsername() : null
             ];
