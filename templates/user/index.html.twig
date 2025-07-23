@@ -1085,12 +1085,61 @@
                 const contactSpan = cell.querySelector('span');
                 const currentContact = contactSpan.textContent.trim();
 
-                // Create a text input
-                const contactInput = document.createElement('input');
-                contactInput.type = 'text';
-                contactInput.className = 'form-control';
-                contactInput.value = currentContact;
-                contactInput.setAttribute('data-action-id', actionId);
+                // Create a dropdown for contacts
+                const contactSelect = document.createElement('select');
+                contactSelect.className = 'form-control';
+                contactSelect.setAttribute('data-action-id', actionId);
+
+                // Add a loading option
+                const loadingOption = document.createElement('option');
+                loadingOption.textContent = 'Loading contacts...';
+                contactSelect.appendChild(loadingOption);
+
+                // Get the account ID from the action
+                const accountId = row.querySelector('.action-account-cell').getAttribute('data-account-id');
+
+                if (accountId && accountId !== 'null') {
+                    // Fetch contacts for this account
+                    fetch(`/accounts/${accountId}/contacts`)
+                        .then(response => response.json())
+                        .then(contacts => {
+                            // Clear the loading option
+                            contactSelect.innerHTML = '';
+
+                            // Add an empty option
+                            const emptyOption = document.createElement('option');
+                            emptyOption.value = '';
+                            emptyOption.textContent = 'Select Contact';
+                            contactSelect.appendChild(emptyOption);
+
+                            // Add options for each contact
+                            if (contacts && contacts.length > 0) {
+                                contacts.forEach(contact => {
+                                    const option = document.createElement('option');
+                                    option.value = contact;
+                                    option.textContent = contact;
+                                    // Pre-select the current contact
+                                    if (contact === currentContact) {
+                                        option.selected = true;
+                                    }
+                                    contactSelect.appendChild(option);
+                                });
+                            } else {
+                                // If no contacts, add a default option
+                                const option = document.createElement('option');
+                                option.value = "No contacts available";
+                                option.textContent = "No contacts available";
+                                contactSelect.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching contacts:', error);
+                            contactSelect.innerHTML = '<option>Error loading contacts</option>';
+                        });
+                } else {
+                    // If no account ID, just show a message
+                    contactSelect.innerHTML = '<option value="">No account selected</option>';
+                }
 
                 // Create save and cancel buttons
                 const saveBtn = document.createElement('button');
@@ -1108,18 +1157,18 @@
                 editBtn.style.display = 'none';
 
                 // Add the new elements
-                cell.appendChild(contactInput);
+                cell.appendChild(contactSelect);
                 cell.appendChild(saveBtn);
                 cell.appendChild(cancelBtn);
 
-                // Focus the input
-                contactInput.focus();
+                // Focus the dropdown
+                contactSelect.focus();
 
                 // Function to reset the cell to its original state
                 const resetCell = () => {
                     contactSpan.style.display = '';
                     editBtn.style.display = '';
-                    contactInput.remove();
+                    contactSelect.remove();
                     saveBtn.remove();
                     cancelBtn.remove();
                 };
@@ -1129,9 +1178,9 @@
 
                 // Handle save button click
                 saveBtn.addEventListener('click', async () => {
-                    const newContact = contactInput.value;
+                    const newContact = contactSelect.value;
                     if (!newContact) {
-                        // If no contact entered, just cancel
+                        // If no contact selected, just cancel
                         resetCell();
                         return;
                     }
@@ -1148,8 +1197,8 @@
                     const originalOpacity = row.style.opacity || '1';
                     row.style.opacity = '0.7';
 
-                    // Disable the input and buttons while processing
-                    contactInput.disabled = true;
+                    // Disable the dropdown and buttons while processing
+                    contactSelect.disabled = true;
                     saveBtn.disabled = true;
                     cancelBtn.disabled = true;
 

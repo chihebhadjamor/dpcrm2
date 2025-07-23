@@ -497,6 +497,14 @@ class UserController extends AbstractWebController
             // Update the appropriate field based on fieldName
             switch ($fieldName) {
                 case 'contact':
+                    // Validate that the contact exists in the account's contacts list
+                    $account = $action->getAccount();
+                    if ($account) {
+                        $contacts = $account->getContacts() ?? [];
+                        if (!in_array($newValue, $contacts)) {
+                            return new JsonResponse(['error' => 'Contact is not valid for this account'], 400);
+                        }
+                    }
                     $action->setContact($newValue);
                     break;
                 case 'action':
