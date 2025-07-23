@@ -1372,14 +1372,29 @@
 
             // Try to convert the formatted date to YYYY-MM-DD for the input
             try {
-                // This is a best effort to parse the date - it may not work for all formats
-                const parsedDate = new Date(currentDate);
-                if (!isNaN(parsedDate.getTime())) {
-                    const yyyy = parsedDate.getFullYear();
-                    const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
-                    const dd = String(parsedDate.getDate()).padStart(2, '0');
-                    dateInput.value = `${yyyy}-${mm}-${dd}`;
-                    dateInput.setAttribute('data-original-date', `${yyyy}-${mm}-${dd}`);
+                // Parse the date correctly based on the displayed format (DD/MM/YYYY)
+                const dateParts = currentDate.split('/');
+                if (dateParts.length === 3) {
+                    // Assuming format is DD/MM/YYYY
+                    const day = dateParts[0];
+                    const month = dateParts[1];
+                    const year = dateParts[2];
+
+                    // Create ISO 8601 format (YYYY-MM-DD)
+                    const isoDate = `${year}-${month}-${day}`;
+                    dateInput.value = isoDate;
+                    dateInput.setAttribute('data-original-date', isoDate);
+                } else {
+                    // Fallback for other formats
+                    const parsedDate = new Date(currentDate);
+                    if (!isNaN(parsedDate.getTime())) {
+                        const yyyy = parsedDate.getFullYear();
+                        const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(parsedDate.getDate()).padStart(2, '0');
+                        const isoDate = `${yyyy}-${mm}-${dd}`;
+                        dateInput.value = isoDate;
+                        dateInput.setAttribute('data-original-date', isoDate);
+                    }
                 }
             } catch (e) {
                 console.error('Error parsing date:', e);
