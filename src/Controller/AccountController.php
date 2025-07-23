@@ -6,6 +6,7 @@ use App\Entity\Account;
 use App\Entity\Action;
 use App\Entity\User;
 use App\Form\AccountType;
+use App\Service\AppSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,10 +21,12 @@ use Symfony\Component\Form\FormFactoryInterface;
 class AccountController extends AbstractWebController
 {
     private FormFactoryInterface $formFactory;
+    private AppSettingsService $appSettingsService;
 
-    public function __construct(FormFactoryInterface $formFactory)
+    public function __construct(FormFactoryInterface $formFactory, AppSettingsService $appSettingsService)
     {
         $this->formFactory = $formFactory;
+        $this->appSettingsService = $appSettingsService;
     }
     #[Route('/accounts/{id}/edit', name: 'app_account_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Account $account, EntityManagerInterface $entityManager): Response
@@ -251,11 +254,11 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ];
@@ -381,11 +384,11 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ]);

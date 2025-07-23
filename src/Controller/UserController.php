@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Entity\Action;
+use App\Service\AppSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +21,12 @@ use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
 
 class UserController extends AbstractWebController
 {
+    private AppSettingsService $appSettingsService;
+
+    public function __construct(AppSettingsService $appSettingsService)
+    {
+        $this->appSettingsService = $appSettingsService;
+    }
     #[Route('/users/create-ajax', name: 'app_create_user_ajax', methods: ['POST'])]
     public function createUserAjax(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
     {
@@ -141,8 +148,8 @@ class UserController extends AbstractWebController
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
-                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                    'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                     'owner' => $action->getOwner()->getUsername()
                 ];
             }
@@ -184,8 +191,8 @@ class UserController extends AbstractWebController
                     'title' => $action->getTitle(),
                     'accountName' => $action->getAccount() ? $action->getAccount()->getName() : null,
                     'priority' => $action->getAccount() ? $action->getAccount()->getPriority() : null,
-                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                    'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                     'owner' => $action->getOwner()->getUsername()
                 ];
             }
@@ -225,12 +232,12 @@ class UserController extends AbstractWebController
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
-                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                    'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                     'owner' => $action->getOwner()->getUsername(),
                     'account' => $action->getAccount() ? $action->getAccount()->getName() : null,
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null
+                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null
                 ];
             }
 
@@ -293,9 +300,9 @@ class UserController extends AbstractWebController
                     'accountName' => $account ? $account->getName() : 'N/A',
                     'lastAction' => $action->getTitle(),
                     'contact' => $action->getContact(), // Ensure contact is included
-                    'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
                     'notes' => $action->getNotes(),
                     'hasNotes' => !empty($action->getNotes()),
                     'accountNotesCount' => isset($accountNotesCount[$accountId]) ? $accountNotesCount[$accountId] : 0
@@ -364,8 +371,8 @@ class UserController extends AbstractWebController
         return new JsonResponse([
             'id' => $action->getId(),
             'title' => $action->getTitle(),
-            'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-            'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+            'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+            'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
             'owner' => $action->getOwner()->getUsername()
         ]);
     }
