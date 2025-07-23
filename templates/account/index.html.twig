@@ -1183,8 +1183,24 @@
                 // Open actions - include Actions column
                 row.innerHTML = `
                     <td>${action.id}</td>
-                    <td>${action.contact || ''}</td>
-                    <td>${action.title}</td>
+                    <td class="action-contact-cell" data-action-id="${action.id}">
+                        <span>${action.contact || ''}</span>
+                        ${action.closed ? '' :
+                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-contact-btn"
+                                data-action-id="${action.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>`
+                        }
+                    </td>
+                    <td class="action-title-cell" data-action-id="${action.id}">
+                        <span>${action.title}</span>
+                        ${action.closed ? '' :
+                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-title-btn"
+                                data-action-id="${action.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>`
+                        }
+                    </td>
                     <td class="action-date-cell" data-action-id="${action.id}">
                         <span>${action.nextStepDateFormatted || ''}</span>
                         ${action.closed ? '' :
@@ -1194,7 +1210,15 @@
                             </button>`
                         }
                     </td>
-                    <td>${action.owner}</td>
+                    <td class="action-owner-cell" data-action-id="${action.id}" data-owner-id="${action.ownerId || ''}">
+                        <span>${action.owner}</span>
+                        ${action.closed ? '' :
+                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-owner-btn"
+                                data-action-id="${action.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>`
+                        }
+                    </td>
                     <td>
                         <div class="form-check">
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
@@ -1568,6 +1592,385 @@
                 } catch (error) {
                     console.error('Error updating action date:', error);
                     showNotification('Error updating action date. Please try again.', 'danger');
+
+                    // Reset the cell
+                    resetCell();
+
+                    // Restore opacity
+                    row.style.opacity = originalOpacity;
+                }
+            });
+        });
+
+        // Handle Edit Contact Button Click
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-contact-btn');
+            if (!editBtn) return;
+
+            const actionId = editBtn.getAttribute('data-action-id');
+            const cell = editBtn.closest('.action-contact-cell');
+            const contactSpan = cell.querySelector('span');
+            const currentContact = contactSpan.textContent.trim();
+
+            // Create a text input
+            const contactInput = document.createElement('input');
+            contactInput.type = 'text';
+            contactInput.className = 'form-control';
+            contactInput.value = currentContact;
+            contactInput.setAttribute('data-action-id', actionId);
+
+            // Create save and cancel buttons
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'btn btn-sm btn-success ms-2';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+            // Hide the current elements
+            contactSpan.style.display = 'none';
+            editBtn.style.display = 'none';
+
+            // Add the new elements
+            cell.appendChild(contactInput);
+            cell.appendChild(saveBtn);
+            cell.appendChild(cancelBtn);
+
+            // Focus the input
+            contactInput.focus();
+
+            // Function to reset the cell to its original state
+            const resetCell = () => {
+                contactSpan.style.display = '';
+                editBtn.style.display = '';
+                contactInput.remove();
+                saveBtn.remove();
+                cancelBtn.remove();
+            };
+
+            // Handle cancel button click
+            cancelBtn.addEventListener('click', resetCell);
+
+            // Handle save button click
+            saveBtn.addEventListener('click', async () => {
+                const newContact = contactInput.value;
+                if (!newContact) {
+                    // If no contact entered, just cancel
+                    resetCell();
+                    return;
+                }
+
+                // Find the row
+                const row = cell.closest('tr');
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    resetCell();
+                    return;
+                }
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
+                // Disable the input and buttons while processing
+                contactInput.disabled = true;
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-field`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `fieldName=contact&newValue=${encodeURIComponent(newContact)}`
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    const data = await response.json();
+
+                    // Update the action in our stored array
+                    const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        allAccountActions[actionIndex] = data;
+                    }
+
+                    // Update the contact span with the new value
+                    contactSpan.textContent = data.contact || '';
+
+                    // Reset the cell to its original state but with the new contact
+                    resetCell();
+
+                    // Show success notification
+                    showNotification('Contact updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating contact:', error);
+                    showNotification('Error updating contact. Please try again.', 'danger');
+
+                    // Reset the cell
+                    resetCell();
+
+                    // Restore opacity
+                    row.style.opacity = originalOpacity;
+                }
+            });
+        });
+
+        // Handle Edit Title (Action) Button Click
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-title-btn');
+            if (!editBtn) return;
+
+            const actionId = editBtn.getAttribute('data-action-id');
+            const cell = editBtn.closest('.action-title-cell');
+            const titleSpan = cell.querySelector('span');
+            const currentTitle = titleSpan.textContent.trim();
+
+            // Create a text input
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.className = 'form-control';
+            titleInput.value = currentTitle;
+            titleInput.setAttribute('data-action-id', actionId);
+
+            // Create save and cancel buttons
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'btn btn-sm btn-success ms-2';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+            // Hide the current elements
+            titleSpan.style.display = 'none';
+            editBtn.style.display = 'none';
+
+            // Add the new elements
+            cell.appendChild(titleInput);
+            cell.appendChild(saveBtn);
+            cell.appendChild(cancelBtn);
+
+            // Focus the input
+            titleInput.focus();
+
+            // Function to reset the cell to its original state
+            const resetCell = () => {
+                titleSpan.style.display = '';
+                editBtn.style.display = '';
+                titleInput.remove();
+                saveBtn.remove();
+                cancelBtn.remove();
+            };
+
+            // Handle cancel button click
+            cancelBtn.addEventListener('click', resetCell);
+
+            // Handle save button click
+            saveBtn.addEventListener('click', async () => {
+                const newTitle = titleInput.value;
+                if (!newTitle) {
+                    // If no title entered, just cancel
+                    resetCell();
+                    return;
+                }
+
+                // Find the row
+                const row = cell.closest('tr');
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    resetCell();
+                    return;
+                }
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
+                // Disable the input and buttons while processing
+                titleInput.disabled = true;
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-field`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `fieldName=action&newValue=${encodeURIComponent(newTitle)}`
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    const data = await response.json();
+
+                    // Update the action in our stored array
+                    const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        allAccountActions[actionIndex] = data;
+                    }
+
+                    // Update the title span with the new value
+                    titleSpan.textContent = data.title || '';
+
+                    // Reset the cell to its original state but with the new title
+                    resetCell();
+
+                    // Show success notification
+                    showNotification('Action updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating action title:', error);
+                    showNotification('Error updating action. Please try again.', 'danger');
+
+                    // Reset the cell
+                    resetCell();
+
+                    // Restore opacity
+                    row.style.opacity = originalOpacity;
+                }
+            });
+        });
+
+        // Handle Edit Owner Button Click
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-owner-btn');
+            if (!editBtn) return;
+
+            const actionId = editBtn.getAttribute('data-action-id');
+            const cell = editBtn.closest('.action-owner-cell');
+            const ownerSpan = cell.querySelector('span');
+            const currentOwner = ownerSpan.textContent.trim();
+            const currentOwnerId = cell.getAttribute('data-owner-id');
+
+            // Create a select dropdown
+            const ownerSelect = document.createElement('select');
+            ownerSelect.className = 'form-control';
+            ownerSelect.setAttribute('data-action-id', actionId);
+
+            // Fetch users to populate the dropdown
+            fetch('/api/users')
+                .then(response => response.json())
+                .then(users => {
+                    // Add users to dropdown
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.name || user.username;
+                        if (currentOwnerId && user.id == currentOwnerId) {
+                            option.selected = true;
+                        } else if (!currentOwnerId && (user.name === currentOwner || user.username === currentOwner)) {
+                            option.selected = true;
+                        }
+                        ownerSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                    resetCell();
+                    showNotification('Error loading users. Please try again.', 'danger');
+                });
+
+            // Create save and cancel buttons
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'btn btn-sm btn-success ms-2';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+            // Hide the current elements
+            ownerSpan.style.display = 'none';
+            editBtn.style.display = 'none';
+
+            // Add the new elements
+            cell.appendChild(ownerSelect);
+            cell.appendChild(saveBtn);
+            cell.appendChild(cancelBtn);
+
+            // Focus the select
+            ownerSelect.focus();
+
+            // Function to reset the cell to its original state
+            const resetCell = () => {
+                ownerSpan.style.display = '';
+                editBtn.style.display = '';
+                ownerSelect.remove();
+                saveBtn.remove();
+                cancelBtn.remove();
+            };
+
+            // Handle cancel button click
+            cancelBtn.addEventListener('click', resetCell);
+
+            // Handle save button click
+            saveBtn.addEventListener('click', async () => {
+                const newOwnerId = ownerSelect.value;
+                if (!newOwnerId) {
+                    // If no owner selected, just cancel
+                    resetCell();
+                    return;
+                }
+
+                // Find the row
+                const row = cell.closest('tr');
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    resetCell();
+                    return;
+                }
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
+                // Disable the select and buttons while processing
+                ownerSelect.disabled = true;
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-field`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `fieldName=owner&newValue=${encodeURIComponent(newOwnerId)}`
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    const data = await response.json();
+
+                    // Update the action in our stored array
+                    const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
+                    if (actionIndex !== -1) {
+                        allAccountActions[actionIndex] = data;
+                    }
+
+                    // Update the owner span with the new value
+                    ownerSpan.textContent = data.owner || '';
+
+                    // Update the data-owner-id attribute
+                    cell.setAttribute('data-owner-id', data.ownerId || '');
+
+                    // Reset the cell to its original state but with the new owner
+                    resetCell();
+
+                    // Show success notification
+                    showNotification('Owner updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating owner:', error);
+                    showNotification('Error updating owner. Please try again.', 'danger');
 
                     // Reset the cell
                     resetCell();

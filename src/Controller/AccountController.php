@@ -689,4 +689,72 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Error updating date. Please try again.'], 400);
         }
     }
+
+    #[Route('/actions/{id}/update-field', name: 'app_action_update_field', methods: ['POST'])]
+    public function updateActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    {
+        // Find the action
+        $action = $entityManager->getRepository(Action::class)->find($id);
+
+        if (!$action) {
+            return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        try {
+            // Get field and value from request
+            $fieldName = $request->request->get('fieldName');
+            $newValue = $request->request->get('newValue');
+
+            if (!$fieldName) {
+                return new JsonResponse(['error' => 'Field name is required'], 400);
+            }
+
+            // Update the appropriate field based on fieldName
+            switch ($fieldName) {
+                case 'contact':
+                    $action->setContact($newValue);
+                    break;
+                case 'action':
+                    $action->setTitle($newValue);
+                    break;
+                case 'owner':
+                    $owner = $entityManager->getRepository(User::class)->find($newValue);
+                    if (!$owner) {
+                        return new JsonResponse(['error' => 'Owner not found'], 400);
+                    }
+                    $action->setOwner($owner);
+                    break;
+                default:
+                    return new JsonResponse(['error' => 'Invalid field name'], 400);
+            }
+
+            // Save to database
+            $entityManager->flush();
+
+            // Return the updated action data
+            return new JsonResponse([
+                'id' => $action->getId(),
+                'title' => $action->getTitle(),
+                'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
+                'lastAction' => $action->getTitle(),
+                'contact' => $action->getContact(),
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
+                'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
+                'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
+                'ownerId' => $action->getOwner() ? $action->getOwner()->getId() : null,
+                'closed' => $action->isClosed(),
+                'dateClosed' => $action->getDateClosed() ? $appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                'notes' => $action->getNotes(),
+                'hasNotes' => !empty($action->getNotes())
+            ]);
+        } catch (\Exception $e) {
+            // Log the detailed error
+            error_log('Error updating action field: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+
+            // Return error response
+            return new JsonResponse(['error' => 'Error updating field. Please try again.'], 400);
+        }
+    }
 }
