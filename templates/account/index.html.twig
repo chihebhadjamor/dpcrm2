@@ -1462,6 +1462,13 @@
                     // Update the action in our stored array
                     const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
                     if (actionIndex !== -1) {
+                        // Ensure data has the properties needed for UI rendering
+                        // The server returns nextStepDate as the formatted date, but UI expects nextStepDateFormatted
+                        data.nextStepDateFormatted = data.nextStepDate;
+
+                        // Extract raw date (YYYY-MM-DD) from the input for styling purposes
+                        data.nextStepDateRaw = newDate;
+
                         allAccountActions[actionIndex] = data;
                     }
 
