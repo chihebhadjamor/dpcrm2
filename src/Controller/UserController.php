@@ -300,7 +300,9 @@ class UserController extends AbstractWebController
                     'accountName' => $account ? $account->getName() : 'N/A',
                     'lastAction' => $action->getTitle(),
                     'contact' => $action->getContact(), // Ensure contact is included
-                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                    'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                     'closed' => $action->isClosed(),
                     'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
                     'notes' => $action->getNotes(),

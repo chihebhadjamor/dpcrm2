@@ -254,7 +254,9 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
@@ -482,7 +484,9 @@ class AccountController extends AbstractWebController
                 'id' => $accountId,
                 'name' => $account->getName(),
                 'contact' => isset($contactInfo[$accountId]) ? $contactInfo[$accountId] : null,
-                'nextStepDate' => $nextAction ? $this->appSettingsService->formatDate($nextAction->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $nextAction ? $this->appSettingsService->formatDate($nextAction->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $nextAction ? $this->appSettingsService->formatDate($nextAction->getNextStepDate()) : null, // Keep for backward compatibility
                 'nextAction' => $nextAction ? $nextAction->getTitle() : null,
                 'actionOwner' => $nextAction ? $nextAction->getOwner()->getUsername() : null
             ];

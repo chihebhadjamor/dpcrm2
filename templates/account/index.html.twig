@@ -563,8 +563,8 @@
                 }
 
                 // Apply action styling based on next action date
-                if (account.nextStepDate) {
-                    const actionDate = new Date(account.nextStepDate);
+                if (account.nextStepDateRaw) {
+                    const actionDate = new Date(account.nextStepDateRaw);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0); // Set to beginning of day
 
@@ -584,7 +584,7 @@
                 row.innerHTML = `
                     <td>${account.id}</td>
                     <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
-                    <td data-date="${account.nextStepDate || ''}">${account.nextStepDate || ''}</td>
+                    <td data-date="${account.nextStepDateRaw || ''}">${account.nextStepDateFormatted || ''}</td>
                     <td>${account.actionOwner || ''}</td>
                     <td>
                         <a href="/accounts/${account.id}/edit" class="btn btn-sm btn-outline-success">
@@ -1121,7 +1121,7 @@
                 row.classList.add('action-closed');
             } else {
                 // For non-closed actions, check if action is overdue or upcoming
-                const actionDate = action.nextStepDate ? new Date(action.nextStepDate) : null;
+                const actionDate = action.nextStepDateRaw ? new Date(action.nextStepDateRaw) : null;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0); // Set to beginning of day
 
@@ -1153,7 +1153,7 @@
                     <td>${action.id}</td>
                     <td>${action.contact || ''}</td>
                     <td>${action.title}</td>
-                    <td>${action.nextStepDate || ''}</td>
+                    <td>${action.nextStepDateFormatted || ''}</td>
                     <td>${action.owner}</td>
                     <td>
                         <div class="form-check">
@@ -1174,7 +1174,7 @@
                     <td>${action.contact || ''}</td>
                     <td>${action.title}</td>
                     <td class="action-date-cell" data-action-id="${action.id}">
-                        <span>${action.nextStepDate || ''}</span>
+                        <span>${action.nextStepDateFormatted || ''}</span>
                         ${action.closed ? '' :
                             `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-date-btn"
                                 data-action-id="${action.id}">
