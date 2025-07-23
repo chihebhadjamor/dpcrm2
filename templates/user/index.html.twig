@@ -442,19 +442,25 @@
                     row.classList.add('action-closed');
                 } else {
                     // For non-closed actions, check if action is overdue or upcoming
-                    const actionDate = action.nextStepDateRaw ? new Date(action.nextStepDateRaw) : null;
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+                    if (action.nextStepDateRaw) {
+                        // Parse dates ensuring they're treated as local dates
+                        const [year, month, day] = action.nextStepDateRaw.split('-').map(Number);
+                        const actionDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
 
-                    if (actionDate) {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Set to beginning of day
+
                         // Calculate days difference
                         const timeDiff = actionDate.getTime() - today.getTime();
                         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
+                        // First check if action is overdue (in the past)
                         if (daysDiff < 0) {
                             // Overdue actions (past dates only)
                             row.classList.add('action-overdue');
-                        } else if (daysDiff <= 7) {
+                        }
+                        // Only if not overdue, check if it's upcoming
+                        else if (daysDiff <= 7) {
                             // Upcoming actions (today or within next 7 days)
                             row.classList.add('action-upcoming');
                         }

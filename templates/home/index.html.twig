@@ -131,17 +131,31 @@
                                 // Closed actions - this styling takes precedence over date-based styling
                                 row.classList.add('action-closed');
                             } else if (action.nextStepDate) {
-                                const actionDate = new Date(action.nextStepDate);
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0); // Set to beginning of day
-                                const daysDiff = Math.ceil((actionDate - today) / (1000 * 3600 * 24));
+                                // Parse the date string to ensure correct local date handling
+                                const dateParts = action.nextStepDate.split('/');
+                                if (dateParts.length === 3) {
+                                    // Assuming date format is DD/MM/YYYY
+                                    const day = parseInt(dateParts[0], 10);
+                                    const month = parseInt(dateParts[1], 10) - 1; // month is 0-indexed in JS Date
+                                    const year = parseInt(dateParts[2], 10);
 
-                                if (daysDiff < 0) {
-                                    // Overdue actions (past dates only)
-                                    row.classList.add('action-overdue');
-                                } else if (daysDiff <= 7) {
-                                    // Upcoming actions (today or within next 7 days)
-                                    row.classList.add('action-upcoming');
+                                    const actionDate = new Date(year, month, day);
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                                    const timeDiff = actionDate.getTime() - today.getTime();
+                                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                                    // First check if action is overdue (in the past)
+                                    if (daysDiff < 0) {
+                                        // Overdue actions (past dates only)
+                                        row.classList.add('action-overdue');
+                                    }
+                                    // Only if not overdue, check if it's upcoming
+                                    else if (daysDiff <= 7) {
+                                        // Upcoming actions (today or within next 7 days)
+                                        row.classList.add('action-upcoming');
+                                    }
                                 }
                             }
                             myActionsTbody.appendChild(row);
