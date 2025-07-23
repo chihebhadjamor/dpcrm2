@@ -1472,13 +1472,46 @@
                         allAccountActions[actionIndex] = data;
                     }
 
-                    // Re-render the actions to ensure proper sorting
-                    renderActions(allAccountActions);
+                    // Update the date span with the new formatted date
+                    dateSpan.textContent = data.nextStepDate;
+
+                    // Reset the cell to its original state but with the new date
+                    resetCell();
+
+                    // Update the row's class based on the new date
+                    // Remove existing date-related classes
+                    row.classList.remove('action-overdue', 'action-upcoming');
+
+                    // Add appropriate class based on the new date
+                    if (!data.closed) {
+                        // Parse dates ensuring they're treated as local dates
+                        const [year, month, day] = newDate.split('-').map(Number);
+                        const actionDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                        // Calculate days difference
+                        const timeDiff = actionDate.getTime() - today.getTime();
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                        // First check if action is overdue (in the past)
+                        if (daysDiff < 0) {
+                            // Overdue actions (past dates only)
+                            row.classList.add('action-overdue');
+                        }
+                        // Only if not overdue, check if it's upcoming
+                        else if (daysDiff <= 7) {
+                            // Upcoming actions (today or within next 7 days)
+                            row.classList.add('action-upcoming');
+                        }
+                    }
 
                     // Show success notification
                     showNotification('Action date updated successfully', 'success');
 
                     // Refresh the accounts list to reflect the updated next action date
+                    // This is done asynchronously in the background
                     fetch('/accounts/list-ajax')
                         .then(response => response.json())
                         .then(data => {
@@ -1522,7 +1555,6 @@
                         .catch(error => {
                             console.error('Error refreshing accounts list:', error);
                         });
-
                 } catch (error) {
                     console.error('Error updating action date:', error);
                     showNotification('Error updating action date. Please try again.', 'danger');
