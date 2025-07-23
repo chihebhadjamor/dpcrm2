@@ -492,7 +492,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/toggle-closed', name: 'app_action_toggle_closed', methods: ['POST'])]
-    public function toggleActionClosed(int $id, EntityManagerInterface $entityManager): JsonResponse
+    public function toggleActionClosed(int $id, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -519,11 +519,11 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'dateClosed' => $action->getDateClosed() ? $appSettingsService->formatDateTime($action->getDateClosed()) : null,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ]);
@@ -582,7 +582,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/update-notes', name: 'app_action_update_notes', methods: ['POST'])]
-    public function updateActionNotes(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function updateActionNotes(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -608,11 +608,11 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'dateClosed' => $action->getDateClosed() ? $appSettingsService->formatDateTime($action->getDateClosed()) : null,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ]);
@@ -626,7 +626,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/update-date', name: 'app_action_update_date', methods: ['POST'])]
-    public function updateActionDate(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function updateActionDate(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -661,11 +661,11 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
-                'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $action->getDateClosed()->format('Y-m-d H:i:s') : null,
+                'dateClosed' => $action->getDateClosed() ? $appSettingsService->formatDateTime($action->getDateClosed()) : null,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ]);

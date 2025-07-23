@@ -470,12 +470,12 @@
                 <td>${action.lastAction || ''}</td>
                 <td>${action.contact || ''}</td>
                 <td class="action-date-cell" data-action-id="${action.id}">
-                    ${action.closed ?
-                        `<span>${action.nextStepDate || ''}</span>` :
-                        `<input type="date" class="form-control action-date-picker"
-                            value="${action.nextStepDate || ''}"
-                            data-action-id="${action.id}"
-                            data-original-date="${action.nextStepDate || ''}">`
+                    <span>${action.nextStepDate || ''}</span>
+                    ${action.closed ? '' :
+                        `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-date-btn"
+                            data-action-id="${action.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>`
                     }
                 </td>
                 <td>
@@ -654,6 +654,135 @@
                 document.getElementById('action-id-for-notes').value = icon.dataset.actionId;
                 document.getElementById('notes-content').value = icon.dataset.notes || '';
                 notesModal.show();
+            });
+
+            // 4. Edit Date Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-date-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-date-cell');
+                const dateSpan = cell.querySelector('span');
+                const currentDate = dateSpan.textContent.trim();
+
+                // Create a date input
+                const dateInput = document.createElement('input');
+                dateInput.type = 'date';
+                dateInput.className = 'form-control temp-date-picker';
+                dateInput.setAttribute('data-action-id', actionId);
+
+                // Try to convert the formatted date to YYYY-MM-DD for the input
+                try {
+                    // This is a best effort to parse the date - it may not work for all formats
+                    const parsedDate = new Date(currentDate);
+                    if (!isNaN(parsedDate.getTime())) {
+                        const yyyy = parsedDate.getFullYear();
+                        const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(parsedDate.getDate()).padStart(2, '0');
+                        dateInput.value = `${yyyy}-${mm}-${dd}`;
+                    }
+                } catch (e) {
+                    console.error('Error parsing date:', e);
+                }
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                dateSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(dateInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the date input
+                dateInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    dateSpan.style.display = '';
+                    editBtn.style.display = '';
+                    dateInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newDate = dateInput.value;
+                    if (!newDate) {
+                        // If no date selected, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    dateInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/actions/${actionId}/update-date`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `date=${encodeURIComponent(newDate)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        const data = await response.json();
+
+                        // Update the action in our stored array
+                        const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
+                        if (actionIndex !== -1) {
+                            userBacklogActions[actionIndex] = data;
+                        }
+
+                        // Re-render the backlog to ensure proper sorting
+                        renderBacklog();
+
+                        // Show success notification
+                        showNotification('Action date updated successfully', 'success');
+
+                    } catch (error) {
+                        console.error('Error updating action date:', error);
+                        showNotification('Error updating action date. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
             });
 
             document.getElementById('save-notes-btn').addEventListener('click', async () => {
