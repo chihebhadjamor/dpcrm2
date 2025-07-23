@@ -31,7 +31,7 @@ class UpdateUserRoleCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $username = 'chiheb';
-        $roles = ['ROLE_USER'];
+        $roles = ['ROLE_USER', 'ROLE_ADMIN'];
 
         // Check if user exists
         $userRepository = $this->entityManager->getRepository(User::class);

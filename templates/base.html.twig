@@ -100,11 +100,9 @@
                     <a href="{{ path('app_accounts') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-building"></i> Accounts
                     </a>
-                    {% if is_granted('ROLE_ADMIN') %}
                     <a href="{{ path('app_setup') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-cog"></i> Setup
                     </a>
-                    {% endif %}
                 </div>
 
                 <div class="mt-4">
