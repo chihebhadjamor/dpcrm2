@@ -335,8 +335,8 @@
                             // Handle different column types
                             if (sortColumn === 'nextStepDate') {
                                 // Convert dates to timestamps for comparison
-                                valueA = a.nextStepDate ? new Date(a.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
-                                valueB = b.nextStepDate ? new Date(b.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
+                                valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                                valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
                             } else if (sortColumn === 'id') {
                                 valueA = parseInt(a.id);
                                 valueB = parseInt(b.id);
@@ -382,8 +382,8 @@
                 .then(data => {
                     // Sort the data by nextStepDate in ascending order
                     data.sort((a, b) => {
-                        const valueA = a.nextStepDate ? new Date(a.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
-                        const valueB = b.nextStepDate ? new Date(b.nextStepDate).getTime() : Number.MAX_SAFE_INTEGER;
+                        const valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                        const valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
                         return valueA - valueB;
                     });
 
@@ -1076,8 +1076,8 @@
 
             // Sort open actions by date in ascending order (soonest first)
             openActions.sort((a, b) => {
-                const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31);
-                const dateB = b.nextStepDate ? new Date(b.nextStepDate) : new Date(9999, 11, 31);
+                const dateA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00') : new Date(9999, 11, 31);
+                const dateB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00') : new Date(9999, 11, 31);
                 return dateA - dateB;
             });
 
@@ -1462,18 +1462,13 @@
                     // Update the action in our stored array
                     const actionIndex = allAccountActions.findIndex(a => a.id == actionId);
                     if (actionIndex !== -1) {
-                        // Ensure data has the properties needed for UI rendering
-                        // The server returns nextStepDate as the formatted date, but UI expects nextStepDateFormatted
-                        data.nextStepDateFormatted = data.nextStepDate;
-
-                        // Extract raw date (YYYY-MM-DD) from the input for styling purposes
-                        data.nextStepDateRaw = newDate;
-
+                        // The server now returns both nextStepDateFormatted and nextStepDateRaw
+                        // No need to manually set these properties anymore
                         allAccountActions[actionIndex] = data;
                     }
 
                     // Update the date span with the new formatted date
-                    dateSpan.textContent = data.nextStepDate;
+                    dateSpan.textContent = data.nextStepDateFormatted || '';
 
                     // Reset the cell to its original state but with the new date
                     resetCell();
@@ -1483,9 +1478,9 @@
                     row.classList.remove('action-overdue', 'action-upcoming');
 
                     // Add appropriate class based on the new date
-                    if (!data.closed) {
-                        // Parse dates ensuring they're treated as local dates
-                        const [year, month, day] = newDate.split('-').map(Number);
+                    if (!data.closed && data.nextStepDateRaw) {
+                        // Parse dates from the reliable raw date format (YYYY-MM-DD)
+                        const [year, month, day] = data.nextStepDateRaw.split('-').map(Number);
                         const actionDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
 
                         const today = new Date();

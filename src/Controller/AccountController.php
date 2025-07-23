@@ -523,7 +523,9 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
@@ -568,7 +570,9 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? (new \App\Service\AppSettingsService())->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // Keep for backward compatibility
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
@@ -612,7 +616,9 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
@@ -665,7 +671,9 @@ class AccountController extends AbstractWebController
                 'accountName' => $action->getAccount() ? $action->getAccount()->getName() : 'N/A',
                 'lastAction' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $action->getCreatedAt() ? $appSettingsService->formatDateTime($action->getCreatedAt()) : null,
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
