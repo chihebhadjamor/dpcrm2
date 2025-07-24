@@ -21,6 +21,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class UserController extends AbstractWebController
 {
@@ -32,9 +33,22 @@ class UserController extends AbstractWebController
         $this->appSettingsService = $appSettingsService;
         $this->emailService = $emailService;
     }
+
+    /**
+     * Check if the current user has admin access
+     * Throws AccessDeniedException if not
+     */
+    private function denyAccessUnlessAdmin(): void
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            throw new AccessDeniedException('You do not have permission to access this page.');
+        }
+    }
     #[Route('/users/create-ajax', name: 'app_create_user_ajax', methods: ['POST'])]
     public function createUserAjax(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         // Validate CSRF token
         $token = $request->request->get('_token');
         if (!$token) {
@@ -126,6 +140,9 @@ class UserController extends AbstractWebController
     #[Route('/users', name: 'app_users')]
     public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
+        // Only allow administrators to access this page
+        $this->denyAccessUnlessAdmin();
+
         $users = $entityManager->getRepository(User::class)->findBy([], ['id' => 'DESC']);
 
         // Return the view with users
@@ -137,6 +154,8 @@ class UserController extends AbstractWebController
     #[Route('/api/users', name: 'app_get_users', methods: ['GET'])]
     public function getUsers(EntityManagerInterface $entityManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         $users = $entityManager->getRepository(User::class)->findAll();
 
         $usersData = [];
@@ -153,6 +172,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{userId}/actions', name: 'app_user_actions', methods: ['GET'])]
     public function getUserActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         try {
             $user = $entityManager->getRepository(User::class)->find($userId);
 
@@ -190,6 +211,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{userId}/open-actions', name: 'app_user_open_actions', methods: ['GET'])]
     public function getUserOpenActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         try {
             $user = $entityManager->getRepository(User::class)->find($userId);
 
@@ -277,6 +300,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{userId}/account-actions', name: 'app_user_account_actions', methods: ['GET'])]
     public function getUserAccountActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         try {
             $user = $entityManager->getRepository(User::class)->find($userId);
 
@@ -349,6 +374,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{userId}/create-action', name: 'app_create_user_action', methods: ['POST'])]
     public function createAction(int $userId, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         // Validate CSRF token
         $token = $request->request->get('_token');
         if (!$token) {
@@ -409,6 +436,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{userId}/update', name: 'app_update_user', methods: ['POST'])]
     public function updateUser(int $userId, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         try {
             // Validate CSRF token
             $token = $request->request->get('_token');
@@ -521,6 +550,8 @@ class UserController extends AbstractWebController
     #[Route('/user/backlog/update-action-field/{id}', name: 'app_user_backlog_update_action_field', methods: ['POST'])]
     public function updateBacklogActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
 
@@ -611,7 +642,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
-        // You can add security checks here, e.g., $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // Only allow administrators to access this page
+        $this->denyAccessUnlessAdmin();
 
         // Main user form
         $form = $this->createForm(\App\Form\UserType::class, $user);
@@ -745,6 +777,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{id}/reset-password', name: 'app_user_reset_password', methods: ['POST'])]
     public function resetPassword(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         // Check CSRF token
         $submittedToken = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('reset-password-' . $user->getId(), $submittedToken)) {
@@ -809,6 +843,8 @@ class UserController extends AbstractWebController
     #[Route('/users/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
     public function setup2fa(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
         // Check if 2FA is already enabled
         if ($user->isIs2faEnabled() && $user->getSecret2fa()) {
             $this->addFlash('info', '2FA is already enabled for this account.');
