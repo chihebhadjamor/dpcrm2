@@ -214,6 +214,13 @@ class AccountController extends AbstractWebController
     #[Route('/accounts/{id}/contacts', name: 'app_account_contacts', methods: ['GET'])]
     public function getAccountContacts(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Get the current user
+        $currentUser = $this->getUser();
+
+        if (!$currentUser) {
+            return new JsonResponse(['error' => 'User not authenticated'], 401);
+        }
+
         // Find the account
         $account = $entityManager->getRepository(Account::class)->find($id);
 
@@ -500,11 +507,23 @@ class AccountController extends AbstractWebController
     #[Route('/actions/{id}/toggle-closed', name: 'app_action_toggle_closed', methods: ['POST'])]
     public function toggleActionClosed(int $id, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
+        // Get the current user
+        $currentUser = $this->getUser();
+
+        if (!$currentUser) {
+            return new JsonResponse(['error' => 'User not authenticated'], 401);
+        }
+
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the action belongs to the current user or if the user is an admin
+        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
         try {
@@ -594,11 +613,23 @@ class AccountController extends AbstractWebController
     #[Route('/actions/{id}/update-notes', name: 'app_action_update_notes', methods: ['POST'])]
     public function updateActionNotes(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
+        // Get the current user
+        $currentUser = $this->getUser();
+
+        if (!$currentUser) {
+            return new JsonResponse(['error' => 'User not authenticated'], 401);
+        }
+
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the action belongs to the current user or if the user is an admin
+        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
         try {

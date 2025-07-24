@@ -24,38 +24,160 @@
                 position: sticky;
                 top: 0;
                 z-index: 1000;
-                background-color: #fff;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                padding: 0.5rem 1rem;
+                background-color: #ffffff;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e9ecef;
+                transition: all 0.3s ease;
             }
 
-            /* Logo styles */
-            .logo-container {
+            /* Brand mark styles (combined logo and title) */
+            .brand-mark {
+                display: flex;
+                align-items: center;
+                height: 42px;
+                position: relative;
+                background: linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,255,255,0));
+                padding-right: 1.5rem;
+                border-radius: 4px;
+            }
+
+            .brand-mark img {
+                height: 100%;
+                width: auto;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+            }
+
+            .brand-mark .app-title {
+                margin-left: 0.75rem;
+                color: #1a3c6e;
+                font-weight: 800;
+                font-size: 1.5rem;
+                letter-spacing: 0.75px;
+                display: flex;
+                align-items: center;
+                position: relative;
+                text-shadow: 0 1px 1px rgba(0,0,0,0.05);
+            }
+
+            .brand-mark .app-title h2 {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                transition: color 0.3s ease;
+            }
+
+            /* Menu button styles */
+            .menu-button {
+                padding: 0.625rem;
+                border-radius: 0.375rem;
+                color: #1a3c6e;
+                transition: all 0.3s ease;
+                margin-right: 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
                 height: 40px;
             }
 
-            .logo-container img {
-                height: 100%;
-                width: auto;
+            .menu-button:hover {
+                background-color: rgba(26, 60, 110, 0.08);
+                color: #0d2b5a;
+                transform: translateY(-1px);
             }
 
-            /* Offcanvas menu styles */
-            .offcanvas {
-                width: 250px;
+            .menu-button:active {
+                transform: translateY(0);
             }
 
-            /* App title styles */
-            .app-title {
-                color: #333;
+            /* User welcome styles */
+            .user-welcome {
                 font-weight: 600;
-                font-size: 1.5rem;
+                color: #1a3c6e;
+            }
+
+            .user-welcome a {
+                color: #1a3c6e;
+                padding: 0.5rem 0.875rem;
+                border-radius: 0.375rem;
+                transition: all 0.3s ease;
                 display: flex;
                 align-items: center;
             }
 
+            .user-welcome a:hover {
+                background-color: rgba(26, 60, 110, 0.08);
+                color: #0d2b5a;
+            }
+
+            .user-welcome .dropdown-menu {
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                border: 1px solid rgba(0,0,0,0.08);
+                padding: 0.5rem 0;
+            }
+
+            .user-welcome .dropdown-item {
+                padding: 0.625rem 1.25rem;
+                transition: all 0.2s ease;
+            }
+
+            /* Offcanvas menu styles */
+            .offcanvas {
+                width: 280px;
+                border-right: 1px solid rgba(0,0,0,0.08);
+            }
+
+            .offcanvas-header {
+                border-bottom: 1px solid rgba(0,0,0,0.08);
+                padding: 1.25rem 1.5rem;
+            }
+
+            .offcanvas-title {
+                color: #1a3c6e;
+                font-weight: 700;
+                font-size: 1.25rem;
+            }
+
+            .offcanvas-body {
+                padding: 1.25rem;
+            }
+
+            .offcanvas .list-group-item {
+                border-radius: 0.375rem;
+                margin-bottom: 0.5rem;
+                border: none;
+                transition: all 0.2s ease;
+                color: #495057;
+            }
+
+            .offcanvas .list-group-item:hover {
+                background-color: rgba(26, 60, 110, 0.08);
+                color: #1a3c6e;
+            }
+
+            .offcanvas .list-group-item i {
+                color: #1a3c6e;
+                margin-right: 0.75rem;
+                width: 1.25rem;
+                text-align: center;
+            }
+
             /* Main content styles */
             .main-content {
-                padding-top: 1rem;
+                padding-top: 2rem;
+                margin-top: 0.75rem;
+                position: relative;
+                min-height: calc(100vh - 80px);
+            }
+
+            /* Add subtle page transitions */
+            .main-content {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0.8; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
             }
 
             /* Responsive table styles */
@@ -68,31 +190,29 @@
         {% block stylesheets %}{% endblock %}
     </head>
     <body>
-        <!-- Header with burger menu, logo, and title -->
+        <!-- Modern header with unified brand mark -->
         <header class="header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <!-- Burger menu button -->
-                    <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-controls="sideMenu">
+                    <!-- Burger menu button with improved alignment -->
+                    <button class="btn menu-button" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-controls="sideMenu">
                         <i class="fas fa-bars"></i>
                     </button>
 
-                    <!-- DataPowa Logo -->
-                    <div class="logo-container ms-3">
+                    <!-- Unified DataPowa Logo and DPCRM Title as a cohesive brand mark -->
+                    <div class="brand-mark">
                         <img src="{{ asset('assets/images/datapowa.png') }}" alt="DataPowa Logo">
-                    </div>
-
-                    <!-- App Title (aligned horizontally with logo) -->
-                    <div class="app-title ms-3">
-                        <h2 class="mb-0">DPCRM</h2>
+                        <div class="app-title">
+                            <h2 class="mb-0">DPCRM</h2>
+                        </div>
                     </div>
                 </div>
 
-                <!-- User welcome message and dropdown (if user is logged in) -->
+                <!-- User welcome message and dropdown with improved styling -->
                 {% if app.user %}
                 <div class="user-welcome dropdown">
                     <a href="#" class="dropdown-toggle text-decoration-none" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i>
+                        <i class="fas fa-user-circle me-2"></i>
                         <span>Welcome, {{ app.user.username is defined ? app.user.username : app.user.userIdentifier }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
@@ -124,6 +244,9 @@
                     {% if app.user %}
                     <a href="{{ path('app_profile') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-user-cog"></i> My Profile
+                    </a>
+                    <a href="{{ path('app_my_backlog') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tasks"></i> My Backlog
                     </a>
                     {% endif %}
                     {% if is_granted('ROLE_ADMIN') %}

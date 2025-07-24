@@ -297,6 +297,65 @@ class UserController extends AbstractWebController
         }
     }
 
+    #[Route('/my-backlog', name: 'app_my_backlog', methods: ['GET'])]
+    /**
+     * Display the current user's backlog (personal actions page)
+     */
+    public function myBacklog(EntityManagerInterface $entityManager): Response
+    {
+        try {
+            $user = $this->getUser();
+
+            if (!$user) {
+                throw new AccessDeniedException('User not authenticated');
+            }
+
+            // Get all actions where the current user is the owner
+            // Order by closed ASC (open actions first) and then by nextStepDate ASC (earliest dates first)
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a', 'acct') // Also select the account to ensure it's loaded
+                ->from(Action::class, 'a')
+                ->leftJoin('a.account', 'acct') // Use leftJoin to include actions without an account
+                ->where('a.owner = :user')
+                ->orderBy('a.closed', 'ASC')
+                ->addOrderBy('a.nextStepDate', 'ASC')
+                ->setParameter('user', $user);
+
+            $actions = $queryBuilder->getQuery()->getResult();
+
+            // Prepare actions for the template
+            $userBacklogActions = [];
+            foreach ($actions as $action) {
+                $account = $action->getAccount();
+                $accountId = $account ? $account->getId() : null;
+
+                $userBacklogActions[] = [
+                    'id' => $action->getId(),
+                    'accountId' => $accountId,
+                    'accountName' => $account ? $account->getName() : 'N/A',
+                    'lastAction' => $action->getTitle(),
+                    'title' => $action->getTitle(),
+                    'contact' => $action->getContact(),
+                    'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'closed' => $action->isClosed(),
+                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                    'notes' => $action->getNotes(),
+                    'hasNotes' => !empty($action->getNotes())
+                ];
+            }
+
+            return $this->render('user/my_backlog.html.twig', [
+                'userBacklogActions' => $userBacklogActions,
+                'username' => $user->getUsername()
+            ]);
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'An error occurred while fetching your backlog: ' . $e->getMessage());
+            return $this->redirectToRoute('app_home');
+        }
+    }
+
     #[Route('/users/{userId}/account-actions', name: 'app_user_account_actions', methods: ['GET'])]
     public function getUserAccountActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -580,13 +639,23 @@ class UserController extends AbstractWebController
     #[Route('/user/backlog/update-action-field/{id}', name: 'app_user_backlog_update_action_field', methods: ['POST'])]
     public function updateBacklogActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
     {
-        // Only allow administrators to access this endpoint
-        $this->denyAccessUnlessAdmin();
+        // Get the current user
+        $currentUser = $this->getUser();
+
+        if (!$currentUser) {
+            return new JsonResponse(['error' => 'User not authenticated'], 401);
+        }
+
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the action belongs to the current user or if the user is an admin
+        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
         try {
