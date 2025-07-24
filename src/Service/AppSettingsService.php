@@ -9,6 +9,7 @@ class AppSettingsService
 {
     private EntityManagerInterface $entityManager;
     private ?string $dateFormat = null;
+    private ?string $fontSize = null;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
@@ -60,6 +61,20 @@ class AppSettingsService
     }
 
     /**
+     * Get the application-wide font size
+     *
+     * @return string The font size (e.g., 'small', 'medium', 'large')
+     */
+    public function getFontSize(): string
+    {
+        if ($this->fontSize === null) {
+            $this->loadFontSize();
+        }
+
+        return $this->fontSize;
+    }
+
+    /**
      * Load the date format from the database
      */
     private function loadDateFormat(): void
@@ -73,6 +88,23 @@ class AppSettingsService
             // If there's any error (e.g., database connection issue or table doesn't exist yet),
             // fall back to the default format
             $this->dateFormat = 'Y-m-d';
+        }
+    }
+
+    /**
+     * Load the font size from the database
+     */
+    private function loadFontSize(): void
+    {
+        try {
+            $setting = $this->entityManager->getRepository(AppSettings::class)
+                ->findOneBy(['setting_name' => 'font_size']);
+
+            $this->fontSize = $setting ? $setting->getSettingValue() : 'medium';
+        } catch (\Exception $e) {
+            // If there's any error (e.g., database connection issue or table doesn't exist yet),
+            // fall back to the default font size
+            $this->fontSize = 'medium';
         }
     }
 }
