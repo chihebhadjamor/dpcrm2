@@ -1183,37 +1183,29 @@
                     <td class="action-contact-cell" data-action-id="${action.id}">
                         <span>${action.contact || ''}</span>
                         ${action.closed ? '' :
-                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-contact-btn"
-                                data-action-id="${action.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>`
+                            `<i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
+                                data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-title-cell" data-action-id="${action.id}">
                         <span>${action.title}</span>
                         ${action.closed ? '' :
-                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-title-btn"
-                                data-action-id="${action.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>`
+                            `<i class="fas fa-pencil-alt edit-title-btn ms-2" style="cursor: pointer;"
+                                data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-date-cell" data-action-id="${action.id}">
                         <span>${action.nextStepDateFormatted || ''}</span>
                         ${action.closed ? '' :
-                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-date-btn"
-                                data-action-id="${action.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>`
+                            `<i class="fas fa-pencil-alt edit-date-btn ms-2" style="cursor: pointer;"
+                                data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-owner-cell" data-action-id="${action.id}" data-owner-id="${action.ownerId || ''}">
                         <span>${action.owner}</span>
                         ${action.closed ? '' :
-                            `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-owner-btn"
-                                data-action-id="${action.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>`
+                            `<i class="fas fa-pencil-alt edit-owner-btn ms-2" style="cursor: pointer;"
+                                data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td>
