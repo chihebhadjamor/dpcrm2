@@ -73,6 +73,41 @@
                                 </div>
                             </div>
 
+                            <!-- User Status Section -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">User Status</label>
+                                <div class="p-4 {% if user.disabled %}bg-danger-subtle{% else %}bg-success-subtle{% endif %} rounded-3 shadow-sm">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if user.disabled %}
+                                                    <i class="fas fa-user-slash fa-2x text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-user-check fa-2x text-success"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1">This user is currently <strong>{% if user.disabled %}disabled{% else %}enabled{% endif %}</strong></h5>
+                                                <p class="mb-0">
+                                                    {% if user.disabled %}
+                                                        This user cannot log in to the application.
+                                                    {% else %}
+                                                        This user has full access to the application.
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <form method="post" action="{{ path('app_user_toggle_status', {'id': user.id}) }}" onsubmit="return confirm('Are you sure you want to {% if user.disabled %}enable{% else %}disable{% endif %} this user?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('toggle-status-' ~ user.id) }}">
+                                            <button type="submit" class="btn {% if user.disabled %}btn-success{% else %}btn-danger{% endif %} px-4 shadow-sm">
+                                                <i class="fas {% if user.disabled %}fa-user-check{% else %}fa-user-slash{% endif %} me-1"></i>
+                                                {% if user.disabled %}Enable User{% else %}Disable User{% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="d-flex justify-content-end gap-2 mt-4">
                                 <a href="{{ path('app_users') }}" class="btn btn-outline-secondary px-4">
                                     <i class="fas fa-arrow-left me-1"></i> Back to list

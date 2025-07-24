@@ -516,8 +516,38 @@ class UserController extends AbstractWebController
                     return new JsonResponse(['error' => 'Invalid field name'], 400);
             }
 
-            // Save to database
-            $entityManager->flush();
+            // Use QueryBuilder to ensure SQL logging for the update
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->update(User::class, 'u')
+                ->where('u.id = :id')
+                ->setParameter('id', $user->getId());
+
+            // Set the appropriate field based on which one was updated
+            switch ($fieldName) {
+                case 'username':
+                    $queryBuilder->set('u.username', ':value')
+                        ->setParameter('value', $value);
+                    break;
+                case 'email':
+                    $queryBuilder->set('u.email', ':value')
+                        ->setParameter('value', $value);
+                    break;
+                case 'roles':
+                    $queryBuilder->set('u.roles', ':value')
+                        ->setParameter('value', $user->getRoles());
+                    break;
+                case 'is_2fa_enabled':
+                    $queryBuilder->set('u.is_2fa_enabled', ':value')
+                        ->setParameter('value', $user->isIs2faEnabled());
+                    break;
+                case 'secret_2fa':
+                    $queryBuilder->set('u.secret_2fa', ':value')
+                        ->setParameter('value', $user->getSecret2fa());
+                    break;
+            }
+
+            // Execute the update query
+            $queryBuilder->getQuery()->execute();
 
             // Send account updated email
             try {
@@ -659,6 +689,24 @@ class UserController extends AbstractWebController
 
         // Handle main form submission
         if ($form->isSubmitted() && $form->isValid()) {
+            // Use QueryBuilder to ensure SQL logging for the update
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->update(User::class, 'u')
+                ->set('u.username', ':username')
+                ->set('u.email', ':email')
+                ->set('u.roles', ':roles')
+                ->set('u.disabled', ':disabled')
+                ->where('u.id = :id')
+                ->setParameter('username', $user->getUsername())
+                ->setParameter('email', $user->getEmail())
+                ->setParameter('roles', $user->getRoles())
+                ->setParameter('disabled', $user->isDisabled())
+                ->setParameter('id', $user->getId());
+
+            // Execute the update query
+            $queryBuilder->getQuery()->execute();
+
+            // Ensure changes are persisted to the database
             $entityManager->flush();
 
             // Send account updated email
@@ -793,8 +841,16 @@ class UserController extends AbstractWebController
         $hashedPassword = $passwordHasher->hashPassword($user, $temporaryPassword);
         $user->setPassword($hashedPassword);
 
-        // Save to database
-        $entityManager->flush();
+        // Use QueryBuilder to ensure SQL logging for the update
+        $queryBuilder = $entityManager->createQueryBuilder();
+        $queryBuilder->update(User::class, 'u')
+            ->set('u.password', ':password')
+            ->where('u.id = :id')
+            ->setParameter('password', $hashedPassword)
+            ->setParameter('id', $user->getId());
+
+        // Execute the update query
+        $queryBuilder->getQuery()->execute();
 
         // Send password reset email
         $emailSent = true;
@@ -840,6 +896,38 @@ class UserController extends AbstractWebController
         return $password;
     }
 
+    #[Route('/users/{id}/toggle-status', name: 'app_user_toggle_status', methods: ['POST'])]
+    public function toggleUserStatus(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    {
+        // Only allow administrators to access this endpoint
+        $this->denyAccessUnlessAdmin();
+
+        // Check CSRF token
+        $submittedToken = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('toggle-status-' . $user->getId(), $submittedToken)) {
+            $this->addFlash('error', 'Invalid CSRF token. Please try again.');
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+        }
+
+        // Get the new status (opposite of current status)
+        $newStatus = !$user->isDisabled();
+
+        // Update the user's disabled status
+        $user->setDisabled($newStatus);
+
+        // Persist the changes to the database
+        $entityManager->flush();
+
+        // Add appropriate flash message
+        if ($newStatus) {
+            $this->addFlash('success', sprintf('User "%s" has been disabled successfully.', $user->getUsername()));
+        } else {
+            $this->addFlash('success', sprintf('User "%s" has been enabled successfully.', $user->getUsername()));
+        }
+
+        return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+    }
+
     #[Route('/users/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
     public function setup2fa(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
@@ -857,7 +945,17 @@ class UserController extends AbstractWebController
             // to generate a proper 2FA secret and QR code
             $secret = bin2hex(random_bytes(16)); // Simple example - use a proper 2FA library in production
             $user->setSecret2fa($secret);
-            $entityManager->flush();
+
+            // Use QueryBuilder to ensure SQL logging for the update
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->update(User::class, 'u')
+                ->set('u.secret_2fa', ':secret')
+                ->where('u.id = :id')
+                ->setParameter('secret', $secret)
+                ->setParameter('id', $user->getId());
+
+            // Execute the update query
+            $queryBuilder->getQuery()->execute();
 
             // Send account updated email
             try {
@@ -884,7 +982,17 @@ class UserController extends AbstractWebController
             // using a proper 2FA library
             if ($code === '123456') { // Example validation - use proper validation in production
                 $user->setIs2faEnabled(true);
-                $entityManager->flush();
+
+                // Use QueryBuilder to ensure SQL logging for the update
+                $queryBuilder = $entityManager->createQueryBuilder();
+                $queryBuilder->update(User::class, 'u')
+                    ->set('u.is_2fa_enabled', ':enabled')
+                    ->where('u.id = :id')
+                    ->setParameter('enabled', true)
+                    ->setParameter('id', $user->getId());
+
+                // Execute the update query
+                $queryBuilder->getQuery()->execute();
 
                 // Send account updated email
                 try {

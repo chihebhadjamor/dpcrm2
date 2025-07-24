@@ -33,6 +33,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $secret_2fa = null;
 
+    #[ORM\Column(options: ["default" => false])]
+    private bool $disabled = false;
+
     /**
      * @var string The hashed password
      */
@@ -113,6 +116,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setSecret2fa(?string $secret_2fa): static
     {
         $this->secret_2fa = $secret_2fa;
+
+        return $this;
+    }
+
+    public function isDisabled(): bool
+    {
+        return $this->disabled;
+    }
+
+    public function setDisabled(bool $disabled): static
+    {
+        $this->disabled = $disabled;
 
         return $this;
     }

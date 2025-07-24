@@ -13,6 +13,10 @@
                             <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
                         {% endif %}
 
+                        {% if app.request.get('disabled') %}
+                            <div class="alert alert-danger">Your account has been disabled. Please contact an administrator.</div>
+                        {% endif %}
+
                         {% if app.user %}
                             <div class="alert alert-info mb-3">
                                 You are logged in as {{ app.user.username }}, <a href="{{ path('app_logout') }}">Logout</a>
