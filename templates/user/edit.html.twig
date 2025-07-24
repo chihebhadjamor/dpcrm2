@@ -5,91 +5,207 @@
 {% block body %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }}">
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} shadow-sm">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endfor %}
 
-            <!-- User Information Card -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h1>Edit User: {{ user.username }}</h1>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h1 class="h3 mb-0">Edit User: {{ user.username }}</h1>
                 </div>
                 <div class="card-body">
-                    {{ form_start(form) }}
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-medium" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                                <i class="fas fa-user me-2"></i>User Details
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="twofa-tab" data-bs-toggle="tab" data-bs-target="#twofa" type="button" role="tab" aria-controls="twofa" aria-selected="false">
+                                <i class="fas fa-shield-alt me-2"></i>Two-Factor Authentication
+                            </button>
+                        </li>
+                    </ul>
 
-                    {{ form_row(form.email) }}
-                    {{ form_row(form.username) }}
+                    <!-- Tabs Content -->
+                    <div class="tab-content" id="userTabsContent">
+                        <!-- User Details Tab -->
+                        <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                            {{ form_start(form) }}
 
-                    <div class="mb-3">
-                        {{ form_label(form.roles) }}
-                        <div class="form-check-group">
-                            {{ form_widget(form.roles) }}
+                            <div class="row">
+                                <div class="col-md-6 pe-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(form.email, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(form.email, {'attr': {'class': 'form-control form-control-lg bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(form.email) }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 ps-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(form.username, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(form.username, {'attr': {'class': 'form-control form-control-lg bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(form.username) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                {{ form_label(form.roles, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                <div class="p-4 bg-light rounded-3 shadow-sm">
+                                    <div class="role-checkboxes">
+                                        {{ form_widget(form.roles) }}
+                                    </div>
+                                </div>
+                                <div class="form-text text-danger">
+                                    {{ form_errors(form.roles) }}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a href="{{ path('app_users') }}" class="btn btn-outline-secondary px-4">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to list
+                                </a>
+                                <button class="btn btn-primary px-4 shadow-sm">
+                                    <i class="fas fa-save me-1"></i> {{ button_label|default('Update User') }}
+                                </button>
+                            </div>
+
+                            {{ form_end(form) }}
                         </div>
-                        <div class="form-text text-danger">
-                            {{ form_errors(form.roles) }}
+
+                        <!-- Change Password Tab -->
+                        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                            <div class="p-4 bg-light rounded-3 shadow-sm mb-4">
+                                <p class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i> Passwords must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, and one number.</p>
+                            </div>
+
+                            {{ form_start(passwordForm) }}
+
+                            <div class="mb-4">
+                                {{ form_label(passwordForm.currentPassword, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                {{ form_widget(passwordForm.currentPassword, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                {{ form_errors(passwordForm.currentPassword) }}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 pe-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(passwordForm.newPassword.first, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(passwordForm.newPassword.first, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(passwordForm.newPassword.first) }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 ps-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(passwordForm.newPassword.second, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(passwordForm.newPassword.second, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(passwordForm.newPassword.second) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                    <i class="fas fa-key me-1"></i> Change Password
+                                </button>
+                            </div>
+
+                            {{ form_end(passwordForm) }}
+                        </div>
+
+                        <!-- Two-Factor Authentication Tab -->
+                        <div class="tab-pane fade" id="twofa" role="tabpanel" aria-labelledby="twofa-tab">
+                            <div class="p-4 rounded-3 shadow-sm mb-4 {% if user.is2faEnabled %}bg-success-subtle{% else %}bg-warning-subtle{% endif %}">
+                                {% if user.is2faEnabled %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Two-factor authentication is <strong>enabled</strong></h5>
+                                            <p class="mb-0">Your account has an extra layer of security.</p>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Two-factor authentication is <strong>disabled</strong></h5>
+                                            <p class="mb-0">Your account could be more secure with 2FA enabled.</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">What is Two-Factor Authentication?</h5>
+                                    <p class="card-text">Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your mobile device in addition to your password.</p>
+                                    <p class="card-text">This helps protect your account even if your password is compromised.</p>
+                                </div>
+                            </div>
+
+                            {% if user.is2faEnabled %}
+                                {{ form_start(twoFactorForm) }}
+                                <div class="form-check form-switch mb-4">
+                                    {{ form_widget(twoFactorForm.is_2fa_enabled, {'attr': {'class': 'form-check-input'}}) }}
+                                    {{ form_label(twoFactorForm.is_2fa_enabled, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-danger px-4 shadow-sm">
+                                        <i class="fas fa-shield-alt me-1"></i> Disable 2FA
+                                    </button>
+                                </div>
+                                {{ form_end(twoFactorForm) }}
+                            {% else %}
+                                <div class="d-flex justify-content-end">
+                                    <a href="{{ path('app_user_setup_2fa', {'id': user.id}) }}" class="btn btn-success px-4 shadow-sm">
+                                        <i class="fas fa-shield-alt me-1"></i> Enable 2FA
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-
-                    <button class="btn btn-primary">{{ button_label|default('Update User') }}</button>
-                    <a href="{{ path('app_users') }}" class="btn btn-secondary">Back to list</a>
-
-                    {{ form_end(form) }}
-                </div>
-            </div>
-
-            <!-- Change Password Card -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h2>Change Password</h2>
-                </div>
-                <div class="card-body">
-                    {{ form_start(passwordForm) }}
-
-                    {{ form_row(passwordForm.currentPassword) }}
-                    {{ form_row(passwordForm.newPassword.first) }}
-                    {{ form_row(passwordForm.newPassword.second) }}
-
-                    <button type="submit" class="btn btn-primary">Change Password</button>
-
-                    {{ form_end(passwordForm) }}
-                </div>
-            </div>
-
-            <!-- Two-Factor Authentication Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Two-Factor Authentication (2FA)</h2>
-                </div>
-                <div class="card-body">
-                    {% if user.is2faEnabled %}
-                        <div class="alert alert-success mb-3">
-                            <i class="fas fa-check-circle"></i> Two-factor authentication is currently <strong>enabled</strong> for your account.
-                        </div>
-
-                        {{ form_start(twoFactorForm) }}
-                        <div class="form-check mb-3">
-                            {{ form_widget(twoFactorForm.is_2fa_enabled) }}
-                            {{ form_label(twoFactorForm.is_2fa_enabled) }}
-                        </div>
-                        <button type="submit" class="btn btn-danger">Disable 2FA</button>
-                        {{ form_end(twoFactorForm) }}
-                    {% else %}
-                        <div class="alert alert-warning mb-3">
-                            <i class="fas fa-exclamation-triangle"></i> Two-factor authentication is currently <strong>disabled</strong> for your account.
-                        </div>
-
-                        <p>Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your mobile device in addition to your password.</p>
-
-                        <a href="{{ path('app_user_setup_2fa', {'id': user.id}) }}" class="btn btn-success">Enable 2FA</a>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Style checkboxes in the roles section
+        const roleCheckboxes = document.querySelectorAll('.role-checkboxes input[type="checkbox"]');
+        roleCheckboxes.forEach(checkbox => {
+            const checkboxWrapper = document.createElement('div');
+            checkboxWrapper.className = 'form-check custom-checkbox mb-2';
+
+            const label = checkbox.nextElementSibling;
+            checkbox.classList.add('form-check-input');
+
+            if (label) {
+                label.classList.add('form-check-label', 'ms-2');
+                checkbox.parentNode.insertBefore(checkboxWrapper, checkbox);
+                checkboxWrapper.appendChild(checkbox);
+                checkboxWrapper.appendChild(label);
+            }
+        });
+    });
+</script>
 {% endblock %}
