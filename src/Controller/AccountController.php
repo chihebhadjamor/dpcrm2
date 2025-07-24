@@ -386,7 +386,9 @@ class AccountController extends AbstractWebController
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
                 'contact' => $action->getContact(),
-                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // For display
+                'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
+                'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
@@ -572,7 +574,7 @@ class AccountController extends AbstractWebController
                 'contact' => $action->getContact(),
                 'nextStepDateFormatted' => $action->getNextStepDate() ? (new \App\Service\AppSettingsService())->formatDate($action->getNextStepDate()) : null, // For display
                 'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
-                'nextStepDate' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // Keep for backward compatibility
+                'nextStepDate' => $action->getNextStepDate() ? (new \App\Service\AppSettingsService())->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                 'createdAt' => $action->getCreatedAt()->format('Y-m-d H:i:s'),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
