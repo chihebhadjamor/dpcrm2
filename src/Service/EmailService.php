@@ -49,16 +49,31 @@ class EmailService
 
     /**
      * Send an email
+     *
+     * @throws \Exception If there's an error sending the email
      */
     private function sendEmail(string $recipientEmail, string $subject, string $htmlContent): void
     {
-        $email = (new Email())
-            ->from(new Address($this->senderEmail, $this->senderName))
-            ->to($recipientEmail)
-            ->subject($subject)
-            ->html($htmlContent);
+        try {
+            $email = (new Email())
+                ->from(new Address($this->senderEmail, $this->senderName))
+                ->to($recipientEmail)
+                ->subject($subject)
+                ->html($htmlContent);
 
-        $this->mailer->send($email);
+            $this->mailer->send($email);
+        } catch (\Exception $e) {
+            // Log detailed error information
+            error_log(sprintf(
+                'Email sending failed - Subject: "%s", Recipient: "%s", Error: %s',
+                $subject,
+                $recipientEmail,
+                $e->getMessage()
+            ));
+
+            // Re-throw the exception so the caller can handle it if needed
+            throw $e;
+        }
     }
 
     /**

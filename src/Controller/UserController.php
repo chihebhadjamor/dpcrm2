@@ -100,7 +100,12 @@ class UserController extends AbstractWebController
             );
         } catch (\Exception $e) {
             // Log the error but don't prevent user creation
-            // In a production environment, you might want to log this error
+            error_log(sprintf(
+                'Failed to send welcome email to user ID %d (%s): %s',
+                $user->getId(),
+                $user->getEmail(),
+                $e->getMessage()
+            ));
         }
 
         // Return the created user data
@@ -487,7 +492,12 @@ class UserController extends AbstractWebController
                 );
             } catch (\Exception $e) {
                 // Log the error but don't prevent user update
-                // In a production environment, you might want to log this error
+                error_log(sprintf(
+                    'Failed to send account updated email to user ID %d (%s): %s',
+                    $user->getId(),
+                    $user->getEmail(),
+                    $e->getMessage()
+                ));
             }
 
             // Return success response
@@ -592,7 +602,7 @@ class UserController extends AbstractWebController
         }
     }
 
-    #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
+    #[Route('/users/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
         // You can add security checks here, e.g., $this->denyAccessUnlessGranted('ROLE_ADMIN');
@@ -621,6 +631,12 @@ class UserController extends AbstractWebController
                 );
             } catch (\Exception $e) {
                 // Log the error but don't prevent user update
+                error_log(sprintf(
+                    'Failed to send account updated email to user ID %d (%s): %s',
+                    $user->getId(),
+                    $user->getEmail(),
+                    $e->getMessage()
+                ));
             }
 
             $this->addFlash('success', 'User updated successfully.');
@@ -651,6 +667,12 @@ class UserController extends AbstractWebController
                 );
             } catch (\Exception $e) {
                 // Log the error but don't prevent user update
+                error_log(sprintf(
+                    'Failed to send account updated email to user ID %d (%s): %s',
+                    $user->getId(),
+                    $user->getEmail(),
+                    $e->getMessage()
+                ));
             }
 
             $this->addFlash('success', 'Password updated successfully.');
@@ -675,6 +697,12 @@ class UserController extends AbstractWebController
                 );
             } catch (\Exception $e) {
                 // Log the error but don't prevent user update
+                error_log(sprintf(
+                    'Failed to send account updated email to user ID %d (%s): %s',
+                    $user->getId(),
+                    $user->getEmail(),
+                    $e->getMessage()
+                ));
             }
 
             $this->addFlash('success', '2FA settings updated successfully.');
@@ -690,7 +718,7 @@ class UserController extends AbstractWebController
         ]);
     }
 
-    #[Route('/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
+    #[Route('/users/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
     public function setup2fa(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
         // Check if 2FA is already enabled
@@ -715,6 +743,12 @@ class UserController extends AbstractWebController
                 );
             } catch (\Exception $e) {
                 // Log the error but don't prevent user update
+                error_log(sprintf(
+                    'Failed to send account updated email to user ID %d (%s): %s',
+                    $user->getId(),
+                    $user->getEmail(),
+                    $e->getMessage()
+                ));
             }
         }
 
@@ -736,6 +770,12 @@ class UserController extends AbstractWebController
                     );
                 } catch (\Exception $e) {
                     // Log the error but don't prevent user update
+                    error_log(sprintf(
+                        'Failed to send account updated email to user ID %d (%s): %s',
+                        $user->getId(),
+                        $user->getEmail(),
+                        $e->getMessage()
+                    ));
                 }
 
                 $this->addFlash('success', '2FA has been successfully enabled.');
