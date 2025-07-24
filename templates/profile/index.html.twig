@@ -1,0 +1,137 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} shadow-sm">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h1 class="h3 mb-0">My Profile</h1>
+                </div>
+                <div class="card-body">
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-medium" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                                <i class="fas fa-user me-2"></i>User Details
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tabs Content -->
+                    <div class="tab-content" id="profileTabsContent">
+                        <!-- User Details Tab -->
+                        <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Username</label>
+                                        <div class="form-control form-control-lg bg-light border-0 shadow-sm">{{ user.username }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Email</label>
+                                        <div class="form-control form-control-lg bg-light border-0 shadow-sm">{{ user.email }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Roles</label>
+                                <div class="p-4 bg-light rounded-3 shadow-sm">
+                                    {% for role in user.roles %}
+                                        <span class="badge bg-primary me-2">{{ role }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Two-Factor Authentication</label>
+                                <div class="p-4 rounded-3 shadow-sm {% if user.is2faEnabled %}bg-success-subtle{% else %}bg-warning-subtle{% endif %}">
+                                    {% if user.is2faEnabled %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1">Two-factor authentication is <strong>enabled</strong></h5>
+                                                <p class="mb-0">Your account has an extra layer of security.</p>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1">Two-factor authentication is <strong>disabled</strong></h5>
+                                                <p class="mb-0">Your account could be more secure with 2FA enabled.</p>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Password Tab -->
+                        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                            <div class="p-4 bg-light rounded-3 shadow-sm mb-4">
+                                <p class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i> Passwords must be at least 6 characters long and include at least one uppercase letter, one lowercase letter, and one number.</p>
+                            </div>
+
+                            {{ form_start(passwordForm) }}
+
+                            <div class="mb-4">
+                                {{ form_label(passwordForm.currentPassword, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                {{ form_widget(passwordForm.currentPassword, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                {{ form_errors(passwordForm.currentPassword) }}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 pe-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(passwordForm.newPassword.first, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(passwordForm.newPassword.first, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(passwordForm.newPassword.first) }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 ps-md-4">
+                                    <div class="mb-4">
+                                        {{ form_label(passwordForm.newPassword.second, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
+                                        {{ form_widget(passwordForm.newPassword.second, {'attr': {'class': 'form-control bg-light border-0 shadow-sm'}}) }}
+                                        {{ form_errors(passwordForm.newPassword.second) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                    <i class="fas fa-key me-1"></i> Change Password
+                                </button>
+                            </div>
+
+                            {{ form_end(passwordForm) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

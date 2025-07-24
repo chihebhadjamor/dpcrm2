@@ -742,6 +742,70 @@ class UserController extends AbstractWebController
         ]);
     }
 
+    #[Route('/users/{id}/reset-password', name: 'app_user_reset_password', methods: ['POST'])]
+    public function resetPassword(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
+    {
+        // Check CSRF token
+        $submittedToken = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('reset-password-' . $user->getId(), $submittedToken)) {
+            $this->addFlash('error', 'Invalid CSRF token. Please try again.');
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+        }
+
+        // Generate a secure temporary password (12 characters)
+        $temporaryPassword = $this->generateSecurePassword(12);
+
+        // Hash and set the new password
+        $hashedPassword = $passwordHasher->hashPassword($user, $temporaryPassword);
+        $user->setPassword($hashedPassword);
+
+        // Save to database
+        $entityManager->flush();
+
+        // Send password reset email
+        $emailSent = true;
+        try {
+            $this->emailService->sendPasswordResetEmail(
+                $user->getEmail(),
+                $user->getUsername(),
+                $temporaryPassword
+            );
+        } catch (\Exception $e) {
+            // Log the error but don't prevent password reset
+            error_log(sprintf(
+                'Failed to send password reset email to user ID %d (%s): %s',
+                $user->getId(),
+                $user->getEmail(),
+                $e->getMessage()
+            ));
+            $emailSent = false;
+        }
+
+        // Add appropriate flash message
+        if ($emailSent) {
+            $this->addFlash('success', sprintf('Password for user "%s" has been reset successfully. A notification email with the temporary password has been sent.', $user->getUsername()));
+        } else {
+            $this->addFlash('warning', sprintf('Warning: Password for user "%s" has been reset, but the notification email could not be sent. Please check the system logs.', $user->getUsername()));
+        }
+
+        return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+    }
+
+    /**
+     * Generate a secure random password
+     */
+    private function generateSecurePassword(int $length = 12): string
+    {
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
+        $password = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+
+        return $password;
+    }
+
     #[Route('/users/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
     public function setup2fa(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
