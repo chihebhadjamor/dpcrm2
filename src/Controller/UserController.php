@@ -7,6 +7,7 @@ use App\Entity\Action;
 use App\Form\ChangePasswordType;
 use App\Form\TwoFactorAuthType;
 use App\Service\AppSettingsService;
+use App\Service\EmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,10 +25,12 @@ use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
 class UserController extends AbstractWebController
 {
     private AppSettingsService $appSettingsService;
+    private EmailService $emailService;
 
-    public function __construct(AppSettingsService $appSettingsService)
+    public function __construct(AppSettingsService $appSettingsService, EmailService $emailService)
     {
         $this->appSettingsService = $appSettingsService;
+        $this->emailService = $emailService;
     }
     #[Route('/users/create-ajax', name: 'app_create_user_ajax', methods: ['POST'])]
     public function createUserAjax(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
@@ -88,6 +91,17 @@ class UserController extends AbstractWebController
         // Save to database
         $entityManager->persist($user);
         $entityManager->flush();
+
+        // Send welcome email
+        try {
+            $this->emailService->sendWelcomeEmail(
+                $user->getEmail(),
+                $user->getUsername()
+            );
+        } catch (\Exception $e) {
+            // Log the error but don't prevent user creation
+            // In a production environment, you might want to log this error
+        }
 
         // Return the created user data
         return new JsonResponse([
@@ -465,6 +479,17 @@ class UserController extends AbstractWebController
             // Save to database
             $entityManager->flush();
 
+            // Send account updated email
+            try {
+                $this->emailService->sendAccountUpdatedEmail(
+                    $user->getEmail(),
+                    $user->getUsername()
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't prevent user update
+                // In a production environment, you might want to log this error
+            }
+
             // Return success response
             return new JsonResponse([
                 'success' => true,
@@ -588,6 +613,16 @@ class UserController extends AbstractWebController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
+            // Send account updated email
+            try {
+                $this->emailService->sendAccountUpdatedEmail(
+                    $user->getEmail(),
+                    $user->getUsername()
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't prevent user update
+            }
+
             $this->addFlash('success', 'User updated successfully.');
 
             return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
@@ -608,6 +643,16 @@ class UserController extends AbstractWebController
             $user->setPassword($passwordHasher->hashPassword($user, $newPassword));
             $entityManager->flush();
 
+            // Send account updated email
+            try {
+                $this->emailService->sendAccountUpdatedEmail(
+                    $user->getEmail(),
+                    $user->getUsername()
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't prevent user update
+            }
+
             $this->addFlash('success', 'Password updated successfully.');
 
             return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
@@ -621,6 +666,16 @@ class UserController extends AbstractWebController
             }
 
             $entityManager->flush();
+
+            // Send account updated email
+            try {
+                $this->emailService->sendAccountUpdatedEmail(
+                    $user->getEmail(),
+                    $user->getUsername()
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't prevent user update
+            }
 
             $this->addFlash('success', '2FA settings updated successfully.');
 
@@ -651,6 +706,16 @@ class UserController extends AbstractWebController
             $secret = bin2hex(random_bytes(16)); // Simple example - use a proper 2FA library in production
             $user->setSecret2fa($secret);
             $entityManager->flush();
+
+            // Send account updated email
+            try {
+                $this->emailService->sendAccountUpdatedEmail(
+                    $user->getEmail(),
+                    $user->getUsername()
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't prevent user update
+            }
         }
 
         // Handle verification code submission
@@ -662,6 +727,16 @@ class UserController extends AbstractWebController
             if ($code === '123456') { // Example validation - use proper validation in production
                 $user->setIs2faEnabled(true);
                 $entityManager->flush();
+
+                // Send account updated email
+                try {
+                    $this->emailService->sendAccountUpdatedEmail(
+                        $user->getEmail(),
+                        $user->getUsername()
+                    );
+                } catch (\Exception $e) {
+                    // Log the error but don't prevent user update
+                }
 
                 $this->addFlash('success', '2FA has been successfully enabled.');
                 return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
