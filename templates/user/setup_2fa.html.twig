@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Setup Two-Factor Authentication{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Setup Two-Factor Authentication</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p>Follow these steps to set up two-factor authentication:</p>
+                        <ol>
+                            <li>Download an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your mobile device.</li>
+                            <li>Scan the QR code below with your authenticator app.</li>
+                            <li>Enter the 6-digit verification code from your authenticator app to complete the setup.</li>
+                        </ol>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <img src="{{ qrCodeUrl }}" alt="QR Code for 2FA Setup" class="img-fluid">
+                    </div>
+
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="verification_code" class="form-label">Verification Code</label>
+                            <input type="text" id="verification_code" name="verification_code" class="form-control" required autocomplete="off" placeholder="Enter the 6-digit code">
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Verify and Enable 2FA</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

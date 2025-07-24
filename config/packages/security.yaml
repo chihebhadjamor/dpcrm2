@@ -17,9 +17,7 @@ security:
                         roles:
                             - ROLE_ADMIN
         app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: username
+            id: security.user.provider.entity.user
         # Chain provider to use both in-memory and database users
         all_users:
             chain:

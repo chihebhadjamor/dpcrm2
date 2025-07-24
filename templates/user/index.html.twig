@@ -472,14 +472,8 @@
 
                 row.innerHTML = `
                 <td>${action.id}</td>
-                <td class="action-account-cell" data-action-id="${action.id}">
+                <td class="action-account-cell" data-action-id="${action.id}" data-account-id="${action.accountId || ''}">
                     <span>${action.accountName || 'N/A'}</span>
-                    ${action.closed ? '' :
-                        `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 edit-account-btn"
-                            data-action-id="${action.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>`
-                    }
                 </td>
                 <td class="action-title-cell" data-action-id="${action.id}">
                     <span>${action.lastAction || ''}</span>
@@ -1096,6 +1090,7 @@
                 contactSelect.appendChild(loadingOption);
 
                 // Get the account ID from the action
+                const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
                 const accountId = row.querySelector('.action-account-cell').getAttribute('data-account-id');
 
                 if (accountId && accountId !== 'null') {

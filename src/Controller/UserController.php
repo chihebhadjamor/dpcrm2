@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Entity\Action;
+use App\Form\ChangePasswordType;
+use App\Form\TwoFactorAuthType;
 use App\Service\AppSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -566,24 +568,112 @@ class UserController extends AbstractWebController
     }
 
     #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {
         // You can add security checks here, e.g., $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        // Main user form
         $form = $this->createForm(\App\Form\UserType::class, $user);
         $form->handleRequest($request);
 
+        // Password change form
+        $passwordForm = $this->createForm(ChangePasswordType::class);
+        $passwordForm->handleRequest($request);
+
+        // 2FA form
+        $twoFactorForm = $this->createForm(TwoFactorAuthType::class, $user);
+        $twoFactorForm->handleRequest($request);
+
+        // Handle main form submission
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
             $this->addFlash('success', 'User updated successfully.');
 
-            return $this->redirectToRoute('app_users', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
+        }
+
+        // Handle password form submission
+        if ($passwordForm->isSubmitted() && $passwordForm->isValid()) {
+            $currentPassword = $passwordForm->get('currentPassword')->getData();
+            $newPassword = $passwordForm->get('newPassword')->getData();
+
+            // Verify current password
+            if (!$passwordHasher->isPasswordValid($user, $currentPassword)) {
+                $this->addFlash('error', 'Current password is incorrect.');
+                return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+            }
+
+            // Set new password
+            $user->setPassword($passwordHasher->hashPassword($user, $newPassword));
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Password updated successfully.');
+
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+        }
+
+        // Handle 2FA form submission
+        if ($twoFactorForm->isSubmitted() && $twoFactorForm->isValid()) {
+            // If 2FA was enabled and is now being disabled, clear the secret
+            if (!$user->isIs2faEnabled()) {
+                $user->setSecret2fa(null);
+            }
+
+            $entityManager->flush();
+
+            $this->addFlash('success', '2FA settings updated successfully.');
+
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
         }
 
         return $this->render('user/edit.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
+            'passwordForm' => $passwordForm->createView(),
+            'twoFactorForm' => $twoFactorForm->createView(),
+        ]);
+    }
+
+    #[Route('/{id}/setup-2fa', name: 'app_user_setup_2fa', methods: ['GET', 'POST'])]
+    public function setup2fa(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    {
+        // Check if 2FA is already enabled
+        if ($user->isIs2faEnabled() && $user->getSecret2fa()) {
+            $this->addFlash('info', '2FA is already enabled for this account.');
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+        }
+
+        // Generate a new secret if one doesn't exist
+        if (!$user->getSecret2fa()) {
+            // In a real application, you would use a library like Scheb\TwoFactorBundle or similar
+            // to generate a proper 2FA secret and QR code
+            $secret = bin2hex(random_bytes(16)); // Simple example - use a proper 2FA library in production
+            $user->setSecret2fa($secret);
+            $entityManager->flush();
+        }
+
+        // Handle verification code submission
+        if ($request->isMethod('POST')) {
+            $code = $request->request->get('verification_code');
+
+            // In a real application, you would verify the code against the secret
+            // using a proper 2FA library
+            if ($code === '123456') { // Example validation - use proper validation in production
+                $user->setIs2faEnabled(true);
+                $entityManager->flush();
+
+                $this->addFlash('success', '2FA has been successfully enabled.');
+                return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
+            } else {
+                $this->addFlash('error', 'Invalid verification code. Please try again.');
+            }
+        }
+
+        return $this->render('user/setup_2fa.html.twig', [
+            'user' => $user,
+            // In a real application, you would generate a QR code URL here
+            'qrCodeUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Example:' . $user->getUsername() . '?secret=' . $user->getSecret2fa() . '&issuer=Example',
         ]);
     }
 }

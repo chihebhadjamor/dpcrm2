@@ -19,3 +19,11 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    # Define the entity user provider service
+    security.user.provider.entity.user:
+        class: Symfony\Bridge\Doctrine\Security\User\EntityUserProvider
+        arguments:
+            - '@doctrine'
+            - 'App\Entity\User'
+            - 'username'
