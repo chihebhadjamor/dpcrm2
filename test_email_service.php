@@ -1,28 +1,58 @@
 <?php
 
-// This is a simple script to test the EmailService
-// In a real environment, you would run the application and create a new user
+// This script tests the EmailService by sending a test email
+// It requires the Symfony environment to be set up
+
+require dirname(__FILE__).'/vendor/autoload.php';
+require dirname(__FILE__).'/config/bootstrap.php';
+
+use App\Service\EmailService;
+use Symfony\Component\Dotenv\Dotenv;
+use Symfony\Component\Mailer\MailerInterface;
+use Psr\Log\LoggerInterface;
+
+// Create the Symfony kernel
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+$container = $kernel->getContainer();
+
+// Get the mailer and logger services
+$mailer = $container->get(MailerInterface::class);
+$logger = $container->get(LoggerInterface::class);
+
+// Get the app URL from environment
+$appUrl = $_ENV['APP_URL'] ?? 'http://localhost';
+
+// Create the email service
+$emailService = new EmailService($mailer, $logger, $appUrl);
 
 // Output a message to indicate the test is running
 echo "Testing EmailService...\n";
 
-// Explain what would happen in a real environment
-echo "In a real environment with MAILER_DSN configured properly:\n";
-echo "1. When a new user is created, the system would send a welcome email\n";
-echo "2. If the email fails to send, the system would log a detailed error\n";
-echo "3. The welcome email would include a welcome message and a link to the application\n\n";
+// Get the test recipient email from command line or use a default
+$recipientEmail = $argv[1] ?? 'test@example.com';
+$recipientName = $argv[2] ?? 'Test User';
 
-// Explain the current configuration
-echo "Current configuration:\n";
-echo "- MAILER_DSN is set to 'null://null' in .env, which means no actual emails are sent\n";
-echo "- Error logging is implemented in EmailService and UserController\n";
-echo "- The welcome email template includes a welcome message and a link to the application\n\n";
+echo "Sending test welcome email to: $recipientEmail ($recipientName)\n";
 
-// Explain how to test in a real environment
-echo "To test in a real environment:\n";
-echo "1. Configure MAILER_DSN in .env with a real SMTP server\n";
-echo "2. Create a new user through the application\n";
-echo "3. Check if the welcome email is received\n";
-echo "4. If not, check the error logs for detailed information\n\n";
+try {
+    // Send a test welcome email
+    $emailService->sendWelcomeEmail($recipientEmail, $recipientName);
+    echo "Success! Welcome email sent successfully.\n";
 
-echo "Implementation complete!\n";
+    // Send a test account updated email
+    $emailService->sendAccountUpdatedEmail($recipientEmail, $recipientName);
+    echo "Success! Account updated email sent successfully.\n";
+
+    echo "\nPlease check your mail catcher at http://localhost:8025 to view the test emails.\n";
+    echo "If you don't see the emails, make sure your mail catcher is running.\n";
+    echo "See MAILCATCHER_SETUP.md for instructions on setting up a mail catcher.\n";
+} catch (\Exception $e) {
+    echo "Error: Failed to send email: " . $e->getMessage() . "\n";
+    echo "\nTroubleshooting:\n";
+    echo "1. Make sure your mail catcher is running at localhost:1025\n";
+    echo "2. Check that MAILER_DSN in .env is set to 'smtp://localhost:1025'\n";
+    echo "3. See MAILCATCHER_SETUP.md for detailed setup instructions\n";
+}
+
+echo "\nTest complete!\n";

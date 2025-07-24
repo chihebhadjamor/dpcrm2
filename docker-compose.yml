@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  mailhog:
+    image: mailhog/mailhog
+    container_name: dpcrm_mailhog
+    ports:
+      - "1025:1025"  # SMTP server port
+      - "8025:8025"  # Web UI port
+    restart: unless-stopped
+    networks:
+      - dpcrm_network
+
+networks:
+  dpcrm_network:
+    driver: bridge

@@ -93,6 +93,7 @@ class UserController extends AbstractWebController
         $entityManager->flush();
 
         // Send welcome email
+        $emailSent = true;
         try {
             $this->emailService->sendWelcomeEmail(
                 $user->getEmail(),
@@ -106,14 +107,19 @@ class UserController extends AbstractWebController
                 $user->getEmail(),
                 $e->getMessage()
             ));
+            $emailSent = false;
         }
 
-        // Return the created user data
+        // Return the created user data with email status
         return new JsonResponse([
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'roles' => $user->getRoles()
+            'roles' => $user->getRoles(),
+            'emailSent' => $emailSent,
+            'message' => $emailSent
+                ? sprintf('User "%s" created successfully. A welcome email has been sent.', $user->getUsername())
+                : sprintf('Warning: User "%s" was created, but the welcome email could not be sent. Please check the system logs.', $user->getUsername())
         ]);
     }
 
@@ -624,6 +630,7 @@ class UserController extends AbstractWebController
             $entityManager->flush();
 
             // Send account updated email
+            $emailSent = true;
             try {
                 $this->emailService->sendAccountUpdatedEmail(
                     $user->getEmail(),
@@ -637,9 +644,14 @@ class UserController extends AbstractWebController
                     $user->getEmail(),
                     $e->getMessage()
                 ));
+                $emailSent = false;
             }
 
-            $this->addFlash('success', 'User updated successfully.');
+            if ($emailSent) {
+                $this->addFlash('success', sprintf('User "%s" updated successfully. A notification email has been sent.', $user->getUsername()));
+            } else {
+                $this->addFlash('warning', sprintf('Warning: User "%s" was updated, but the notification email could not be sent. Please check the system logs.', $user->getUsername()));
+            }
 
             return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
         }
@@ -660,6 +672,7 @@ class UserController extends AbstractWebController
             $entityManager->flush();
 
             // Send account updated email
+            $emailSent = true;
             try {
                 $this->emailService->sendAccountUpdatedEmail(
                     $user->getEmail(),
@@ -673,9 +686,14 @@ class UserController extends AbstractWebController
                     $user->getEmail(),
                     $e->getMessage()
                 ));
+                $emailSent = false;
             }
 
-            $this->addFlash('success', 'Password updated successfully.');
+            if ($emailSent) {
+                $this->addFlash('success', sprintf('Password for user "%s" updated successfully. A notification email has been sent.', $user->getUsername()));
+            } else {
+                $this->addFlash('warning', sprintf('Warning: Password for user "%s" was updated, but the notification email could not be sent. Please check the system logs.', $user->getUsername()));
+            }
 
             return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
         }
@@ -690,6 +708,7 @@ class UserController extends AbstractWebController
             $entityManager->flush();
 
             // Send account updated email
+            $emailSent = true;
             try {
                 $this->emailService->sendAccountUpdatedEmail(
                     $user->getEmail(),
@@ -703,9 +722,14 @@ class UserController extends AbstractWebController
                     $user->getEmail(),
                     $e->getMessage()
                 ));
+                $emailSent = false;
             }
 
-            $this->addFlash('success', '2FA settings updated successfully.');
+            if ($emailSent) {
+                $this->addFlash('success', sprintf('2FA settings for user "%s" updated successfully. A notification email has been sent.', $user->getUsername()));
+            } else {
+                $this->addFlash('warning', sprintf('Warning: 2FA settings for user "%s" were updated, but the notification email could not be sent. Please check the system logs.', $user->getUsername()));
+            }
 
             return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
         }

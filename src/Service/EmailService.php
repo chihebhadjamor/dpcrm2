@@ -5,21 +5,25 @@ namespace App\Service;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Address;
+use Psr\Log\LoggerInterface;
 
 class EmailService
 {
     private MailerInterface $mailer;
+    private LoggerInterface $logger;
     private string $appUrl;
     private string $senderEmail;
     private string $senderName;
 
     public function __construct(
         MailerInterface $mailer,
+        LoggerInterface $logger,
         string $appUrl = 'http://localhost',
         string $senderEmail = 'noreply@dpcrm.com',
         string $senderName = 'DPCRM'
     ) {
         $this->mailer = $mailer;
+        $this->logger = $logger;
         $this->appUrl = $appUrl;
         $this->senderEmail = $senderEmail;
         $this->senderName = $senderName;
@@ -62,14 +66,26 @@ class EmailService
                 ->html($htmlContent);
 
             $this->mailer->send($email);
+
+            // Log successful email sending
+            $this->logger->info(sprintf(
+                "Email sent successfully - Subject: \"%s\", Recipient: \"%s\"",
+                $subject,
+                $recipientEmail
+            ));
         } catch (\Exception $e) {
-            // Log detailed error information
-            error_log(sprintf(
-                'Email sending failed - Subject: "%s", Recipient: "%s", Error: %s',
+            // Log detailed error information with stack trace
+            $errorMessage = sprintf(
+                "Email sending failed - Subject: \"%s\", Recipient: \"%s\", Error: %s",
                 $subject,
                 $recipientEmail,
                 $e->getMessage()
-            ));
+            );
+
+            $this->logger->error($errorMessage, [
+                'exception' => $e,
+                'stack_trace' => $e->getTraceAsString()
+            ]);
 
             // Re-throw the exception so the caller can handle it if needed
             throw $e;
