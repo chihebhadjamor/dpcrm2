@@ -22,11 +22,109 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use DateTimeImmutable;
 
 class UserController extends AbstractWebController
 {
     private AppSettingsService $appSettingsService;
     private EmailService $emailService;
+
+    /**
+     * Verifies a TOTP code against a given secret
+     *
+     * @param string $secret The Base32 encoded secret
+     * @param string $code The 6-digit code to verify
+     * @param int $window Time window in 30-second units (default: 1 unit before and after)
+     * @return bool Whether the code is valid
+     */
+    private function verifyTotpCode(string $secret, string $code, int $window = 1): bool
+    {
+        // Clean up the code (remove spaces, etc.)
+        $code = preg_replace('/\s+/', '', $code);
+
+        // Validate code format (must be 6 digits)
+        if (!preg_match('/^\d{6}$/', $code)) {
+            return false;
+        }
+
+        // Get current timestamp
+        $now = new DateTimeImmutable();
+        $timestamp = $now->getTimestamp();
+
+        // Check codes in the time window
+        for ($i = -$window; $i <= $window; $i++) {
+            $checkTime = floor($timestamp / 30) + $i;
+            $generatedCode = $this->generateTotpCode($secret, $checkTime);
+
+            if (hash_equals($generatedCode, $code)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generates a TOTP code for a given secret and timestamp
+     *
+     * @param string $secret The Base32 encoded secret
+     * @param int|null $timestamp The timestamp to use (null for current time)
+     * @return string The 6-digit TOTP code
+     */
+    private function generateTotpCode(string $secret, ?int $timestamp = null): string
+    {
+        // Remove padding characters
+        $secret = str_replace('=', '', $secret);
+
+        // Convert Base32 secret to binary
+        $base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $secretBinary = '';
+
+        // Process 8 characters (40 bits) at a time
+        for ($i = 0; $i < strlen($secret); $i += 8) {
+            $chunk = substr($secret, $i, 8);
+            $buffer = 0;
+            $bitsLeft = 0;
+
+            // Process each character in the chunk
+            for ($j = 0; $j < strlen($chunk); $j++) {
+                $buffer <<= 5;
+                $buffer |= strpos($base32Chars, $chunk[$j]);
+                $bitsLeft += 5;
+
+                if ($bitsLeft >= 8) {
+                    $bitsLeft -= 8;
+                    $secretBinary .= chr(($buffer >> $bitsLeft) & 0xFF);
+                }
+            }
+        }
+
+        // Use current timestamp if none provided
+        if ($timestamp === null) {
+            $timestamp = floor(time() / 30);
+        }
+
+        // Create binary timestamp (big-endian)
+        $timestampBinary = pack('N*', 0, $timestamp);
+
+        // Generate HMAC-SHA1 hash
+        $hash = hash_hmac('sha1', $timestampBinary, $secretBinary, true);
+
+        // Get offset from last 4 bits of the hash
+        $offset = ord($hash[19]) & 0x0F;
+
+        // Get 4 bytes from the hash starting at offset
+        $value = unpack('N', substr($hash, $offset, 4))[1];
+
+        // Remove the most significant bit (RFC 4226)
+        $value = $value & 0x7FFFFFFF;
+
+        // Get 6 digits
+        $modulo = pow(10, 6);
+        $code = str_pad($value % $modulo, 6, '0', STR_PAD_LEFT);
+
+        return $code;
+    }
 
     public function __construct(AppSettingsService $appSettingsService, EmailService $emailService)
     {
@@ -1090,9 +1188,30 @@ class UserController extends AbstractWebController
 
         // Generate a new secret if one doesn't exist
         if (!$user->getSecret2fa()) {
-            // In a real application, you would use a library like Scheb\TwoFactorBundle or similar
-            // to generate a proper 2FA secret and QR code
-            $secret = bin2hex(random_bytes(16)); // Simple example - use a proper 2FA library in production
+            // Generate a proper base32 encoded secret for TOTP
+            $randomBytes = random_bytes(20); // 20 bytes = 160 bits (recommended for TOTP)
+            $base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 character set
+
+            // Convert random bytes to base32 string
+            $secret = '';
+            $bits = '';
+
+            // Convert bytes to binary string
+            for ($i = 0; $i < strlen($randomBytes); $i++) {
+                $bits .= sprintf('%08b', ord($randomBytes[$i]));
+            }
+
+            // Convert 5 bits at a time to base32 characters
+            for ($i = 0; $i + 5 <= strlen($bits); $i += 5) {
+                $chunk = substr($bits, $i, 5);
+                $secret .= $base32Chars[bindec($chunk)];
+            }
+
+            // Make sure the secret is a multiple of 8 characters (padding)
+            while (strlen($secret) % 8 !== 0) {
+                $secret .= '=';
+            }
+
             $user->setSecret2fa($secret);
 
             // Use QueryBuilder to ensure SQL logging for the update
@@ -1127,9 +1246,8 @@ class UserController extends AbstractWebController
         if ($request->isMethod('POST')) {
             $code = $request->request->get('verification_code');
 
-            // In a real application, you would verify the code against the secret
-            // using a proper 2FA library
-            if ($code === '123456') { // Example validation - use proper validation in production
+            // Verify the TOTP code against the secret
+            if ($this->verifyTotpCode($user->getSecret2fa(), $code)) {
                 $user->setIs2faEnabled(true);
 
                 // Use QueryBuilder to ensure SQL logging for the update
@@ -1166,10 +1284,27 @@ class UserController extends AbstractWebController
             }
         }
 
+        // Get the application name from settings or use a default
+        $appName = 'DPCRM';
+
+        // Create a properly formatted otpauth URI
+        // Format: otpauth://totp/[App Name]:[Account]?secret=[Secret]&issuer=[App Name]&algorithm=SHA1&digits=6&period=30
+        $otpauthUri = sprintf(
+            'otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30',
+            urlencode($appName),
+            urlencode($user->getUsername()),
+            $user->getSecret2fa(),
+            urlencode($appName)
+        );
+
+        // Generate QR code URL using the otpauth URI
+        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($otpauthUri);
+
         return $this->render('user/setup_2fa.html.twig', [
             'user' => $user,
-            // In a real application, you would generate a QR code URL here
-            'qrCodeUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Example:' . $user->getUsername() . '?secret=' . $user->getSecret2fa() . '&issuer=Example',
+            'qrCodeUrl' => $qrCodeUrl,
+            'secret' => $user->getSecret2fa(),
+            'appName' => $appName
         ]);
     }
 }

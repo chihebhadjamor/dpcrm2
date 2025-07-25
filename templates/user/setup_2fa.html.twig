@@ -15,13 +15,24 @@
                         <p>Follow these steps to set up two-factor authentication:</p>
                         <ol>
                             <li>Download an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your mobile device.</li>
-                            <li>Scan the QR code below with your authenticator app.</li>
+                            <li>Scan the QR code below with your authenticator app, or enter the key manually.</li>
                             <li>Enter the 6-digit verification code from your authenticator app to complete the setup.</li>
                         </ol>
                     </div>
 
                     <div class="text-center mb-4">
                         <img src="{{ qrCodeUrl }}" alt="QR Code for 2FA Setup" class="img-fluid">
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Or enter this key manually:</h5>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="manual-key" value="{{ secret }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copy-key-btn">Copy</button>
+                        </div>
+                        <small class="form-text text-muted">
+                            When adding manually, use "{{ appName }}" as the account name and select "Time-based" option.
+                        </small>
                     </div>
 
                     <form method="post">
@@ -40,4 +51,41 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButton = document.getElementById('copy-key-btn');
+        const manualKey = document.getElementById('manual-key');
+
+        copyButton.addEventListener('click', function() {
+            // Select the text
+            manualKey.select();
+            manualKey.setSelectionRange(0, 99999); // For mobile devices
+
+            // Copy the text to clipboard
+            navigator.clipboard.writeText(manualKey.value)
+                .then(() => {
+                    // Change button text to show success
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = 'Copied!';
+                    copyButton.classList.add('btn-success');
+                    copyButton.classList.remove('btn-outline-secondary');
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                        copyButton.classList.remove('btn-success');
+                        copyButton.classList.add('btn-outline-secondary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Failed to copy text. Please try again.');
+                });
+        });
+    });
+</script>
 {% endblock %}
