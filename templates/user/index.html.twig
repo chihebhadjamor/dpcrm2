@@ -35,6 +35,12 @@
             line-height: 1;
         }
 
+        /* Disabled user styling */
+        .disabled-user {
+            color: #dc3545;
+            font-style: italic;
+        }
+
         /* Responsive layout */
         @media (max-width: 768px) {
             .user-list-column, .backlog-column { width: 100%; float: none; padding: 0; }
@@ -90,7 +96,7 @@
                                     </td>
                                 </tr>
                                 {% for user in users %}
-                                    <tr class="user-row" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
+                                    <tr class="user-row {% if user.disabled %}disabled-user table-secondary{% endif %}" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
                                         <td>{{ user.id }}</td>
                                         <td>{{ user.username }} <span class="text-muted">({{ user.email }})</span></td>
                                         <td>
