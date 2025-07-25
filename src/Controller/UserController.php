@@ -311,17 +311,43 @@ class UserController extends AbstractWebController
             }
 
             // Get all actions where the current user is the owner
-            // Order by closed ASC (open actions first) and then by nextStepDate ASC (earliest dates first)
             $queryBuilder = $entityManager->createQueryBuilder();
             $queryBuilder->select('a', 'acct') // Also select the account to ensure it's loaded
                 ->from(Action::class, 'a')
                 ->leftJoin('a.account', 'acct') // Use leftJoin to include actions without an account
                 ->where('a.owner = :user')
-                ->orderBy('a.closed', 'ASC')
-                ->addOrderBy('a.nextStepDate', 'ASC')
                 ->setParameter('user', $user);
 
             $actions = $queryBuilder->getQuery()->getResult();
+
+            // Split actions into open and closed
+            $openActions = [];
+            $closedActions = [];
+
+            foreach ($actions as $action) {
+                if ($action->isClosed()) {
+                    $closedActions[] = $action;
+                } else {
+                    $openActions[] = $action;
+                }
+            }
+
+            // Sort open actions by nextStepDate ASC (earliest dates first)
+            usort($openActions, function($a, $b) {
+                $dateA = $a->getNextStepDate() ?: new \DateTime('9999-12-31');
+                $dateB = $b->getNextStepDate() ?: new \DateTime('9999-12-31');
+                return $dateA <=> $dateB;
+            });
+
+            // Sort closed actions by dateClosed DESC (most recently closed first)
+            usort($closedActions, function($a, $b) {
+                $dateA = $a->getDateClosed() ?: new \DateTime('1970-01-01');
+                $dateB = $b->getDateClosed() ?: new \DateTime('1970-01-01');
+                return $dateB <=> $dateA;
+            });
+
+            // Combine the sorted lists (open actions first, then closed actions)
+            $actions = array_merge($openActions, $closedActions);
 
             // Prepare actions for the template
             $userBacklogActions = [];
