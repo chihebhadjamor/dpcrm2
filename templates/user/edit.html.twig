@@ -97,13 +97,13 @@
                                                 </p>
                                             </div>
                                         </div>
-                                        <form method="post" action="{{ path('app_user_toggle_status', {'id': user.id}) }}" onsubmit="return confirm('Are you sure you want to {% if user.disabled %}enable{% else %}disable{% endif %} this user?');">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('toggle-status-' ~ user.id) }}">
-                                            <button type="submit" class="btn {% if user.disabled %}btn-success{% else %}btn-danger{% endif %} px-4 shadow-sm">
+                                        <div id="toggle-status-button-container">
+                                            <!-- Toggle status button placeholder - actual form moved outside main form -->
+                                            <button type="button" id="toggle-status-btn" class="btn {% if user.disabled %}btn-success{% else %}btn-danger{% endif %} px-4 shadow-sm">
                                                 <i class="fas {% if user.disabled %}fa-user-check{% else %}fa-user-slash{% endif %} me-1"></i>
                                                 {% if user.disabled %}Enable User{% else %}Disable User{% endif %}
                                             </button>
-                                        </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -118,6 +118,11 @@
                             </div>
 
                             {{ form_end(form) }}
+
+                            <!-- Toggle Status Form (moved outside main form) -->
+                            <form id="toggle-status-form" method="post" action="{{ path('app_user_toggle_status', {'id': user.id}) }}" style="display: none;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle-status-' ~ user.id) }}">
+                            </form>
                         </div>
 
                         <!-- Change Password Tab -->
@@ -260,6 +265,21 @@
                 checkboxWrapper.appendChild(label);
             }
         });
+
+        // Handle toggle status button click
+        const toggleStatusBtn = document.getElementById('toggle-status-btn');
+        const toggleStatusForm = document.getElementById('toggle-status-form');
+
+        if (toggleStatusBtn && toggleStatusForm) {
+            toggleStatusBtn.addEventListener('click', function() {
+                const isDisabled = {% if user.disabled %}true{% else %}false{% endif %};
+                const action = isDisabled ? 'enable' : 'disable';
+
+                if (confirm('Are you sure you want to ' + action + ' this user?')) {
+                    toggleStatusForm.submit();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
