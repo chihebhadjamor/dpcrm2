@@ -619,7 +619,7 @@ class UserController extends AbstractWebController
                     break;
                 case 'roles':
                     $queryBuilder->set('u.roles', ':value')
-                        ->setParameter('value', $user->getRoles());
+                        ->setParameter('value', json_encode($user->getRoles())); // Convert roles array to JSON string
                     break;
                 case 'is_2fa_enabled':
                     $queryBuilder->set('u.is_2fa_enabled', ':value')
@@ -794,7 +794,7 @@ class UserController extends AbstractWebController
                 ->where('u.id = :id')
                 ->setParameter('username', $user->getUsername())
                 ->setParameter('email', $user->getEmail())
-                ->setParameter('roles', $user->getRoles())
+                ->setParameter('roles', json_encode($user->getRoles())) // Convert roles array to JSON string
                 ->setParameter('disabled', $user->isDisabled())
                 ->setParameter('id', $user->getId());
 
