@@ -775,7 +775,17 @@
                 })
                 .catch(error => {
                     console.error('Error creating account:', error);
-                    alert('Error creating account. Please try again.');
+
+                    // Try to parse the response to get the error message
+                    error.json().then(data => {
+                        if (data && data.error) {
+                            showNotification(data.error, 'danger');
+                        } else {
+                            showNotification('Error creating account. Please try again.', 'danger');
+                        }
+                    }).catch(() => {
+                        showNotification('Error creating account. Please try again.', 'danger');
+                    });
                 });
             });
         }

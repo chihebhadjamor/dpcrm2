@@ -193,7 +193,37 @@ class AccountController extends AbstractWebController
         return $this->handleForm(
             $request,
             $form,
-            function ($data) use ($entityManager) {
+            function ($data) use ($entityManager, $nextActions, $contactInfo) {
+                // Check if an account with this name already exists
+                if ($this->accountNameExists($data->getName(), $entityManager)) {
+                    // Add a form error
+                    $form = $this->formFactory->createBuilder()->setData($data)
+                        ->add('name', TextType::class, [
+                            'label' => 'Name',
+                            'attr' => ['class' => 'form-control'],
+                            'invalid_message' => 'An account with this name already exists'
+                        ])
+                        ->add('save', SubmitType::class, [
+                            'label' => 'Create Account',
+                            'attr' => ['class' => 'btn btn-success mt-2']
+                        ])
+                        ->getForm();
+
+                    $form->get('name')->addError(new \Symfony\Component\Form\FormError('An account with this name already exists'));
+
+                    // Return the form with the error
+                    return $this->render('account/index.html.twig', [
+                        'accounts' => $entityManager->getRepository(Account::class)->findBy([], ['createdAt' => 'DESC']),
+                        'nextActions' => $nextActions,
+                        'contactInfo' => $contactInfo,
+                        'form' => $form->createView(),
+                        'duplicate_error' => 'An account with this name already exists'
+                    ]);
+                }
+
+                // Trim whitespace from the name
+                $data->setName(trim($data->getName()));
+
                 // Save to database
                 $entityManager->persist($data);
                 $entityManager->flush();
@@ -294,6 +324,26 @@ class AccountController extends AbstractWebController
         return new JsonResponse($actionsData);
     }
 
+    /**
+     * Check if an account with the given name already exists
+     *
+     * @param string $name The account name to check
+     * @param EntityManagerInterface $entityManager The entity manager
+     * @return bool True if an account with the name exists, false otherwise
+     */
+    private function accountNameExists(string $name, EntityManagerInterface $entityManager): bool
+    {
+        // Trim the name and convert to lowercase for case-insensitive comparison
+        $normalizedName = strtolower(trim($name));
+
+        // Use DQL for a case-insensitive search
+        $query = $entityManager->createQuery(
+            'SELECT COUNT(a) FROM App\Entity\Account a WHERE LOWER(a.name) = :name'
+        )->setParameter('name', $normalizedName);
+
+        return (bool)$query->getSingleScalarResult();
+    }
+
     #[Route('/accounts/create-ajax', name: 'app_create_account_ajax', methods: ['POST'])]
     public function createAccountAjax(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -307,9 +357,14 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Missing required fields'], 400);
         }
 
+        // Check if an account with this name already exists
+        if ($this->accountNameExists($name, $entityManager)) {
+            return new JsonResponse(['error' => 'An account with this name already exists'], 400);
+        }
+
         // Create a new account
         $account = new Account();
-        $account->setName($name);
+        $account->setName(trim($name)); // Trim whitespace from the name
 
         // If a contact is provided, add it to the account's contacts
         if ($contact) {
