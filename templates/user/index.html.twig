@@ -508,7 +508,7 @@
                     ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${action.dateClosed}</div>` : ''}
                 </td>
                 <td class="text-center">
-                    <i class="fas fa-pencil-alt notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
+                    <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
                        data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"
                        data-account-id="${action.accountId}"></i>
                 </td>
