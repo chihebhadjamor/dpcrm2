@@ -161,6 +161,7 @@
                                         <th>Contact</th>
                                         <th>Action Date</th>
                                         <th>Status</th>
+                                        <th>Closed At</th>
                                         <th>Notes <span id="closed-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
                                     </thead>
@@ -505,8 +506,8 @@
                 <td>
                     <input class="form-check-input action-status-checkbox" type="checkbox"
                            data-action-id="${action.id}" ${action.closed ? 'checked' : ''}>
-                    ${action.closed && action.dateClosed ? `<div style="font-size: 0.8em; margin-top: 2px;">${action.dateClosed}</div>` : ''}
                 </td>
+                <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
                 <td class="text-center">
                     <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
                        data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"

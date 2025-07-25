@@ -121,6 +121,7 @@
                                     <th>Contact</th>
                                     <th>Action Date</th>
                                     <th>Status</th>
+                                    <th>Closed At</th>
                                     <th>Notes <span id="closed-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                 </tr>
                                 </thead>
@@ -144,8 +145,10 @@
                                         <td>
                                             <input class="form-check-input action-status-checkbox" type="checkbox"
                                                 data-action-id="{{ action.id }}" checked>
+                                        </td>
+                                        <td>
                                             {% if action.dateClosed %}
-                                            <div style="font-size: 0.8em; margin-top: 2px;">{{ action.dateClosed }}</div>
+                                            {{ action.dateClosed }}
                                             {% endif %}
                                         </td>
                                         <td class="text-center">

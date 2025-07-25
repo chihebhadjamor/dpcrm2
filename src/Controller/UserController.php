@@ -279,6 +279,24 @@ class UserController extends AbstractWebController
 
             $actionsData = [];
             foreach ($actions as $action) {
+                // Get the closure date from the History entity if the action is closed
+                $dateClosed = null;
+                if ($action->isClosed()) {
+                    // Find the history entry that corresponds to when the action was closed
+                    $histories = $action->getHistories();
+                    foreach ($histories as $history) {
+                        if (strpos($history->getNote(), 'closed') !== false) {
+                            $dateClosed = $this->appSettingsService->formatDateTime($history->getCreatedAt());
+                            break;
+                        }
+                    }
+
+                    // If no history entry is found, fall back to the action's dateClosed field
+                    if ($dateClosed === null && $action->getDateClosed()) {
+                        $dateClosed = $this->appSettingsService->formatDateTime($action->getDateClosed());
+                    }
+                }
+
                 $actionsData[] = [
                     'id' => $action->getId(),
                     'title' => $action->getTitle(),
@@ -287,7 +305,7 @@ class UserController extends AbstractWebController
                     'owner' => $action->getOwner()->getUsername(),
                     'account' => $action->getAccount() ? $action->getAccount()->getName() : null,
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null
+                    'dateClosed' => $dateClosed
                 ];
             }
 
@@ -355,6 +373,24 @@ class UserController extends AbstractWebController
                 $account = $action->getAccount();
                 $accountId = $account ? $account->getId() : null;
 
+                // Get the closure date from the History entity if the action is closed
+                $dateClosed = null;
+                if ($action->isClosed()) {
+                    // Find the history entry that corresponds to when the action was closed
+                    $histories = $action->getHistories();
+                    foreach ($histories as $history) {
+                        if (strpos($history->getNote(), 'closed') !== false) {
+                            $dateClosed = $this->appSettingsService->formatDateTime($history->getCreatedAt());
+                            break;
+                        }
+                    }
+
+                    // If no history entry is found, fall back to the action's dateClosed field
+                    if ($dateClosed === null && $action->getDateClosed()) {
+                        $dateClosed = $this->appSettingsService->formatDateTime($action->getDateClosed());
+                    }
+                }
+
                 $userBacklogActions[] = [
                     'id' => $action->getId(),
                     'accountId' => $accountId,
@@ -366,7 +402,7 @@ class UserController extends AbstractWebController
                     'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
                     'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                    'dateClosed' => $dateClosed,
                     'notes' => $action->getNotes(),
                     'hasNotes' => !empty($action->getNotes())
                 ];
@@ -431,6 +467,24 @@ class UserController extends AbstractWebController
                 $account = $action->getAccount();
                 $accountId = $account ? $account->getId() : 'N/A';
 
+                // Get the closure date from the History entity if the action is closed
+                $dateClosed = null;
+                if ($action->isClosed()) {
+                    // Find the history entry that corresponds to when the action was closed
+                    $histories = $action->getHistories();
+                    foreach ($histories as $history) {
+                        if (strpos($history->getNote(), 'closed') !== false) {
+                            $dateClosed = $this->appSettingsService->formatDateTime($history->getCreatedAt());
+                            break;
+                        }
+                    }
+
+                    // If no history entry is found, fall back to the action's dateClosed field
+                    if ($dateClosed === null && $action->getDateClosed()) {
+                        $dateClosed = $this->appSettingsService->formatDateTime($action->getDateClosed());
+                    }
+                }
+
                 $accountActions[] = [
                     'id' => $action->getId(),
                     'accountId' => $accountId,
@@ -441,7 +495,7 @@ class UserController extends AbstractWebController
                     'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null, // For JS logic
                     'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // Keep for backward compatibility
                     'closed' => $action->isClosed(),
-                    'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                    'dateClosed' => $dateClosed,
                     'notes' => $action->getNotes(),
                     'hasNotes' => !empty($action->getNotes()),
                     'accountNotesCount' => isset($accountNotesCount[$accountId]) ? $accountNotesCount[$accountId] : 0

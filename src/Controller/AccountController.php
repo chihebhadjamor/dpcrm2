@@ -257,6 +257,24 @@ class AccountController extends AbstractWebController
 
         $actionsData = [];
         foreach ($actions as $action) {
+            // Get the closure date from the History entity if the action is closed
+            $dateClosed = null;
+            if ($action->isClosed()) {
+                // Find the history entry that corresponds to when the action was closed
+                $histories = $action->getHistories();
+                foreach ($histories as $history) {
+                    if (strpos($history->getNote(), 'closed') !== false) {
+                        $dateClosed = $this->appSettingsService->formatDateTime($history->getCreatedAt());
+                        break;
+                    }
+                }
+
+                // If no history entry is found, fall back to the action's dateClosed field
+                if ($dateClosed === null && $action->getDateClosed()) {
+                    $dateClosed = $this->appSettingsService->formatDateTime($action->getDateClosed());
+                }
+            }
+
             $actionsData[] = [
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
@@ -267,7 +285,7 @@ class AccountController extends AbstractWebController
                 'createdAt' => $this->appSettingsService->formatDateTime($action->getCreatedAt()),
                 'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'Unknown',
                 'closed' => $action->isClosed(),
-                'dateClosed' => $action->getDateClosed() ? $this->appSettingsService->formatDateTime($action->getDateClosed()) : null,
+                'dateClosed' => $dateClosed,
                 'notes' => $action->getNotes(),
                 'hasNotes' => !empty($action->getNotes())
             ];
