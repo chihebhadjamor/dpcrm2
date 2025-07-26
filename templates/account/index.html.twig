@@ -351,7 +351,22 @@
 
                 // Fetch and sort accounts
                 fetch('/accounts/list-ajax')
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            // Check the content type of the response
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                // If it's JSON, parse it and extract the error message
+                                return response.json().then(data => {
+                                    throw new Error(data.error || 'Network response was not ok');
+                                });
+                            } else {
+                                // If it's not JSON (likely HTML error page), throw a generic error
+                                throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                            }
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         // Sort the data
                         data.sort((a, b) => {
@@ -403,7 +418,22 @@
 
             // Fetch and sort accounts by nextStepDate on page load
             fetch('/accounts/list-ajax')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        // Check the content type of the response
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // If it's JSON, parse it and extract the error message
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            });
+                        } else {
+                            // If it's not JSON (likely HTML error page), throw a generic error
+                            throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                        }
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     // Sort the data by nextStepDate in ascending order
                     data.sort((a, b) => {
@@ -718,7 +748,17 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        // Check the content type of the response
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // If it's JSON, parse it and extract the error message
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            });
+                        } else {
+                            // If it's not JSON (likely HTML error page), throw a generic error
+                            throw new Error('An error occurred while creating the account. Please check the logs or contact support.');
+                        }
                     }
                     return response.json();
                 })
@@ -802,17 +842,7 @@
                 })
                 .catch(error => {
                     console.error('Error creating account:', error);
-
-                    // Try to parse the response to get the error message
-                    error.json().then(data => {
-                        if (data && data.error) {
-                            showNotification(data.error, 'danger');
-                        } else {
-                            showNotification('Error creating account. Please try again.', 'danger');
-                        }
-                    }).catch(() => {
-                        showNotification('Error creating account. Please try again.', 'danger');
-                    });
+                    showNotification(error.message || 'Error creating account. Please try again.', 'danger');
                 });
             });
         }
@@ -1347,7 +1377,22 @@
 
                     // Refresh the accounts list to reflect the updated next action date
                     fetch('/accounts/list-ajax')
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Check the content type of the response
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    // If it's JSON, parse it and extract the error message
+                                    return response.json().then(data => {
+                                        throw new Error(data.error || 'Network response was not ok');
+                                    });
+                                } else {
+                                    // If it's not JSON (likely HTML error page), throw a generic error
+                                    throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                                }
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
@@ -1573,7 +1618,22 @@
                     // Refresh the accounts list to reflect the updated next action date
                     // This is done asynchronously in the background
                     fetch('/accounts/list-ajax')
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Check the content type of the response
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    // If it's JSON, parse it and extract the error message
+                                    return response.json().then(data => {
+                                        throw new Error(data.error || 'Network response was not ok');
+                                    });
+                                } else {
+                                    // If it's not JSON (likely HTML error page), throw a generic error
+                                    throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                                }
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
@@ -2083,7 +2143,17 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        // Check the content type of the response
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // If it's JSON, parse it and extract the error message
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            });
+                        } else {
+                            // If it's not JSON (likely HTML error page), throw a generic error
+                            throw new Error('An error occurred while updating the action. Please check the logs or contact support.');
+                        }
                     }
                     return response.json();
                 })
@@ -2109,7 +2179,22 @@
 
                     // Refresh the accounts list
                     fetch('/accounts/list-ajax')
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Check the content type of the response
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    // If it's JSON, parse it and extract the error message
+                                    return response.json().then(data => {
+                                        throw new Error(data.error || 'Network response was not ok');
+                                    });
+                                } else {
+                                    // If it's not JSON (likely HTML error page), throw a generic error
+                                    throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                                }
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
@@ -2246,7 +2331,17 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        // Check the content type of the response
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // If it's JSON, parse it and extract the error message
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Network response was not ok');
+                            });
+                        } else {
+                            // If it's not JSON (likely HTML error page), throw a generic error
+                            throw new Error('An error occurred while creating the action. Please check the logs or contact support.');
+                        }
                     }
                     return response.json();
                 })
@@ -2280,7 +2375,22 @@
 
                     // Refresh the accounts list to reflect the new action
                     fetch('/accounts/list-ajax')
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Check the content type of the response
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    // If it's JSON, parse it and extract the error message
+                                    return response.json().then(data => {
+                                        throw new Error(data.error || 'Network response was not ok');
+                                    });
+                                } else {
+                                    // If it's not JSON (likely HTML error page), throw a generic error
+                                    throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                                }
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             // Update the accounts table with the new data
                             updateAccountsTable(data);
@@ -2325,7 +2435,7 @@
                 })
                 .catch(error => {
                     console.error('Error creating action:', error);
-                    alert('Error creating action. Please try again.');
+                    showNotification(error.message || 'Error creating action. Please try again.', 'danger');
                 });
             });
         }
