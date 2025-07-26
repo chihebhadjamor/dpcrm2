@@ -293,9 +293,17 @@
                     })
                     .then(response => {
                         if (!response.ok) {
-                            return response.json().then(data => {
-                                throw new Error(data.error || 'Network response was not ok');
-                            });
+                            // Check the content type of the response
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                // If it's JSON, parse it and extract the error message
+                                return response.json().then(data => {
+                                    throw new Error(data.error || 'Network response was not ok');
+                                });
+                            } else {
+                                // If it's not JSON (likely HTML error page), throw a generic error
+                                throw new Error('An error occurred while creating the user. Please check the logs or contact support.');
+                            }
                         }
                         return response.json();
                     })
