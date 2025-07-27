@@ -347,9 +347,6 @@ class AccountController extends AbstractWebController
     #[Route('/accounts/create-ajax', name: 'app_create_account_ajax', methods: ['POST'])]
     public function createAccountAjax(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        // Add this line to force an error for debugging
-        throw new \Exception("This is a test exception to find the log file.");
-
         // Get form data
         $name = $request->request->get('name');
         $contact = $request->request->get('contact');
