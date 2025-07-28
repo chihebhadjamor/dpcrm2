@@ -22,9 +22,40 @@
                                 {{ form_errors(form.name) }}
                             </div>
 
+                            <!-- Account Status Section -->
                             <div class="mb-4">
-                                {{ form_label(form.status, null, {'label_attr': {'class': 'form-label fw-bold'}}) }}
-                                {{ form_widget(form.status, {'attr': {'class': 'form-select bg-light border-0 shadow-sm'}}) }}
+                                <label class="form-label fw-bold">Account Status</label>
+                                <div class="p-4 {% if not account.status %}bg-danger-subtle{% else %}bg-success-subtle{% endif %} rounded-3 shadow-sm">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if not account.status %}
+                                                    <i class="fas fa-ban fa-2x text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1">This account is currently <strong>{% if not account.status %}disabled{% else %}enabled{% endif %}</strong></h5>
+                                                <p class="mb-0">
+                                                    {% if not account.status %}
+                                                        This account is inactive and will appear in the "Disabled Accounts" panel.
+                                                    {% else %}
+                                                        This account is active and will appear in the "Active Accounts" panel.
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="form-check form-switch">
+                                                {{ form_widget(form.status, {'attr': {'class': 'form-check-input', 'style': 'width: 3em; height: 1.5em;'}}) }}
+                                                <label class="form-check-label" for="{{ form.status.vars.id }}">
+                                                    {% if account.status %}Enabled{% else %}Disabled{% endif %}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 {{ form_errors(form.status) }}
                             </div>
                         </div>
