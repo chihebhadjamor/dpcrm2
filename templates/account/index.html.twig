@@ -1235,6 +1235,9 @@
             const accountRow = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
             const accountName = accountRow ? accountRow.querySelector('td[data-field="name"]').textContent : 'Unknown Account';
 
+            // Check if account is disabled
+            const isAccountDisabled = accountRow ? accountRow.classList.contains('inactive-account') : false;
+
             // Set the initial actions header with the account name
             // The count of open actions will be added when the actions are loaded
             const actionsHeader = document.getElementById('actions-header');
@@ -1242,12 +1245,33 @@
                 actionsHeader.textContent = `Actions for ${accountName}`;
             }
 
-            // Hide placeholder and enable create action button
+            // Hide placeholder
             document.getElementById('actions-placeholder').style.display = 'none';
-            document.getElementById('create-action-btn').disabled = false;
+
+            // Enable or disable create action button based on account status
+            const createActionBtn = document.getElementById('create-action-btn');
+            createActionBtn.disabled = isAccountDisabled;
+
+            // If account is disabled, show a message
+            const actionsTableContainer = document.getElementById('actions-table-container');
+
+            // Remove any existing disabled account message
+            const existingMessage = document.getElementById('disabled-account-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            // If account is disabled, add a message
+            if (isAccountDisabled) {
+                const disabledMessage = document.createElement('div');
+                disabledMessage.id = 'disabled-account-message';
+                disabledMessage.className = 'alert alert-warning mb-3';
+                disabledMessage.innerHTML = '<strong>Note:</strong> This account is disabled. To manage its actions, you must enable the account first.';
+                actionsTableContainer.parentNode.insertBefore(disabledMessage, actionsTableContainer);
+            }
 
             // Show actions table container
-            document.getElementById('actions-table-container').style.display = 'block';
+            actionsTableContainer.style.display = 'block';
 
             // Fetch contacts for this account
             fetch(`/accounts/${accountId}/contacts`)
@@ -1351,6 +1375,10 @@
             openActionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
 
+            // Check if account is disabled
+            const accountRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
+            const isAccountDisabled = accountRow ? accountRow.classList.contains('inactive-account') : false;
+
             // Separate actions into open and closed
             const openActions = actions.filter(action => !action.closed);
             const closedActions = actions.filter(action => action.closed);
@@ -1383,13 +1411,13 @@
 
             // Add open actions to the open actions table
             openActions.forEach(action => {
-                const row = createActionRow(action);
+                const row = createActionRow(action, isAccountDisabled);
                 openActionsTbody.appendChild(row);
             });
 
             // Add closed actions to the closed actions table
             closedActions.forEach(action => {
-                const row = createActionRow(action);
+                const row = createActionRow(action, isAccountDisabled);
                 closedActionsTbody.appendChild(row);
             });
 
@@ -1399,7 +1427,7 @@
         }
 
         // Helper function to create an action row
-        function createActionRow(action) {
+        function createActionRow(action, isAccountDisabled = false) {
             const row = document.createElement('tr');
 
             // Check action status and apply appropriate class
@@ -1433,6 +1461,11 @@
                 }
             }
 
+            // If account is disabled, add a class to the row
+            if (isAccountDisabled) {
+                row.classList.add('disabled-account-action');
+            }
+
             // Set data attribute for action ID
             row.setAttribute('data-action-id', action.id);
 
@@ -1452,7 +1485,8 @@
                         <div class="form-check">
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
-                                   data-action-id="${action.id}">
+                                   data-action-id="${action.id}"
+                                   ${isAccountDisabled ? 'disabled' : ''}>
                         </div>
                     </td>
                     <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
@@ -1466,28 +1500,28 @@
                     <td>${action.id}</td>
                     <td class="action-contact-cell" data-action-id="${action.id}">
                         <span>${action.contact || ''}</span>
-                        ${action.closed ? '' :
+                        ${(action.closed || isAccountDisabled) ? '' :
                             `<i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
                                 data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-title-cell" data-action-id="${action.id}">
                         <span>${action.title}</span>
-                        ${action.closed ? '' :
+                        ${(action.closed || isAccountDisabled) ? '' :
                             `<i class="fas fa-pencil-alt edit-title-btn ms-2" style="cursor: pointer;"
                                 data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-date-cell" data-action-id="${action.id}">
                         <span>${action.nextStepDateFormatted || ''}</span>
-                        ${action.closed ? '' :
+                        ${(action.closed || isAccountDisabled) ? '' :
                             `<i class="fas fa-pencil-alt edit-date-btn ms-2" style="cursor: pointer;"
                                 data-action-id="${action.id}"></i>`
                         }
                     </td>
                     <td class="action-owner-cell" data-action-id="${action.id}" data-owner-id="${action.ownerId || ''}">
                         <span>${action.owner}</span>
-                        ${action.closed ? '' :
+                        ${(action.closed || isAccountDisabled) ? '' :
                             `<i class="fas fa-pencil-alt edit-owner-btn ms-2" style="cursor: pointer;"
                                 data-action-id="${action.id}"></i>`
                         }
@@ -1496,7 +1530,8 @@
                         <div class="form-check">
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
-                                   data-action-id="${action.id}">
+                                   data-action-id="${action.id}"
+                                   ${isAccountDisabled ? 'disabled' : ''}>
                         </div>
                     </td>
                     <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>

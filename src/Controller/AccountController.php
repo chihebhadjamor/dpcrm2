@@ -413,6 +413,11 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Account not found'], 404);
         }
 
+        // Check if account is disabled
+        if (!$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot create actions for a disabled account'], 403);
+        }
+
         // Get the owner from the request or use the current user as fallback
         $ownerId = $request->request->get('owner');
         $owner = null;
@@ -601,6 +606,12 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
+        // Check if the account is disabled
+        $account = $action->getAccount();
+        if ($account && !$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
+        }
+
         try {
             // Toggle the closed status
             if ($action->isClosed()) {
@@ -646,6 +657,12 @@ class AccountController extends AbstractWebController
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the account is disabled
+        $account = $action->getAccount();
+        if ($account && !$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
         }
 
         try {
@@ -707,6 +724,12 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
+        // Check if the account is disabled
+        $account = $action->getAccount();
+        if ($account && !$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
+        }
+
         try {
             // Get notes from request
             $notes = $request->request->get('notes');
@@ -751,6 +774,12 @@ class AccountController extends AbstractWebController
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the account is disabled
+        $account = $action->getAccount();
+        if ($account && !$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
         }
 
         try {
@@ -806,6 +835,12 @@ class AccountController extends AbstractWebController
 
         if (!$action) {
             return new JsonResponse(['error' => 'Action not found'], 404);
+        }
+
+        // Check if the account is disabled
+        $account = $action->getAccount();
+        if ($account && !$account->isActive()) {
+            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
         }
 
         try {
