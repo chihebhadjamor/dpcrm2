@@ -4,7 +4,7 @@ namespace App\Form;
 
 use App\Entity\Account;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -21,10 +21,11 @@ class AccountType extends AbstractType
                 'label' => 'Account Name',
                 'attr' => ['class' => 'form-control mb-3']
             ])
-            ->add('status', ChoiceType::class, [
-                'label' => 'Status',
-                'choices' => Account::getAvailableStatuses(),
-                'attr' => ['class' => 'form-select mb-3']
+            ->add('status', CheckboxType::class, [
+                'label' => 'Active',
+                'required' => false,
+                'attr' => ['class' => 'form-check-input mb-3'],
+                'label_attr' => ['class' => 'form-check-label']
             ])
             ->add('contacts', HiddenType::class, [
                 'attr' => ['id' => 'account_contacts_json'],

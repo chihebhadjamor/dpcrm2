@@ -27,10 +27,9 @@ class Account implements ArrayAccess
 
 
 
-    #[ORM\Column(length: 50)]
-    #[Assert\NotBlank]
-    #[Assert\Choice(choices: ['Active', 'Inactive', 'Pending'])]
-    private ?string $status = 'Active';
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    #[Assert\NotNull]
+    private bool $status = true;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $context = null;
@@ -115,12 +114,12 @@ class Account implements ArrayAccess
     }
 
 
-    public function getStatus(): ?string
+    public function getStatus(): bool
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(bool $status): static
     {
         $this->status = $status;
 
@@ -130,10 +129,14 @@ class Account implements ArrayAccess
     public static function getAvailableStatuses(): array
     {
         return [
-            'Active' => 'Active',
-            'Inactive' => 'Inactive',
-            'Pending' => 'Pending'
+            'Active' => true,
+            'Inactive' => false
         ];
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status;
     }
 
 

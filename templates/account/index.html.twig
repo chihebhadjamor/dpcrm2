@@ -56,8 +56,14 @@
     }
 
     .accounts-column .table-responsive {
-        max-height: calc(70vh - 20px);
+        max-height: calc(35vh - 20px);
         overflow-y: auto;
+    }
+
+    /* Styling for inactive accounts */
+    .inactive-account {
+        background-color: #f5f5f5;
+        font-style: italic;
     }
 
     /* Keep the table header fixed */
@@ -115,9 +121,10 @@
 <div class="split-view-container mb-4">
     <!-- Left Column: Accounts List (40% width) -->
     <div class="accounts-column">
-        <div class="card">
+        <!-- Active Accounts Panel -->
+        <div class="card mb-3">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Accounts List</h4>
+                <h4 class="mb-0">Active Accounts</h4>
                 <button type="button" class="btn btn-light" id="create-account-btn">
                     <i class="fas fa-plus"></i> Create Account
                 </button>
@@ -153,6 +160,7 @@
                                 </td>
                             </tr>
                             {% for account in accounts %}
+                                {% if account.status %}
                                 <tr class="account-row" data-account-id="{{ account.id }}" style="cursor: pointer;">
                                     <td>{{ account.id }}</td>
                                     <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
@@ -168,11 +176,65 @@
                                         </a>
                                     </td>
                                 </tr>
+                                {% endif %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center">No accounts found</td>
+                                    <td colspan="5" class="text-center">No active accounts found</td>
                                 </tr>
                             {% endfor %}
+                            {% if accounts|filter(account => account.status)|length == 0 %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No active accounts found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disabled Accounts Panel -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Disabled Accounts</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="id">ID</th>
+                                <th class="sortable" data-sort="name">Account</th>
+                                <th class="sortable" data-sort="nextStepDate" style="width: 150px;">Next Action</th>
+                                <th class="sortable" data-sort="owner">Owner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                                {% if not account.status %}
+                                <tr class="account-row inactive-account" data-account-id="{{ account.id }}" style="cursor: pointer;">
+                                    <td>{{ account.id }}</td>
+                                    <td class="editable" data-field="name" data-account-id="{{ account.id }}">{{ account.name }}</td>
+                                    <td>
+                                        {% if nextActions[account.id] is defined %}
+                                            {{ nextActions[account.id].nextStepDate|app_date }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{% if nextActions[account.id] is defined %}{{ nextActions[account.id].owner.username }}{% endif %}</td>
+                                    <td>
+                                        <a href="{{ path('app_account_edit', {'id': account.id}) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if accounts|filter(account => not account.status)|length == 0 %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No disabled accounts found</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -320,9 +382,124 @@
             openBadgeContainer.innerHTML = '';
         }
 
-        // Variables for sorting
-        let currentSortColumn = 'nextStepDate';
-        let currentSortDirection = 'asc';
+        // Variables for sorting - separate for active and disabled accounts
+        let activeSortState = {
+            column: 'nextStepDate',
+            direction: 'asc'
+        };
+
+        let disabledSortState = {
+            column: 'nextStepDate',
+            direction: 'asc'
+        };
+
+        // Function to update a specific accounts panel
+        function updateAccountsPanel(accounts, isActivePanel) {
+            // Get the appropriate table body
+            const panel = isActivePanel
+                ? document.querySelector('.card:nth-child(1)')
+                : document.querySelector('.card:nth-child(2)');
+
+            if (!panel) return;
+
+            const tableBody = panel.querySelector('tbody');
+            if (!tableBody) return;
+
+            // Save the form row if it exists (only in active panel)
+            let formRow = null;
+            let formRowDisplay = 'none';
+
+            if (isActivePanel) {
+                formRow = document.getElementById('account-form-row');
+                if (formRow) {
+                    formRowDisplay = formRow.style.display;
+                    formRow.remove();
+                }
+            }
+
+            // Get all current account rows in this panel
+            const currentRows = tableBody.querySelectorAll('.account-row');
+            currentRows.forEach(row => row.remove());
+
+            // Re-add the form row if it exists (only in active panel)
+            if (isActivePanel && formRow) {
+                tableBody.appendChild(formRow);
+                formRow.style.display = formRowDisplay;
+            }
+
+            // Add the updated account rows
+            accounts.forEach(account => {
+                const row = document.createElement('tr');
+                row.className = 'account-row';
+                if (!isActivePanel) {
+                    row.classList.add('inactive-account');
+                }
+                row.setAttribute('data-account-id', account.id);
+                row.style.cursor = 'pointer';
+
+                // Check if this is the currently selected account
+                if (currentAccountId && currentAccountId == account.id) {
+                    row.classList.add('table-primary');
+                }
+
+                // Apply action styling based on next action date
+                if (account.nextStepDateRaw) {
+                    // Parse dates ensuring they're treated as local dates
+                    const [year, month, day] = account.nextStepDateRaw.split('-').map(Number);
+                    const actionDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Set to beginning of day
+
+                    // Calculate days difference
+                    const timeDiff = actionDate.getTime() - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    // First check if action is overdue (in the past)
+                    if (daysDiff < 0) {
+                        // Overdue actions (past dates)
+                        row.classList.add('action-overdue');
+                    }
+                    // Only if not overdue, check if it's upcoming
+                    else if (daysDiff <= 7) {
+                        // Upcoming actions (today or within next 7 days)
+                        row.classList.add('action-upcoming');
+                    }
+                }
+
+                row.innerHTML = `
+                    <td>${account.id}</td>
+                    <td class="editable" data-field="name" data-account-id="${account.id}">${account.name}</td>
+                    <td data-date="${account.nextStepDateRaw || ''}">${account.nextStepDateFormatted || ''}</td>
+                    <td>${account.actionOwner || ''}</td>
+                    <td>
+                        <a href="/accounts/${account.id}/edit" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Edit">
+                            <i class="fas fa-pencil-alt"></i>
+                        </a>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+
+                // Add click event listener to the new row
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('button') && !isEditing) {
+                        // Remove active class from all rows
+                        document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-primary'));
+
+                        // Add active class to clicked row
+                        this.classList.add('table-primary');
+
+                        // Get account ID and update currentAccountId
+                        const accountId = this.getAttribute('data-account-id');
+                        currentAccountId = accountId;
+
+                        // Load account actions for the clicked account
+                        loadAccountActions(accountId);
+                    }
+                });
+            });
+        }
 
         // Add click event listeners to sortable headers
         document.querySelectorAll('th.sortable').forEach(header => {
@@ -333,21 +510,35 @@
             header.addEventListener('click', function() {
                 const sortColumn = this.getAttribute('data-sort');
 
+                // Determine which panel the header belongs to
+                const isActivePanel = this.closest('.card-header, .card-body').closest('.card').querySelector('.card-header').textContent.trim().includes('Active');
+
+                // Get the appropriate sort state
+                let sortState = isActivePanel ? activeSortState : disabledSortState;
+
                 // Toggle sort direction if clicking the same column
-                if (sortColumn === currentSortColumn) {
-                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                if (sortColumn === sortState.column) {
+                    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
                 } else {
-                    currentSortColumn = sortColumn;
-                    currentSortDirection = 'asc';
+                    sortState.column = sortColumn;
+                    sortState.direction = 'asc';
                 }
 
-                // Update sort indicators
-                document.querySelectorAll('.sort-indicator').forEach(indicator => {
+                // Update the appropriate sort state
+                if (isActivePanel) {
+                    activeSortState = sortState;
+                } else {
+                    disabledSortState = sortState;
+                }
+
+                // Update sort indicators only in the current panel
+                const panel = this.closest('.card');
+                panel.querySelectorAll('.sort-indicator').forEach(indicator => {
                     indicator.textContent = '';
                 });
 
                 const indicator = this.querySelector('.sort-indicator');
-                indicator.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+                indicator.textContent = sortState.direction === 'asc' ? '▲' : '▼';
 
                 // Fetch and sort accounts
                 fetch('/accounts/list-ajax')
@@ -368,34 +559,41 @@
                         return response.json();
                     })
                     .then(data => {
-                        // Sort the data
-                        data.sort((a, b) => {
+                        // Filter accounts based on which panel we're sorting
+                        const activeAccounts = data.filter(account => account.status === true);
+                        const disabledAccounts = data.filter(account => account.status === false);
+
+                        // Sort only the accounts for the current panel
+                        const accountsToSort = isActivePanel ? activeAccounts : disabledAccounts;
+                        const sortStateToUse = isActivePanel ? activeSortState : disabledSortState;
+
+                        accountsToSort.sort((a, b) => {
                             let valueA, valueB;
 
                             // Handle different column types
-                            if (sortColumn === 'nextStepDate') {
+                            if (sortStateToUse.column === 'nextStepDate') {
                                 // Convert dates to timestamps for comparison
                                 valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
                                 valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
-                            } else if (sortColumn === 'id') {
+                            } else if (sortStateToUse.column === 'id') {
                                 valueA = parseInt(a.id);
                                 valueB = parseInt(b.id);
                             } else {
                                 // For text columns
-                                valueA = (a[sortColumn] || '').toString().toLowerCase();
-                                valueB = (b[sortColumn] || '').toString().toLowerCase();
+                                valueA = (a[sortStateToUse.column] || '').toString().toLowerCase();
+                                valueB = (b[sortStateToUse.column] || '').toString().toLowerCase();
                             }
 
                             // Compare values based on sort direction
-                            if (currentSortDirection === 'asc') {
+                            if (sortStateToUse.direction === 'asc') {
                                 return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
                             } else {
                                 return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
                             }
                         });
 
-                        // Update the table with sorted data
-                        updateAccountsTable(data);
+                        // Update only the relevant panel
+                        updateAccountsPanel(accountsToSort, isActivePanel);
 
                         // Ensure the current account remains selected
                         if (currentAccountId) {
@@ -411,44 +609,62 @@
             });
         });
 
-        // Set initial sort indicator and trigger sorting on page load
-        const nextStepDateHeader = document.querySelector('th.sortable[data-sort="nextStepDate"]');
-        if (nextStepDateHeader) {
-            nextStepDateHeader.querySelector('.sort-indicator').textContent = '▲';
-
-            // Fetch and sort accounts by nextStepDate on page load
-            fetch('/accounts/list-ajax')
-                .then(response => {
-                    if (!response.ok) {
-                        // Check the content type of the response
-                        const contentType = response.headers.get('content-type');
-                        if (contentType && contentType.includes('application/json')) {
-                            // If it's JSON, parse it and extract the error message
-                            return response.json().then(data => {
-                                throw new Error(data.error || 'Network response was not ok');
-                            });
-                        } else {
-                            // If it's not JSON (likely HTML error page), throw a generic error
-                            throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
-                        }
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Sort the data by nextStepDate in ascending order
-                    data.sort((a, b) => {
-                        const valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
-                        const valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
-                        return valueA - valueB;
-                    });
-
-                    // Update the table with sorted data
-                    updateAccountsTable(data);
-                })
-                .catch(error => {
-                    console.error('Error fetching accounts for initial sorting:', error);
-                });
+        // Set initial sort indicators for both panels
+        const activeNextStepDateHeader = document.querySelector('.card:nth-child(1) th.sortable[data-sort="nextStepDate"]');
+        if (activeNextStepDateHeader) {
+            activeNextStepDateHeader.querySelector('.sort-indicator').textContent = '▲';
         }
+
+        const disabledNextStepDateHeader = document.querySelector('.card:nth-child(2) th.sortable[data-sort="nextStepDate"]');
+        if (disabledNextStepDateHeader) {
+            disabledNextStepDateHeader.querySelector('.sort-indicator').textContent = '▲';
+        }
+
+        // Fetch and sort accounts by nextStepDate on page load
+        fetch('/accounts/list-ajax')
+            .then(response => {
+                if (!response.ok) {
+                    // Check the content type of the response
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        // If it's JSON, parse it and extract the error message
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Network response was not ok');
+                        });
+                    } else {
+                        // If it's not JSON (likely HTML error page), throw a generic error
+                        throw new Error('An error occurred while fetching accounts. Please check the logs or contact support.');
+                    }
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Filter accounts based on status
+                const activeAccounts = data.filter(account => account.status === true);
+                const disabledAccounts = data.filter(account => account.status === false);
+
+                // Sort active accounts by nextStepDate in ascending order
+                activeAccounts.sort((a, b) => {
+                    const valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                    const valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                    return valueA - valueB;
+                });
+
+                // Sort disabled accounts by nextStepDate in ascending order
+                disabledAccounts.sort((a, b) => {
+                    const valueA = a.nextStepDateRaw ? new Date(a.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                    const valueB = b.nextStepDateRaw ? new Date(b.nextStepDateRaw + 'T00:00:00').getTime() : Number.MAX_SAFE_INTEGER;
+                    return valueA - valueB;
+                });
+
+                // Update each panel with its sorted accounts
+                updateAccountsPanel(activeAccounts, true);
+                updateAccountsPanel(disabledAccounts, false);
+            })
+            .catch(error => {
+                console.error('Error fetching accounts for initial sorting:', error);
+            });
+
         // Function to update the notes badges for both open and closed actions
         function updateNotesBadge(actions) {
             const openBadgeContainer = document.getElementById('open-notes-badge-container');

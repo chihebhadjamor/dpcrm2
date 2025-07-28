@@ -566,6 +566,7 @@ class AccountController extends AbstractWebController
             $accountsData[] = [
                 'id' => $accountId,
                 'name' => $account->getName(),
+                'status' => $account->getStatus(), // Add status field
                 'contact' => isset($contactInfo[$accountId]) ? $contactInfo[$accountId] : null,
                 'nextStepDateFormatted' => $nextAction ? $this->appSettingsService->formatDate($nextAction->getNextStepDate()) : null, // For display
                 'nextStepDateRaw' => $nextAction ? $nextAction->getNextStepDate()->format('Y-m-d') : null, // For JS logic

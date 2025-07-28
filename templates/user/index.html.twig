@@ -48,7 +48,7 @@
         }
 
         .user-list-column .table-responsive {
-            max-height: calc(70vh - 20px);
+            max-height: calc(35vh - 20px);
             overflow-y: auto;
         }
 
@@ -78,9 +78,10 @@
     <div class="row mb-4">
         <div class="clearfix">
             <div class="user-list-column">
-                <div class="card">
+                <!-- Enabled Users Panel -->
+                <div class="card mb-3">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Users List</h4>
+                        <h4 class="mb-0">Enabled Users</h4>
                         <button type="button" class="btn btn-light" id="create-user-btn">
                             <i class="fas fa-plus"></i> Create User
                         </button>
@@ -116,7 +117,8 @@
                                     </td>
                                 </tr>
                                 {% for user in users %}
-                                    <tr class="user-row {% if user.disabled %}disabled-user table-secondary{% endif %}" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
+                                    {% if not user.disabled %}
+                                    <tr class="user-row" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
                                         <td>{{ user.id }}</td>
                                         <td>{{ user.username }} <span class="text-muted">({{ user.email }})</span></td>
                                         <td>
@@ -125,11 +127,57 @@
                                             </a>
                                         </td>
                                     </tr>
+                                    {% endif %}
                                 {% else %}
                                     <tr>
                                         <td colspan="3" class="text-center">No users found</td>
                                     </tr>
                                 {% endfor %}
+                                {% if users|filter(user => not user.disabled)|length == 0 %}
+                                    <tr>
+                                        <td colspan="3" class="text-center">No enabled users found</td>
+                                    </tr>
+                                {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disabled Users Panel -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Disabled Users</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for user in users %}
+                                    {% if user.disabled %}
+                                    <tr class="user-row disabled-user table-secondary" data-user-id="{{ user.id }}" data-username="{{ user.username }}" style="cursor: pointer;">
+                                        <td>{{ user.id }}</td>
+                                        <td>{{ user.username }} <span class="text-muted">({{ user.email }})</span></td>
+                                        <td>
+                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Edit">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if users|filter(user => user.disabled)|length == 0 %}
+                                    <tr>
+                                        <td colspan="3" class="text-center">No disabled users found</td>
+                                    </tr>
+                                {% endif %}
                                 </tbody>
                             </table>
                         </div>
