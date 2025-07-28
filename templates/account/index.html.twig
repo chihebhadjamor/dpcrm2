@@ -728,10 +728,24 @@
                 const actionId = e.target.getAttribute('data-action-id');
                 const notesContent = document.getElementById('notes-content');
                 const actionIdInput = document.getElementById('action-id-for-notes');
+                const saveNotesBtn = document.getElementById('save-notes-btn');
 
                 // Set the notes content in the modal
                 notesContent.value = notes || '';
                 actionIdInput.value = actionId;
+
+                // Check if the action belongs to a disabled account
+                const actionRow = e.target.closest('tr');
+                const isDisabledAccount = actionRow && actionRow.classList.contains('disabled-account-action');
+
+                // Make the text area read-only and hide the save button if the account is disabled
+                if (isDisabledAccount) {
+                    notesContent.readOnly = true;
+                    saveNotesBtn.style.display = 'none';
+                } else {
+                    notesContent.readOnly = false;
+                    saveNotesBtn.style.display = 'block';
+                }
 
                 // Show the modal
                 notesModal.show();

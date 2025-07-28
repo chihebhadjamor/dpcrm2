@@ -254,8 +254,32 @@
                 if (!e.target.classList.contains('notes-icon')) return;
 
                 const icon = e.target;
-                document.getElementById('action-id-for-notes').value = icon.dataset.actionId;
-                document.getElementById('notes-content').value = icon.dataset.notes || '';
+                const actionId = icon.dataset.actionId;
+                const accountId = icon.dataset.accountId;
+                const notesContent = document.getElementById('notes-content');
+                const saveNotesBtn = document.getElementById('save-notes-btn');
+
+                document.getElementById('action-id-for-notes').value = actionId;
+                notesContent.value = icon.dataset.notes || '';
+
+                // Check if the action belongs to a disabled account
+                // First try to find the account in the DOM
+                const accountRow = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
+                const isDisabledAccount = accountRow && accountRow.classList.contains('inactive-account');
+
+                // If we can't find it in the DOM, check if the action row has a disabled class
+                const actionRow = icon.closest('tr');
+                const isDisabledAction = actionRow && actionRow.classList.contains('disabled-account-action');
+
+                // Make the text area read-only and hide the save button if the account is disabled
+                if (isDisabledAccount || isDisabledAction) {
+                    notesContent.readOnly = true;
+                    saveNotesBtn.style.display = 'none';
+                } else {
+                    notesContent.readOnly = false;
+                    saveNotesBtn.style.display = 'block';
+                }
+
                 notesModal.show();
             });
 
