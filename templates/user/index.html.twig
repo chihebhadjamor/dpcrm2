@@ -120,8 +120,8 @@
                                         <td>{{ user.id }}</td>
                                         <td>{{ user.username }} <span class="text-muted">({{ user.email }})</span></td>
                                         <td>
-                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-edit"></i> Edit
+                                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Edit">
+                                                <i class="fas fa-pencil-alt"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -326,8 +326,8 @@
                             <td>${data.id}</td>
                             <td>${data.username} <span class="text-muted">(${data.email})</span></td>
                             <td>
-                                <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-edit"></i> Edit
+                                <a href="/users/${data.id}/edit" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Edit">
+                                    <i class="fas fa-pencil-alt"></i>
                                 </a>
                             </td>
                         `;
