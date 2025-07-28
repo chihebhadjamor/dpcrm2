@@ -41,15 +41,27 @@
             font-style: italic;
         }
 
-        /* Fixed height with scrolling for users list */
+        /* Dynamic height with scrolling for users list */
         .user-list-column .card-body {
-            max-height: 70vh;
             overflow: hidden;
         }
 
         .user-list-column .table-responsive {
-            max-height: calc(35vh - 20px);
             overflow-y: auto;
+        }
+
+        /* Expanded panel styling */
+        .panel-expanded .card-body {
+            max-height: calc(100vh - 200px); /* Dynamic height that leaves room for headers and margins */
+        }
+
+        .panel-expanded .table-responsive {
+            max-height: calc(100vh - 240px); /* Slightly less than card-body to account for padding */
+        }
+
+        /* Collapsed panel styling */
+        .panel-collapsed .card-body {
+            display: none;
         }
 
         /* Keep the table header fixed */
@@ -59,6 +71,21 @@
             top: 0;
             background-color: #fff;
             z-index: 1;
+        }
+
+        /* Panel header styling */
+        .panel-header {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .panel-header:hover {
+            filter: brightness(1.1);
+        }
+
+        .panel-icon {
+            margin-right: 8px;
+            transition: transform 0.2s;
         }
 
         /* Responsive layout */
@@ -80,8 +107,8 @@
             <div class="user-list-column">
                 <!-- Enabled Users Panel -->
                 <div class="card mb-3">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Enabled Users</h4>
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center panel-header" data-panel="enabled-users">
+                        <h4 class="mb-0"><i class="fas fa-minus panel-icon"></i> Enabled Users</h4>
                         <button type="button" class="btn btn-light" id="create-user-btn">
                             <i class="fas fa-plus"></i> Create User
                         </button>
@@ -146,8 +173,8 @@
 
                 <!-- Disabled Users Panel -->
                 <div class="card">
-                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Disabled Users</h4>
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center panel-header" data-panel="disabled-users">
+                        <h4 class="mb-0"><i class="fas fa-plus panel-icon"></i> Disabled Users</h4>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -270,6 +297,76 @@
 {% block javascripts %}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Panel expand/collapse functionality
+            const panelHeaders = document.querySelectorAll('.panel-header');
+
+            // Set initial state - Enabled expanded, Disabled collapsed
+            const enabledPanel = document.querySelector('[data-panel="enabled-users"]').closest('.card');
+            const disabledPanel = document.querySelector('[data-panel="disabled-users"]').closest('.card');
+
+            // Function to set panel state
+            function setPanelState(panel, isExpanded) {
+                const panelBody = panel.querySelector('.card-body');
+                const panelIcon = panel.querySelector('.panel-icon');
+
+                if (isExpanded) {
+                    // Expand panel
+                    panel.classList.add('panel-expanded');
+                    panel.classList.remove('panel-collapsed');
+                    panelIcon.classList.remove('fa-plus');
+                    panelIcon.classList.add('fa-minus');
+                } else {
+                    // Collapse panel
+                    panel.classList.remove('panel-expanded');
+                    panel.classList.add('panel-collapsed');
+                    panelIcon.classList.remove('fa-minus');
+                    panelIcon.classList.add('fa-plus');
+                }
+            }
+
+            // Set initial states
+            setPanelState(enabledPanel, true);
+            setPanelState(disabledPanel, false);
+
+            // Add click event listeners to panel headers
+            panelHeaders.forEach(header => {
+                header.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on the Create User button
+                    if (e.target.closest('#create-user-btn')) {
+                        return;
+                    }
+
+                    const panel = this.closest('.card');
+                    const otherPanel = panel === enabledPanel ? disabledPanel : enabledPanel;
+
+                    // Check if panel is currently collapsed
+                    const isCollapsed = panel.classList.contains('panel-collapsed');
+
+                    if (isCollapsed) {
+                        // Expand this panel and collapse the other
+                        setPanelState(panel, true);
+                        setPanelState(otherPanel, false);
+                    }
+                });
+            });
+
+            // Handle window resize to adjust panel heights
+            function adjustPanelHeights() {
+                const expandedPanel = document.querySelector('.panel-expanded');
+                if (expandedPanel) {
+                    // Force a small repaint to ensure the panel adjusts to the new window size
+                    expandedPanel.style.maxHeight = 'none';
+                    setTimeout(() => {
+                        expandedPanel.style.maxHeight = '';
+                    }, 0);
+                }
+            }
+
+            // Listen for window resize events
+            window.addEventListener('resize', adjustPanelHeights);
+
+            // Trigger initial adjustment when the page loads
+            window.addEventListener('load', adjustPanelHeights);
             // --- STATE MANAGEMENT ---
             let userBacklogActions = [];
             let currentUserId = null;

@@ -49,15 +49,27 @@
         font-size: 1.05rem;
     }
 
-    /* Fixed height with scrolling for accounts list */
+    /* Dynamic height with scrolling for accounts list */
     .accounts-column .card-body {
-        max-height: 70vh;
         overflow: hidden;
     }
 
     .accounts-column .table-responsive {
-        max-height: calc(35vh - 20px);
         overflow-y: auto;
+    }
+
+    /* Expanded panel styling */
+    .panel-expanded .card-body {
+        max-height: calc(100vh - 200px); /* Dynamic height that leaves room for headers and margins */
+    }
+
+    .panel-expanded .table-responsive {
+        max-height: calc(100vh - 240px); /* Slightly less than card-body to account for padding */
+    }
+
+    /* Collapsed panel styling */
+    .panel-collapsed .card-body {
+        display: none;
     }
 
     /* Styling for inactive accounts */
@@ -94,6 +106,21 @@
         z-index: 1;
     }
 
+    /* Panel header styling */
+    .panel-header {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .panel-header:hover {
+        filter: brightness(1.1);
+    }
+
+    .panel-icon {
+        margin-right: 8px;
+        transition: transform 0.2s;
+    }
+
     /* Notes count badge */
     .notes-badge {
         display: inline-flex;
@@ -123,8 +150,8 @@
     <div class="accounts-column">
         <!-- Active Accounts Panel -->
         <div class="card mb-3">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Active Accounts</h4>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center panel-header" data-panel="active-accounts">
+                <h4 class="mb-0"><i class="fas fa-minus panel-icon"></i> Active Accounts</h4>
                 <button type="button" class="btn btn-light" id="create-account-btn">
                     <i class="fas fa-plus"></i> Create Account
                 </button>
@@ -195,8 +222,8 @@
 
         <!-- Disabled Accounts Panel -->
         <div class="card">
-            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Disabled Accounts</h4>
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center panel-header" data-panel="disabled-accounts">
+                <h4 class="mb-0"><i class="fas fa-plus panel-icon"></i> Disabled Accounts</h4>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -371,6 +398,76 @@
 {% block javascripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Panel expand/collapse functionality
+        const panelHeaders = document.querySelectorAll('.panel-header');
+
+        // Set initial state - Active expanded, Disabled collapsed
+        const activePanel = document.querySelector('[data-panel="active-accounts"]').closest('.card');
+        const disabledPanel = document.querySelector('[data-panel="disabled-accounts"]').closest('.card');
+
+        // Function to set panel state
+        function setPanelState(panel, isExpanded) {
+            const panelBody = panel.querySelector('.card-body');
+            const panelIcon = panel.querySelector('.panel-icon');
+
+            if (isExpanded) {
+                // Expand panel
+                panel.classList.add('panel-expanded');
+                panel.classList.remove('panel-collapsed');
+                panelIcon.classList.remove('fa-plus');
+                panelIcon.classList.add('fa-minus');
+            } else {
+                // Collapse panel
+                panel.classList.remove('panel-expanded');
+                panel.classList.add('panel-collapsed');
+                panelIcon.classList.remove('fa-minus');
+                panelIcon.classList.add('fa-plus');
+            }
+        }
+
+        // Set initial states
+        setPanelState(activePanel, true);
+        setPanelState(disabledPanel, false);
+
+        // Add click event listeners to panel headers
+        panelHeaders.forEach(header => {
+            header.addEventListener('click', function(e) {
+                // Don't trigger if clicking on the Create Account button
+                if (e.target.closest('#create-account-btn')) {
+                    return;
+                }
+
+                const panel = this.closest('.card');
+                const otherPanel = panel === activePanel ? disabledPanel : activePanel;
+
+                // Check if panel is currently collapsed
+                const isCollapsed = panel.classList.contains('panel-collapsed');
+
+                if (isCollapsed) {
+                    // Expand this panel and collapse the other
+                    setPanelState(panel, true);
+                    setPanelState(otherPanel, false);
+                }
+            });
+        });
+
+        // Handle window resize to adjust panel heights
+        function adjustPanelHeights() {
+            const expandedPanel = document.querySelector('.panel-expanded');
+            if (expandedPanel) {
+                // Force a small repaint to ensure the panel adjusts to the new window size
+                expandedPanel.style.maxHeight = 'none';
+                setTimeout(() => {
+                    expandedPanel.style.maxHeight = '';
+                }, 0);
+            }
+        }
+
+        // Listen for window resize events
+        window.addEventListener('resize', adjustPanelHeights);
+
+        // Trigger initial adjustment when the page loads
+        window.addEventListener('load', adjustPanelHeights);
         // Initialize both notes badge containers to be empty
         const closedBadgeContainer = document.getElementById('notes-badge-container');
         if (closedBadgeContainer) {
