@@ -494,6 +494,7 @@ class UserController extends AbstractWebController
                     'id' => $action->getId(),
                     'accountId' => $accountId,
                     'accountName' => $account ? $account->getName() : 'N/A',
+                    'accountStatus' => $account ? $account->getStatus() : true, // Include account status (true = active, false = disabled)
                     'lastAction' => $action->getTitle(),
                     'title' => $action->getTitle(),
                     'contact' => $action->getContact(),
@@ -588,6 +589,7 @@ class UserController extends AbstractWebController
                     'id' => $action->getId(),
                     'accountId' => $accountId,
                     'accountName' => $account ? $account->getName() : 'N/A',
+                    'accountStatus' => $account ? $account->getStatus() : true, // Include account status (true = active, false = disabled)
                     'lastAction' => $action->getTitle(),
                     'contact' => $action->getContact(), // Ensure contact is included
                     'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null, // For display

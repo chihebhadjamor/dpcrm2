@@ -68,7 +68,7 @@
                                 <tbody id="open-backlog-tbody">
                                 {% for action in userBacklogActions %}
                                     {% if not action.closed %}
-                                    <tr class="action-row {% if action.nextStepDateRaw %}
+                                    <tr class="action-row {% if not action.accountStatus %}disabled-account-action{% endif %} {% if action.nextStepDateRaw %}
                                         {% set today = 'now'|date('Y-m-d') %}
                                         {% set actionDate = action.nextStepDateRaw %}
                                         {% if actionDate < today %}action-overdue
@@ -77,8 +77,11 @@
                                         {% endif %}"
                                         data-action-id="{{ action.id }}">
                                         <td>{{ action.id }}</td>
-                                        <td class="action-account-cell" data-action-id="{{ action.id }}" data-account-id="{{ action.accountId }}">
+                                        <td class="action-account-cell" data-action-id="{{ action.id }}" data-account-id="{{ action.accountId }}" data-account-status="{{ action.accountStatus ? 'active' : 'disabled' }}">
                                             <span>{{ action.accountName }}</span>
+                                            {% if not action.accountStatus %}
+                                                <i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>
+                                            {% endif %}
                                         </td>
                                         <td class="action-title-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.title }}</span>
@@ -128,10 +131,13 @@
                                 <tbody id="closed-backlog-tbody">
                                 {% for action in userBacklogActions %}
                                     {% if action.closed %}
-                                    <tr class="action-row action-closed" data-action-id="{{ action.id }}">
+                                    <tr class="action-row action-closed {% if not action.accountStatus %}disabled-account-action{% endif %}" data-action-id="{{ action.id }}">
                                         <td>{{ action.id }}</td>
-                                        <td class="action-account-cell" data-action-id="{{ action.id }}" data-account-id="{{ action.accountId }}">
+                                        <td class="action-account-cell" data-action-id="{{ action.id }}" data-account-id="{{ action.accountId }}" data-account-status="{{ action.accountStatus ? 'active' : 'disabled' }}">
                                             <span>{{ action.accountName }}</span>
+                                            {% if not action.accountStatus %}
+                                                <i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>
+                                            {% endif %}
                                         </td>
                                         <td class="action-title-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.title }}</span>
@@ -263,13 +269,14 @@
                 notesContent.value = icon.dataset.notes || '';
 
                 // Check if the action belongs to a disabled account
-                // First try to find the account in the DOM
-                const accountRow = document.querySelector(`.account-row[data-account-id="${accountId}"]`);
-                const isDisabledAccount = accountRow && accountRow.classList.contains('inactive-account');
-
-                // If we can't find it in the DOM, check if the action row has a disabled class
+                // First check if the action row has the disabled-account-action class
                 const actionRow = icon.closest('tr');
                 const isDisabledAction = actionRow && actionRow.classList.contains('disabled-account-action');
+
+                // If not, check the account status from the data attribute
+                const accountCell = actionRow.querySelector('.action-account-cell');
+                const accountStatus = accountCell ? accountCell.getAttribute('data-account-status') : 'active';
+                const isDisabledAccount = accountStatus === 'disabled';
 
                 // Make the text area read-only and hide the save button if the account is disabled
                 if (isDisabledAccount || isDisabledAction) {
@@ -721,6 +728,10 @@
 
             // Update notes badges on page load
             updateNotesBadges();
+
+            // Initialize tooltips
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         });
     </script>
 {% endblock %}

@@ -512,6 +512,10 @@
                     const row = createActionRow(action);
                     closedBacklogTbody.appendChild(row);
                 });
+
+                // Initialize tooltips for disabled account icons
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
             }
 
             // Helper function to create an action row
@@ -520,6 +524,11 @@
 
                 // Determine row classes for styling
                 row.className = '';
+                // Add disabled-account-action class if the account is disabled
+                if (!action.accountStatus) {
+                    row.classList.add('disabled-account-action');
+                }
+
                 if (action.closed) {
                     // Closed actions - this styling takes precedence over date-based styling
                     row.classList.add('action-closed');
@@ -555,8 +564,9 @@
 
                 row.innerHTML = `
                 <td>${action.id}</td>
-                <td class="action-account-cell" data-action-id="${action.id}" data-account-id="${action.accountId || ''}">
+                <td class="action-account-cell" data-action-id="${action.id}" data-account-id="${action.accountId || ''}" data-account-status="${action.accountStatus ? 'active' : 'disabled'}">
                     <span>${action.accountName || 'N/A'}</span>
+                    ${!action.accountStatus ? '<i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>' : ''}
                 </td>
                 <td class="action-title-cell" data-action-id="${action.id}">
                     <span>${action.lastAction || ''}</span>
@@ -761,13 +771,14 @@
                 notesContent.value = icon.dataset.notes || '';
 
                 // Check if the action belongs to a disabled account
-                // First try to find the account in the DOM
-                const accountRow = document.querySelector(`.user-row[data-account-id="${accountId}"]`);
-                const isDisabledAccount = accountRow && accountRow.classList.contains('inactive-account');
-
-                // If we can't find it in the DOM, check if the action row has a disabled class
+                // First check if the action row has the disabled-account-action class
                 const actionRow = icon.closest('tr');
                 const isDisabledAction = actionRow && actionRow.classList.contains('disabled-account-action');
+
+                // If not, check the account status from the data attribute
+                const accountCell = actionRow.querySelector('.action-account-cell');
+                const accountStatus = accountCell ? accountCell.getAttribute('data-account-status') : 'active';
+                const isDisabledAccount = accountStatus === 'disabled';
 
                 // Make the text area read-only and hide the save button if the account is disabled
                 if (isDisabledAccount || isDisabledAction) {
