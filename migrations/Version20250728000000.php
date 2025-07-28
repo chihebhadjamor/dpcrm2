@@ -20,7 +20,7 @@ final class Version20250728000000 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE action ADD notes TEXT DEFAULT NULL');
+        $this->addSql('ALTER TABLE action ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL');
     }
 
     public function down(Schema $schema): void

@@ -22,7 +22,7 @@ final class Version20250719192118 extends AbstractMigration
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE action ADD closed BOOLEAN DEFAULT false NOT NULL');
         $this->addSql('ALTER TABLE action ADD date_closed TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL');
-        $this->addSql('ALTER TABLE "user" DROP name');
+        $this->addSql('ALTER TABLE "user" DROP COLUMN IF EXISTS name');
     }
 
     public function down(Schema $schema): void

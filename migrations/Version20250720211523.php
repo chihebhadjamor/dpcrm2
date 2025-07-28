@@ -21,9 +21,9 @@ final class Version20250720211523 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE account ADD contacts JSON DEFAULT NULL');
-        $this->addSql('ALTER TABLE account DROP priority');
-        $this->addSql('ALTER TABLE account DROP next_step');
-        $this->addSql('ALTER TABLE action DROP type');
+        $this->addSql('ALTER TABLE account DROP COLUMN IF EXISTS priority');
+        $this->addSql('ALTER TABLE account DROP COLUMN IF EXISTS next_step');
+        $this->addSql('ALTER TABLE action DROP COLUMN IF EXISTS type');
     }
 
     public function down(Schema $schema): void

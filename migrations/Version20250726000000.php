@@ -19,8 +19,8 @@ final class Version20250726000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Add contacts field to account table as JSON
-        $this->addSql('ALTER TABLE account ADD contacts JSON DEFAULT NULL');
+        // Add contacts field to account table as JSON if it doesn't exist
+        $this->addSql('ALTER TABLE account ADD COLUMN IF NOT EXISTS contacts JSON DEFAULT NULL');
     }
 
     public function down(Schema $schema): void

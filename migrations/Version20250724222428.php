@@ -19,14 +19,14 @@ final class Version20250724222428 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE "user" ADD disabled BOOLEAN DEFAULT false NOT NULL');
+        // Modified to use IF NOT EXISTS to prevent errors if column already exists
+        $this->addSql('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS disabled BOOLEAN DEFAULT false NOT NULL');
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
+        // Modified to use IF EXISTS to prevent errors if column doesn't exist
         $this->addSql('CREATE SCHEMA public');
-        $this->addSql('ALTER TABLE "user" DROP disabled');
+        $this->addSql('ALTER TABLE "user" DROP COLUMN IF EXISTS disabled');
     }
 }

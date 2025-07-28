@@ -19,8 +19,8 @@ final class Version20250727000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Remove type column from action table
-        $this->addSql('ALTER TABLE action DROP type');
+        // Remove type column from action table if it exists
+        $this->addSql('ALTER TABLE action DROP COLUMN IF EXISTS type');
     }
 
     public function down(Schema $schema): void

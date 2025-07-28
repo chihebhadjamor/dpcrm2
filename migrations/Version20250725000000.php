@@ -19,13 +19,13 @@ final class Version20250725000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Remove next_step column from account table
-        $this->addSql('ALTER TABLE account DROP next_step');
+        // Remove next_step column from account table if it exists
+        $this->addSql('ALTER TABLE account DROP COLUMN IF EXISTS next_step');
     }
 
     public function down(Schema $schema): void
     {
-        // Add next_step column back to account table
-        $this->addSql('ALTER TABLE account ADD next_step VARCHAR(255) DEFAULT NULL');
+        // Add next_step column back to account table if it doesn't exist
+        $this->addSql('ALTER TABLE account ADD COLUMN IF NOT EXISTS next_step VARCHAR(255) DEFAULT NULL');
     }
 }

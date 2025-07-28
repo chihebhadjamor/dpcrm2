@@ -19,8 +19,8 @@ final class Version20250725000001 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Add disabled column to user table with default value false
-        $this->addSql('ALTER TABLE "user" ADD disabled BOOLEAN NOT NULL DEFAULT FALSE');
+        // Add disabled column to user table with default value false if it doesn't exist
+        $this->addSql('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT FALSE');
     }
 
     public function down(Schema $schema): void

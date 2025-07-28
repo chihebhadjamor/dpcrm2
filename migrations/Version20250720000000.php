@@ -8,27 +8,23 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Add is_closed and date_closed fields to action table
+ * This migration is now empty as its functionality has been moved to Version20250719192118
+ * which already adds the 'closed' and 'date_closed' columns to the action table
  */
 final class Version20250720000000 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Add is_closed and date_closed fields to action table';
+        return 'Empty migration - functionality moved to Version20250719192118';
     }
 
     public function up(Schema $schema): void
     {
-        // Add is_closed boolean column with default false
-        $this->addSql('ALTER TABLE action ADD is_closed BOOLEAN DEFAULT FALSE NOT NULL');
-        // Add date_closed datetime column that can be null
-        $this->addSql('ALTER TABLE action ADD date_closed TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL');
+        // This migration is now empty as its functionality has been moved to Version20250719192118
     }
 
     public function down(Schema $schema): void
     {
-        // Remove the columns if migration is reverted
-        $this->addSql('ALTER TABLE action DROP date_closed');
-        $this->addSql('ALTER TABLE action DROP is_closed');
+        // This migration is now empty as its functionality has been moved to Version20250719192118
     }
 }

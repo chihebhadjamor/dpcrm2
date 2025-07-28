@@ -20,12 +20,12 @@ final class Version20250720134553 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE account DROP CONSTRAINT fk_7d3656a47e3c61f9');
-        $this->addSql('DROP INDEX idx_7d3656a47e3c61f9');
-        $this->addSql('ALTER TABLE account DROP owner_id');
-        $this->addSql('ALTER TABLE action DROP CONSTRAINT fk_47cc8c92a76ed395');
-        $this->addSql('DROP INDEX idx_47cc8c92a76ed395');
-        $this->addSql('ALTER TABLE action DROP user_id');
+        $this->addSql('ALTER TABLE account DROP CONSTRAINT IF EXISTS fk_7d3656a47e3c61f9');
+        $this->addSql('DROP INDEX IF EXISTS idx_7d3656a47e3c61f9');
+        $this->addSql('ALTER TABLE account DROP COLUMN IF EXISTS owner_id');
+        $this->addSql('ALTER TABLE action DROP CONSTRAINT IF EXISTS fk_47cc8c92a76ed395');
+        $this->addSql('DROP INDEX IF EXISTS idx_47cc8c92a76ed395');
+        $this->addSql('ALTER TABLE action DROP COLUMN IF EXISTS user_id');
     }
 
     public function down(Schema $schema): void
