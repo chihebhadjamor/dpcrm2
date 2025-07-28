@@ -50,7 +50,8 @@ class AccountController extends AbstractWebController
     #[Route('/api/users', name: 'app_get_users', methods: ['GET'])]
     public function getUsers(EntityManagerInterface $entityManager): JsonResponse
     {
-        $users = $entityManager->getRepository(User::class)->findAll();
+        // Only get active users (where disabled = false)
+        $users = $entityManager->getRepository(User::class)->findBy(['disabled' => false]);
 
         $usersData = [];
         foreach ($users as $user) {

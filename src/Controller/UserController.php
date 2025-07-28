@@ -254,7 +254,8 @@ class UserController extends AbstractWebController
     {
         // Only allow administrators to access this endpoint
         $this->denyAccessUnlessAdmin();
-        $users = $entityManager->getRepository(User::class)->findAll();
+        // Only get active users (where disabled = false)
+        $users = $entityManager->getRepository(User::class)->findBy(['disabled' => false]);
 
         $usersData = [];
         foreach ($users as $user) {
