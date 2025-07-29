@@ -1592,7 +1592,7 @@
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td>${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
-                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
                         action.contact || ''}
                     </td>
                     <td>${action.title}</td>
@@ -1618,7 +1618,7 @@
                     <td>${action.id}</td>
                     <td class="action-contact-cell" data-action-id="${action.id}">
                         ${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
-                            `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                            `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
                             `<span>${action.contact || ''}</span>`
                         }
                         ${(action.closed || isAccountDisabled) ? '' :

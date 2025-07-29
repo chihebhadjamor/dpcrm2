@@ -92,7 +92,7 @@
                                         </td>
                                         <td class="action-contact-cell" data-action-id="{{ action.id }}">
                                             {% if not action.closed and action.contact matches '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/' %}
-                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
+                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" target="_blank" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
                                             {% else %}
                                                 <span>{{ action.contact }}</span>
                                             {% endif %}
@@ -156,7 +156,7 @@
                                         </td>
                                         <td class="action-contact-cell" data-action-id="{{ action.id }}">
                                             {% if not action.closed and action.contact matches '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/' %}
-                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
+                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" target="_blank" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
                                             {% else %}
                                                 <span>{{ action.contact }}</span>
                                             {% endif %}
