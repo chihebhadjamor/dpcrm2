@@ -688,7 +688,9 @@
                 </td>
                 <td>
                     <input class="form-check-input action-status-checkbox" type="checkbox"
-                           data-action-id="${action.id}" ${action.closed ? 'checked' : ''}>
+                           data-action-id="${action.id}" ${action.closed ? 'checked' : ''}
+                           ${(action.closed && !action.accountStatus) ? 'disabled style="opacity: 0.5;"' : ''}
+                           title="${(action.closed && !action.accountStatus) ? 'This action cannot be reopened because its account is disabled' : ''}">
                 </td>
                 <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
                 <td class="text-center">
@@ -810,15 +812,26 @@
 
                 const checkbox = e.target;
                 const actionId = checkbox.dataset.actionId;
-                checkbox.disabled = true; // Prevent rapid clicks
 
                 // Find the row in either table
                 const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
                 if (!row) {
                     console.error('Row not found for action ID:', actionId);
-                    checkbox.disabled = false;
                     return;
                 }
+
+                // Check if this is a closed action for a disabled account
+                const isDisabledAccount = row.classList.contains('disabled-account-action');
+                const isClosed = checkbox.checked;
+
+                // If trying to reopen a closed action for a disabled account, prevent it
+                if (isDisabledAccount && !isClosed) {
+                    checkbox.checked = true; // Force the checkbox back to checked
+                    showNotification('Cannot reopen an action for a disabled account.', 'warning');
+                    return;
+                }
+
+                checkbox.disabled = true; // Prevent rapid clicks
 
                 // Add a visual indicator that the action is being processed
                 const originalOpacity = row.style.opacity || '1';
