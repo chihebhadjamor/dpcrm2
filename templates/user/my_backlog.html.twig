@@ -85,18 +85,24 @@
                                         </td>
                                         <td class="action-title-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.title }}</span>
+                                            {% if action.accountStatus %}
                                             <i class="fas fa-pencil-alt edit-title-btn ms-2" style="cursor: pointer;"
                                                 data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
                                         </td>
                                         <td class="action-contact-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.contact }}</span>
+                                            {% if action.accountStatus %}
                                             <i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
                                                 data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
                                         </td>
                                         <td class="action-date-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.nextStepDateFormatted }}</span>
+                                            {% if action.accountStatus %}
                                             <i class="fas fa-pencil-alt edit-date-btn ms-2" style="cursor: pointer;"
                                                 data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <input class="form-check-input action-status-checkbox" type="checkbox"
@@ -297,6 +303,14 @@
 
                 const actionId = editBtn.getAttribute('data-action-id');
                 const cell = editBtn.closest('.action-date-cell');
+
+                // Check if this action belongs to a disabled account
+                const actionRow = cell.closest('tr');
+                if (actionRow && actionRow.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
                 const dateSpan = cell.querySelector('span');
                 const currentDate = dateSpan.textContent.trim();
 
@@ -431,6 +445,14 @@
 
                 const actionId = editBtn.getAttribute('data-action-id');
                 const cell = editBtn.closest('.action-title-cell');
+
+                // Find the row and check if it's for a disabled account
+                const row = cell.closest('tr');
+                if (row && row.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
                 const titleSpan = cell.querySelector('span');
                 const currentTitle = titleSpan.textContent.trim();
 
@@ -535,6 +557,14 @@
 
                 const actionId = editBtn.getAttribute('data-action-id');
                 const cell = editBtn.closest('.action-contact-cell');
+
+                // Check if this action belongs to a disabled account
+                const actionRow = cell.closest('tr');
+                if (actionRow && actionRow.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
                 const contactSpan = cell.querySelector('span');
                 const currentContact = contactSpan.textContent.trim();
 
