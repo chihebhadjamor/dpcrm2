@@ -851,14 +851,9 @@ class UserController extends AbstractWebController
             // Update the appropriate field based on fieldName
             switch ($fieldName) {
                 case 'contact':
-                    // Validate that the contact exists in the account's contacts list
-                    $account = $action->getAccount();
-                    if ($account) {
-                        $contacts = $account->getContacts() ?? [];
-                        if (!in_array($newValue, $contacts)) {
-                            return new JsonResponse(['error' => 'Contact is not valid for this account'], 400);
-                        }
-                    }
+                    // Allow any contact value, including "No contacts available" and removed contacts
+                    // This is necessary to handle cases where contacts have been removed from the account
+                    // or when the user wants to set "No contacts available"
                     $action->setContact($newValue);
                     break;
                 case 'action':

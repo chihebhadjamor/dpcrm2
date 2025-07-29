@@ -1337,8 +1337,9 @@
                     return;
                 }
 
-                const contactSpan = cell.querySelector('span');
-                const currentContact = contactSpan.textContent.trim();
+                // Look for either a span or an anchor tag
+                const contactElement = cell.querySelector('span') || cell.querySelector('a');
+                const currentContact = contactElement ? contactElement.textContent.trim() : '';
 
                 // Create a dropdown for contacts
                 const contactSelect = document.createElement('select');
@@ -1370,6 +1371,9 @@
 
                             // Add options for each contact
                             if (contacts && contacts.length > 0) {
+                                // Check if the current contact is in the list
+                                let currentContactInList = false;
+
                                 contacts.forEach(contact => {
                                     const option = document.createElement('option');
                                     option.value = contact;
@@ -1377,16 +1381,26 @@
                                     // Pre-select the current contact
                                     if (contact === currentContact) {
                                         option.selected = true;
+                                        currentContactInList = true;
                                     }
                                     contactSelect.appendChild(option);
                                 });
-                            } else {
-                                // If no contacts, add a default option
-                                const option = document.createElement('option');
-                                option.value = "No contacts available";
-                                option.textContent = "No contacts available";
-                                contactSelect.appendChild(option);
+
+                                // If the current contact is not in the list but exists, add it
+                                if (!currentContactInList && currentContact) {
+                                    const option = document.createElement('option');
+                                    option.value = currentContact;
+                                    option.textContent = currentContact + " (removed from account)";
+                                    option.selected = true;
+                                    contactSelect.appendChild(option);
+                                }
                             }
+
+                            // Always add "No contacts available" option
+                            const noContactOption = document.createElement('option');
+                            noContactOption.value = "No contacts available";
+                            noContactOption.textContent = "No contacts available";
+                            contactSelect.appendChild(noContactOption);
                         })
                         .catch(error => {
                             console.error('Error fetching contacts:', error);
@@ -1409,7 +1423,9 @@
                 cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
 
                 // Hide the current elements
-                contactSpan.style.display = 'none';
+                if (contactElement) {
+                    contactElement.style.display = 'none';
+                }
                 editBtn.style.display = 'none';
 
                 // Add the new elements
@@ -1422,7 +1438,9 @@
 
                 // Function to reset the cell to its original state
                 const resetCell = () => {
-                    contactSpan.style.display = '';
+                    if (contactElement) {
+                        contactElement.style.display = '';
+                    }
                     editBtn.style.display = '';
                     contactSelect.remove();
                     saveBtn.remove();
@@ -1477,8 +1495,10 @@
                             userBacklogActions[actionIndex] = data;
                         }
 
-                        // Update the contact span with the new value
-                        contactSpan.textContent = data.contact || '';
+                        // Update the contact element with the new value
+                        if (contactElement) {
+                            contactElement.textContent = data.contact || '';
+                        }
 
                         // Reset the cell to its original state but with the new contact
                         resetCell();
