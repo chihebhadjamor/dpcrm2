@@ -721,6 +721,11 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
+        // Check if the action is closed
+        if ($action->isClosed()) {
+            return new JsonResponse(['error' => 'Cannot modify notes for a closed action'], 403);
+        }
+
         // Check if the account is disabled
         $account = $action->getAccount();
         if ($account && !$account->isActive()) {

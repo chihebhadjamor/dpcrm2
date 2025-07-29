@@ -299,8 +299,11 @@
                 const accountStatus = accountCell ? accountCell.getAttribute('data-account-status') : 'active';
                 const isDisabledAccount = accountStatus === 'disabled';
 
-                // Make the text area read-only and hide the save button if the account is disabled
-                if (isDisabledAccount || isDisabledAction) {
+                // Check if the action is closed
+                const isActionClosed = actionRow && actionRow.classList.contains('action-closed');
+
+                // Make the text area read-only and hide the save button if the account is disabled or the action is closed
+                if (isDisabledAccount || isDisabledAction || isActionClosed) {
                     notesContent.readOnly = true;
                     saveNotesBtn.style.display = 'none';
                 } else {

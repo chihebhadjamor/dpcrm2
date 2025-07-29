@@ -835,8 +835,11 @@
                 const actionRow = e.target.closest('tr');
                 const isDisabledAccount = actionRow && actionRow.classList.contains('disabled-account-action');
 
-                // Make the text area read-only and hide the save button if the account is disabled
-                if (isDisabledAccount) {
+                // Check if the action is closed
+                const isActionClosed = actionRow && actionRow.classList.contains('action-closed');
+
+                // Make the text area read-only and hide the save button if the account is disabled or the action is closed
+                if (isDisabledAccount || isActionClosed) {
                     notesContent.readOnly = true;
                     saveNotesBtn.style.display = 'none';
                 } else {
