@@ -606,10 +606,10 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
         }
 
-        // Check if the account is disabled
+        // For disabled accounts, we only allow closing actions, not reopening them
         $account = $action->getAccount();
-        if ($account && !$account->isActive()) {
-            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
+        if ($account && !$account->isActive() && $action->isClosed()) {
+            return new JsonResponse(['error' => 'Cannot reopen actions for a disabled account'], 403);
         }
 
         try {
@@ -659,11 +659,8 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Action not found'], 404);
         }
 
-        // Check if the account is disabled
-        $account = $action->getAccount();
-        if ($account && !$account->isActive()) {
-            return new JsonResponse(['error' => 'Cannot modify actions for a disabled account'], 403);
-        }
+        // For disabled accounts, we allow closing actions with notes
+        // No restriction needed here since this method only closes actions
 
         try {
             // Get notes from request
