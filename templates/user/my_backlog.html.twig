@@ -91,7 +91,11 @@
                                             {% endif %}
                                         </td>
                                         <td class="action-contact-cell" data-action-id="{{ action.id }}">
-                                            <span>{{ action.contact }}</span>
+                                            {% if not action.closed and action.contact matches '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/' %}
+                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
+                                            {% else %}
+                                                <span>{{ action.contact }}</span>
+                                            {% endif %}
                                             {% if action.accountStatus %}
                                             <i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
                                                 data-action-id="{{ action.id }}"></i>
@@ -151,7 +155,11 @@
                                             <span>{{ action.title }}</span>
                                         </td>
                                         <td class="action-contact-cell" data-action-id="{{ action.id }}">
-                                            <span>{{ action.contact }}</span>
+                                            {% if not action.closed and action.contact matches '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/' %}
+                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
+                                            {% else %}
+                                                <span>{{ action.contact }}</span>
+                                            {% endif %}
                                         </td>
                                         <td class="action-date-cell" data-action-id="{{ action.id }}">
                                             <span>{{ action.nextStepDateFormatted }}</span>

@@ -367,6 +367,15 @@
 
             // Trigger initial adjustment when the page loads
             window.addEventListener('load', adjustPanelHeights);
+
+            // --- UTILITY FUNCTIONS ---
+            // Function to validate email addresses
+            function isValidEmail(email) {
+                if (!email) return false;
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                return emailRegex.test(email);
+            }
+
             // --- STATE MANAGEMENT ---
             let userBacklogActions = [];
             let currentUserId = null;
@@ -673,7 +682,10 @@
                     }
                 </td>
                 <td class="action-contact-cell" data-action-id="${action.id}">
-                    <span>${action.contact || ''}</span>
+                    ${(!action.closed && isValidEmail(action.contact)) ?
+                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title || '')}" style="color: blue; text-decoration: underline;">${action.contact || ''}</a>` :
+                        `<span>${action.contact || ''}</span>`
+                    }
                     ${(action.closed || !action.accountStatus) ? '' :
                         `<i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
                             data-action-id="${action.id}"></i>`
