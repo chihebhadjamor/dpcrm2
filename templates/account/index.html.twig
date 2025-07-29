@@ -2068,8 +2068,12 @@
 
             const actionId = editBtn.getAttribute('data-action-id');
             const cell = editBtn.closest('.action-contact-cell');
-            const contactSpan = cell.querySelector('span');
-            const currentContact = contactSpan.textContent.trim();
+
+            // Look for either a span or an anchor tag
+            const contactElement = cell.querySelector('span') || cell.querySelector('a');
+            if (!contactElement) return; // Safety check
+
+            const currentContact = contactElement.textContent.trim();
 
             // Create a dropdown for contacts
             const contactSelect = document.createElement('select');
@@ -2099,6 +2103,9 @@
 
                     // Add options for each contact
                     if (contacts && contacts.length > 0) {
+                        // Check if the current contact is in the list
+                        let currentContactInList = false;
+
                         contacts.forEach(contact => {
                             const option = document.createElement('option');
                             option.value = contact;
@@ -2106,15 +2113,41 @@
                             // Pre-select the current contact
                             if (contact === currentContact) {
                                 option.selected = true;
+                                currentContactInList = true;
                             }
                             contactSelect.appendChild(option);
                         });
+
+                        // If the current contact is not in the list but exists, add it
+                        if (!currentContactInList && currentContact) {
+                            const option = document.createElement('option');
+                            option.value = currentContact;
+                            option.textContent = currentContact + " (removed from account)";
+                            option.selected = true;
+                            contactSelect.appendChild(option);
+                        }
+
+                        // Always add "No contacts available" option
+                        const noContactOption = document.createElement('option');
+                        noContactOption.value = "No contacts available";
+                        noContactOption.textContent = "No contacts available";
+                        contactSelect.appendChild(noContactOption);
                     } else {
                         // If no contacts, add a default option
                         const option = document.createElement('option');
                         option.value = "No contacts available";
                         option.textContent = "No contacts available";
+                        option.selected = !currentContact; // Select if there's no current contact
                         contactSelect.appendChild(option);
+
+                        // If there's a current contact, add it even though it's not in the contacts list
+                        if (currentContact) {
+                            const currentOption = document.createElement('option');
+                            currentOption.value = currentContact;
+                            currentOption.textContent = currentContact + " (removed from account)";
+                            currentOption.selected = true;
+                            contactSelect.appendChild(currentOption);
+                        }
                     }
                 })
                 .catch(error => {
@@ -2134,7 +2167,7 @@
             cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
 
             // Hide the current elements
-            contactSpan.style.display = 'none';
+            contactElement.style.display = 'none';
             editBtn.style.display = 'none';
 
             // Add the new elements
@@ -2146,12 +2179,43 @@
             contactSelect.focus();
 
             // Function to reset the cell to its original state
-            const resetCell = () => {
-                contactSpan.style.display = '';
-                editBtn.style.display = '';
+            const resetCell = (updatedContact = null) => {
+                // Remove the edit UI elements
                 contactSelect.remove();
                 saveBtn.remove();
                 cancelBtn.remove();
+
+                // If we have an updated contact value, rebuild the cell content
+                if (updatedContact !== null) {
+                    // Remove the old contact element
+                    contactElement.remove();
+
+                    // Create the appropriate element based on whether it's an email
+                    if (updatedContact && updatedContact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+                        // Create a mailto link for email contacts
+                        const link = document.createElement('a');
+                        // Get the action title from our stored actions
+                        const action = allAccountActions.find(a => a.id == actionId);
+                        const actionTitle = action ? action.title : '';
+                        link.href = `mailto:${updatedContact}?subject=${encodeURIComponent(actionTitle)}`;
+                        link.target = '_blank';
+                        link.style.color = 'blue';
+                        link.style.textDecoration = 'underline';
+                        link.textContent = updatedContact;
+                        cell.insertBefore(link, editBtn);
+                    } else {
+                        // Create a span for non-email contacts
+                        const span = document.createElement('span');
+                        span.textContent = updatedContact || '';
+                        cell.insertBefore(span, editBtn);
+                    }
+                } else {
+                    // Just restore the visibility of existing elements
+                    contactElement.style.display = '';
+                }
+
+                // Restore the edit button
+                editBtn.style.display = '';
             };
 
             // Handle cancel button click
@@ -2202,11 +2266,8 @@
                         allAccountActions[actionIndex] = data;
                     }
 
-                    // Update the contact span with the new value
-                    contactSpan.textContent = data.contact || '';
-
                     // Reset the cell to its original state but with the new contact
-                    resetCell();
+                    resetCell(data.contact);
 
                     // Show success notification
                     showNotification('Contact updated successfully', 'success');
