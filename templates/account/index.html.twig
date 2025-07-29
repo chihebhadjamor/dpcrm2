@@ -1591,7 +1591,10 @@
                 // Closed actions - no Actions column
                 row.innerHTML = `
                     <td>${action.id}</td>
-                    <td>${action.contact || ''}</td>
+                    <td>${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
+                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                        action.contact || ''}
+                    </td>
                     <td>${action.title}</td>
                     <td>${action.nextStepDateFormatted || ''}</td>
                     <td>${action.owner}</td>
@@ -1600,7 +1603,8 @@
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
                                    data-action-id="${action.id}"
-                                   ${isAccountDisabled ? 'disabled' : ''}>
+                                   ${isAccountDisabled ? 'disabled' : ''}
+                                   title="${isAccountDisabled ? 'This action cannot be reopened because its account is disabled' : ''}">
                         </div>
                     </td>
                     <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
@@ -1613,7 +1617,10 @@
                 row.innerHTML = `
                     <td>${action.id}</td>
                     <td class="action-contact-cell" data-action-id="${action.id}">
-                        <span>${action.contact || ''}</span>
+                        ${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
+                            `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                            `<span>${action.contact || ''}</span>`
+                        }
                         ${(action.closed || isAccountDisabled) ? '' :
                             `<i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
                                 data-action-id="${action.id}"></i>`
@@ -1645,7 +1652,8 @@
                             <input class="form-check-input action-closed-checkbox" type="checkbox"
                                    ${action.closed ? 'checked' : ''}
                                    data-action-id="${action.id}"
-                                   ${isAccountDisabled ? 'disabled' : ''}>
+                                   ${isAccountDisabled && action.closed ? 'disabled' : ''}
+                                   title="${isAccountDisabled && action.closed ? 'This action cannot be reopened because its account is disabled' : ''}">
                         </div>
                     </td>
                     <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
