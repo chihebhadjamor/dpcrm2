@@ -1080,6 +1080,9 @@
                             // Extract raw date (YYYY-MM-DD) from the input for styling purposes
                             data.nextStepDateRaw = newDate;
 
+                            // Ensure hasHistory is set to true since we just modified the action
+                            data.hasHistory = true;
+
                             userBacklogActions[actionIndex] = data;
                         }
 
@@ -1196,6 +1199,8 @@
                         // Update the action in our stored array
                         const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
                         if (actionIndex !== -1) {
+                            // Ensure hasHistory is set to true since we just modified the action
+                            data.hasHistory = true;
                             userBacklogActions[actionIndex] = data;
                         }
 
@@ -1322,6 +1327,8 @@
                         // Update the action in our stored array
                         const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
                         if (actionIndex !== -1) {
+                            // Ensure hasHistory is set to true since we just modified the action
+                            data.hasHistory = true;
                             userBacklogActions[actionIndex] = data;
                         }
 
@@ -1516,6 +1523,8 @@
                         // Update the action in our stored array
                         const actionIndex = userBacklogActions.findIndex(a => a.id == actionId);
                         if (actionIndex !== -1) {
+                            // Ensure hasHistory is set to true since we just modified the action
+                            data.hasHistory = true;
                             userBacklogActions[actionIndex] = data;
                         }
 

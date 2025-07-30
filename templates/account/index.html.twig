@@ -1420,6 +1420,35 @@
             // Show actions table container
             actionsTableContainer.style.display = 'block';
 
+            // Clear previous actions from both tables immediately
+            const openActionsTbody = document.getElementById('open-actions-tbody');
+            const closedActionsTbody = document.getElementById('closed-actions-tbody');
+
+            // Save the form row
+            const formRow = document.getElementById('action-form-row');
+            const formRowDisplay = formRow.style.display;
+
+            // Clear previous actions from both tables
+            openActionsTbody.innerHTML = '';
+            closedActionsTbody.innerHTML = '';
+
+            // Re-add the form row to the open actions tbody
+            openActionsTbody.appendChild(formRow);
+            formRow.style.display = formRowDisplay;
+
+            // Show loading indicator
+            const loadingIndicator = document.createElement('tr');
+            loadingIndicator.id = 'actions-loading-indicator';
+            loadingIndicator.innerHTML = `
+                <td colspan="8" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading actions...</p>
+                </td>
+            `;
+            openActionsTbody.appendChild(loadingIndicator);
+
             // Fetch contacts for this account
             fetch(`/accounts/${accountId}/contacts`)
                 .then(response => response.json())
@@ -1473,16 +1502,11 @@
                             badgeContainer.innerHTML = '';
                         }
 
-                        // Save the form row
-                        const formRow = document.getElementById('action-form-row');
-                        const formRowDisplay = formRow.style.display;
-
-                        // Clear previous actions
-                        actionsTbody.innerHTML = '';
-
-                        // Re-add the form row to the tbody
-                        actionsTbody.appendChild(formRow);
-                        formRow.style.display = formRowDisplay;
+                        // Remove loading indicator if it exists
+                        const loadingIndicator = document.getElementById('actions-loading-indicator');
+                        if (loadingIndicator) {
+                            loadingIndicator.remove();
+                        }
                     }
                 })
                 .catch(error => {
@@ -1498,6 +1522,12 @@
                     // Re-add the form row to the tbody
                     actionsTbody.appendChild(formRow);
                     formRow.style.display = formRowDisplay;
+
+                    // Remove loading indicator if it exists
+                    const loadingIndicator = document.getElementById('actions-loading-indicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.remove();
+                    }
 
                     noActionsMessage.style.display = 'block';
                     noActionsMessage.innerHTML = '<p>Error loading actions. Please try again.</p>';
@@ -1521,6 +1551,12 @@
             // Re-add the form row to the open actions tbody
             openActionsTbody.appendChild(formRow);
             formRow.style.display = formRowDisplay;
+
+            // Remove loading indicator if it exists
+            const loadingIndicator = document.getElementById('actions-loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
 
             // Check if account is disabled
             const accountRow = document.querySelector(`.account-row[data-account-id="${currentAccountId}"]`);
@@ -2027,6 +2063,19 @@
                         }
                     }
 
+                    // Update the action ID cell to reflect the new hasHistory status
+                    const idCell = row.querySelector('td:first-child');
+                    if (idCell) {
+                        if (data.hasHistory) {
+                            idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}" data-bs-toggle="tooltip" title="Display the history for the action">${actionId}</a>`;
+                        } else {
+                            idCell.textContent = actionId;
+                        }
+                    }
+
+                    // Re-initialize tooltips for the newly created elements
+                    initTooltips();
+
                     // Show success notification
                     showNotification('Action date updated successfully', 'success');
 
@@ -2311,6 +2360,19 @@
                     // Reset the cell to its original state but with the new contact
                     resetCell(data.contact);
 
+                    // Update the action ID cell to reflect the new hasHistory status
+                    const idCell = row.querySelector('td:first-child');
+                    if (idCell) {
+                        if (data.hasHistory) {
+                            idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}" data-bs-toggle="tooltip" title="Display the history for the action">${actionId}</a>`;
+                        } else {
+                            idCell.textContent = actionId;
+                        }
+                    }
+
+                    // Re-initialize tooltips for the newly created elements
+                    initTooltips();
+
                     // Show success notification
                     showNotification('Contact updated successfully', 'success');
                 } catch (error) {
@@ -2428,6 +2490,19 @@
 
                     // Reset the cell to its original state but with the new title
                     resetCell();
+
+                    // Update the action ID cell to reflect the new hasHistory status
+                    const idCell = row.querySelector('td:first-child');
+                    if (idCell) {
+                        if (data.hasHistory) {
+                            idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}" data-bs-toggle="tooltip" title="Display the history for the action">${actionId}</a>`;
+                        } else {
+                            idCell.textContent = actionId;
+                        }
+                    }
+
+                    // Re-initialize tooltips for the newly created elements
+                    initTooltips();
 
                     // Show success notification
                     showNotification('Action updated successfully', 'success');
@@ -2571,6 +2646,19 @@
 
                     // Reset the cell to its original state but with the new owner
                     resetCell();
+
+                    // Update the action ID cell to reflect the new hasHistory status
+                    const idCell = row.querySelector('td:first-child');
+                    if (idCell) {
+                        if (data.hasHistory) {
+                            idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}" data-bs-toggle="tooltip" title="Display the history for the action">${actionId}</a>`;
+                        } else {
+                            idCell.textContent = actionId;
+                        }
+                    }
+
+                    // Re-initialize tooltips for the newly created elements
+                    initTooltips();
 
                     // Show success notification
                     showNotification('Owner updated successfully', 'success');
