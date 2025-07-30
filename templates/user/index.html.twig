@@ -1210,6 +1210,16 @@
                         // Reset the cell to its original state but with the new account
                         resetCell();
 
+                        // Update the action ID cell to reflect the new hasHistory status
+                        const idCell = row.querySelector('td:first-child');
+                        if (idCell) {
+                            if (data.hasHistory) {
+                                idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}">${actionId}</a>`;
+                            } else {
+                                idCell.textContent = actionId;
+                            }
+                        }
+
                         // Show success notification
                         showNotification('Account updated successfully', 'success');
                     } catch (error) {
@@ -1337,6 +1347,16 @@
 
                         // Reset the cell to its original state but with the new title
                         resetCell();
+
+                        // Update the action ID cell to reflect the new hasHistory status
+                        const idCell = row.querySelector('td:first-child');
+                        if (idCell) {
+                            if (data.hasHistory) {
+                                idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}">${actionId}</a>`;
+                            } else {
+                                idCell.textContent = actionId;
+                            }
+                        }
 
                         // Show success notification
                         showNotification('Action updated successfully', 'success');
@@ -1535,6 +1555,16 @@
 
                         // Reset the cell to its original state but with the new contact
                         resetCell();
+
+                        // Update the action ID cell to reflect the new hasHistory status
+                        const idCell = row.querySelector('td:first-child');
+                        if (idCell) {
+                            if (data.hasHistory) {
+                                idCell.innerHTML = `<a href="#" class="action-history-link" data-action-id="${actionId}">${actionId}</a>`;
+                            } else {
+                                idCell.textContent = actionId;
+                            }
+                        }
 
                         // Show success notification
                         showNotification('Contact updated successfully', 'success');
