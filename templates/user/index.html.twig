@@ -683,7 +683,7 @@
                 </td>
                 <td class="action-contact-cell" data-action-id="${action.id}">
                     ${(!action.closed && isValidEmail(action.contact)) ?
-                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title || '')}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact || ''}</a>` :
+                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.lastAction || '')}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact || ''}</a>` :
                         `<span>${action.contact || ''}</span>`
                     }
                     ${(action.closed || !action.accountStatus) ? '' :
