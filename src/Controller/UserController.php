@@ -613,7 +613,7 @@ class UserController extends AbstractWebController
     }
 
     #[Route('/users/{userId}/create-action', name: 'app_create_user_action', methods: ['POST'])]
-    public function createAction(int $userId, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
+    public function createAction(int $userId, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Only allow administrators to access this endpoint
         $this->denyAccessUnlessAdmin();
@@ -662,6 +662,10 @@ class UserController extends AbstractWebController
 
         // Save to database
         $entityManager->persist($action);
+        $entityManager->flush();
+
+        // Create initial history entry for the action
+        $actionHistoryService->createHistoryEntry($action);
         $entityManager->flush();
 
         // Return the new action data

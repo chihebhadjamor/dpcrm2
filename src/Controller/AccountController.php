@@ -332,7 +332,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/accounts/create-ajax', name: 'app_create_account_ajax', methods: ['POST'])]
-    public function createAccountAjax(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function createAccountAjax(Request $request, EntityManagerInterface $entityManager, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Get form data
         $name = $request->request->get('name');
@@ -376,6 +376,10 @@ class AccountController extends AbstractWebController
                 $entityManager->persist($action);
                 $entityManager->flush();
 
+                // Create initial history entry for the action
+                $actionHistoryService->createHistoryEntry($action);
+                $entityManager->flush();
+
                 $actionOwner = $owner->getUsername();
             }
         }
@@ -390,7 +394,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/accounts/{id}/create-action', name: 'app_create_account_action', methods: ['POST'])]
-    public function createAction(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function createAction(int $id, Request $request, EntityManagerInterface $entityManager, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Find the account
         $account = $entityManager->getRepository(Account::class)->find($id);
@@ -451,6 +455,10 @@ class AccountController extends AbstractWebController
         try {
             // Save to database
             $entityManager->persist($action);
+            $entityManager->flush();
+
+            // Create initial history entry for the action
+            $actionHistoryService->createHistoryEntry($action);
             $entityManager->flush();
 
             // Return the new action data
