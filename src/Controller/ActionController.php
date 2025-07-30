@@ -56,9 +56,13 @@ class ActionController extends AbstractController
             $allHistories = array_merge($actionHistories, $histories);
 
             $historyData = [];
+            $previousEntry = null;
+
             foreach ($allHistories as $history) {
+                $currentEntry = [];
+
                 if ($history instanceof ActionHistory) {
-                    $historyData[] = [
+                    $currentEntry = [
                         'title' => $history->getTitle(),
                         'actionDate' => $history->getActionDate() ? $this->appSettingsService->formatDate($history->getActionDate()) : null,
                         'owner' => $history->getOwner() ? $history->getOwner()->getUsername() : 'N/A',
@@ -68,7 +72,7 @@ class ActionController extends AbstractController
                         'updatedAt' => $history->getUpdatedAt() ? $this->appSettingsService->formatDateTime($history->getUpdatedAt()) : 'N/A',
                     ];
                 } elseif ($history instanceof History) {
-                    $historyData[] = [
+                    $currentEntry = [
                         'title' => $action->getTitle() . ' - ' . $history->getNote(), // Include note in title
                         'actionDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                         'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'N/A',
@@ -78,6 +82,23 @@ class ActionController extends AbstractController
                         'updatedAt' => $history->getCreatedAt() ? $this->appSettingsService->formatDateTime($history->getCreatedAt()) : 'N/A',
                     ];
                 }
+
+                // Identify changed fields by comparing with previous entry
+                $changedFields = [];
+                if ($previousEntry !== null) {
+                    foreach ($currentEntry as $field => $value) {
+                        // Skip updatedBy and updatedAt fields from comparison
+                        if ($field !== 'updatedBy' && $field !== 'updatedAt') {
+                            if ($previousEntry[$field] !== $value) {
+                                $changedFields[] = $field;
+                            }
+                        }
+                    }
+                }
+
+                $currentEntry['changedFields'] = $changedFields;
+                $historyData[] = $currentEntry;
+                $previousEntry = $currentEntry;
             }
 
             // If no history entries exist yet, add the current action state as the initial history
@@ -90,6 +111,7 @@ class ActionController extends AbstractController
                     'status' => $action->isClosed() ? 'Closed' : 'Open',
                     'updatedBy' => 'System',
                     'updatedAt' => $action->getCreatedAt() ? $this->appSettingsService->formatDateTime($action->getCreatedAt()) : 'N/A',
+                    'changedFields' => [], // Initial entry has no changed fields
                 ];
             }
 
