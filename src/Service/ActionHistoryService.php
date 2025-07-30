@@ -36,6 +36,7 @@ class ActionHistoryService
         // Handle potentially null owner
         $history->setOwner($action->getOwner());
         $history->setClosed($action->isClosed());
+        $history->setContact($action->getContact());
         $history->setUpdatedBy($user);
 
         // Add the history to the action's collection

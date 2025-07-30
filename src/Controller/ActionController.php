@@ -62,6 +62,7 @@ class ActionController extends AbstractController
                         'title' => $history->getTitle(),
                         'actionDate' => $history->getActionDate() ? $this->appSettingsService->formatDate($history->getActionDate()) : null,
                         'owner' => $history->getOwner() ? $history->getOwner()->getUsername() : 'N/A',
+                        'contact' => $history->getContact() ?: 'N/A',
                         'status' => $history->isClosed() ? 'Closed' : 'Open',
                         'updatedBy' => $history->getUpdatedBy() ? $history->getUpdatedBy()->getUsername() : 'System',
                         'updatedAt' => $history->getUpdatedAt() ? $this->appSettingsService->formatDateTime($history->getUpdatedAt()) : 'N/A',
@@ -71,6 +72,7 @@ class ActionController extends AbstractController
                         'title' => $action->getTitle() . ' - ' . $history->getNote(), // Include note in title
                         'actionDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                         'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'N/A',
+                        'contact' => $action->getContact() ?: 'N/A',
                         'status' => $action->isClosed() ? 'Closed' : 'Open',
                         'updatedBy' => $history->getAuthor() ? $history->getAuthor()->getUsername() : 'System',
                         'updatedAt' => $history->getCreatedAt() ? $this->appSettingsService->formatDateTime($history->getCreatedAt()) : 'N/A',
@@ -84,6 +86,7 @@ class ActionController extends AbstractController
                     'title' => $action->getTitle(),
                     'actionDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                     'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'N/A',
+                    'contact' => $action->getContact() ?: 'N/A',
                     'status' => $action->isClosed() ? 'Closed' : 'Open',
                     'updatedBy' => 'System',
                     'updatedAt' => $action->getCreatedAt() ? $this->appSettingsService->formatDateTime($action->getCreatedAt()) : 'N/A',

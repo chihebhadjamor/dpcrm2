@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.getElementById('action-history-modal')) {
         const modalHtml = `
             <div class="modal fade" id="action-history-modal" tabindex="-1" aria-labelledby="action-history-modal-label" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="action-history-modal-label">Action History</h5>
