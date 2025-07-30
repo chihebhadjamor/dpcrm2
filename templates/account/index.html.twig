@@ -489,6 +489,18 @@
 
         // Trigger initial adjustment when the page loads
         window.addEventListener('load', adjustPanelHeights);
+
+        // Initialize tooltips
+        function initTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
+        // Initialize tooltips on page load
+        initTooltips();
+
         // Initialize both notes badge containers to be empty
         const closedBadgeContainer = document.getElementById('notes-badge-container');
         if (closedBadgeContainer) {
@@ -1559,6 +1571,9 @@
             // Show the actions table container and hide the placeholder
             document.getElementById('actions-table-container').style.display = 'block';
             document.getElementById('actions-placeholder').style.display = 'none';
+
+            // Initialize tooltips for the newly created elements
+            initTooltips();
         }
 
         // Helper function to create an action row
@@ -1612,11 +1627,11 @@
                 // Closed actions - no Actions column
                 row.innerHTML = `
                     <td>${action.hasHistory ?
-                        `<a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a>` :
+                        `<a href="#" class="action-history-link" data-action-id="${action.id}" data-bs-toggle="tooltip" title="Display the history for the action">${action.id}</a>` :
                         `${action.id}`}
                     </td>
                     <td>${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
-                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                        `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;" data-bs-toggle="tooltip" title="Mail to contact">${action.contact}</a>` :
                         action.contact || ''}
                     </td>
                     <td>${action.title}</td>
@@ -1640,12 +1655,12 @@
                 // Open actions - include Actions column
                 row.innerHTML = `
                 <td>${action.hasHistory ?
-                    `<a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a>` :
+                    `<a href="#" class="action-history-link" data-action-id="${action.id}" data-bs-toggle="tooltip" title="Display the history for the action">${action.id}</a>` :
                     `${action.id}`}
                 </td>
                 <td class="action-contact-cell" data-action-id="${action.id}">
                         ${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
-                            `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
+                            `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;" data-bs-toggle="tooltip" title="Mail to contact">${action.contact}</a>` :
                             `<span>${action.contact || ''}</span>`
                         }
                         ${(action.closed || isAccountDisabled) ? '' :
