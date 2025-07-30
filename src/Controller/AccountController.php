@@ -579,7 +579,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/toggle-closed', name: 'app_action_toggle_closed', methods: ['POST'])]
-    public function toggleActionClosed(int $id, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    public function toggleActionClosed(int $id, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Get the current user
         $currentUser = $this->getUser();
@@ -611,6 +611,9 @@ class AccountController extends AbstractWebController
                 $action->close();
             }
 
+            // Create history entry for the status change
+            $actionHistoryService->createHistoryEntry($action);
+
             // Save to database
             $entityManager->flush();
 
@@ -641,7 +644,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/close-with-notes', name: 'app_action_close_with_notes', methods: ['POST'])]
-    public function closeActionWithNotes(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function closeActionWithNotes(int $id, Request $request, EntityManagerInterface $entityManager, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -660,6 +663,9 @@ class AccountController extends AbstractWebController
             // Close the action and set notes
             $action->close();
             $action->setNotes($notes);
+
+            // Create history entry for the status change
+            $actionHistoryService->createHistoryEntry($action);
 
             // Save to database
             $entityManager->flush();
