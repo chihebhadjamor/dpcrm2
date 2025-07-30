@@ -690,7 +690,10 @@
                 row.setAttribute('data-action-id', action.id);
 
                 row.innerHTML = `
-                <td><a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a></td>
+                <td>${action.hasHistory ?
+                    `<a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a>` :
+                    `${action.id}`}
+                </td>
                 <td class="action-account-cell" data-action-id="${action.id}" data-account-id="${action.accountId || ''}" data-account-status="${action.accountStatus ? 'active' : 'disabled'}">
                     <span>${action.accountName || 'N/A'}</span>
                     ${!action.accountStatus ? '<i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>' : ''}

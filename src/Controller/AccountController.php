@@ -292,6 +292,10 @@ class AccountController extends AbstractWebController
                 }
             }
 
+            // Check if the action has more than one history record
+            $historyCount = $action->getActionHistories()->count();
+            $hasHistory = $historyCount > 1;
+
             $actionsData[] = [
                 'id' => $action->getId(),
                 'title' => $action->getTitle(),
@@ -304,7 +308,8 @@ class AccountController extends AbstractWebController
                 'closed' => $action->isClosed(),
                 'dateClosed' => $dateClosed,
                 'notes' => $action->getNotes(),
-                'hasNotes' => !empty($action->getNotes())
+                'hasNotes' => !empty($action->getNotes()),
+                'hasHistory' => $hasHistory
             ];
         }
 

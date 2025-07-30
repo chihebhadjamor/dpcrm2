@@ -491,6 +491,10 @@ class UserController extends AbstractWebController
                     }
                 }
 
+                // Check if the action has more than one history record
+                $historyCount = $action->getActionHistories()->count();
+                $hasHistory = $historyCount > 1;
+
                 $userBacklogActions[] = [
                     'id' => $action->getId(),
                     'accountId' => $accountId,
@@ -505,7 +509,8 @@ class UserController extends AbstractWebController
                     'closed' => $action->isClosed(),
                     'dateClosed' => $dateClosed,
                     'notes' => $action->getNotes(),
-                    'hasNotes' => !empty($action->getNotes())
+                    'hasNotes' => !empty($action->getNotes()),
+                    'hasHistory' => $hasHistory
                 ];
             }
 
@@ -586,6 +591,10 @@ class UserController extends AbstractWebController
                     }
                 }
 
+                // Check if the action has more than one history record
+                $historyCount = $action->getActionHistories()->count();
+                $hasHistory = $historyCount > 1;
+
                 $accountActions[] = [
                     'id' => $action->getId(),
                     'accountId' => $accountId,
@@ -600,7 +609,8 @@ class UserController extends AbstractWebController
                     'dateClosed' => $dateClosed,
                     'notes' => $action->getNotes(),
                     'hasNotes' => !empty($action->getNotes()),
-                    'accountNotesCount' => isset($accountNotesCount[$accountId]) ? $accountNotesCount[$accountId] : 0
+                    'accountNotesCount' => isset($accountNotesCount[$accountId]) ? $accountNotesCount[$accountId] : 0,
+                    'hasHistory' => $hasHistory
                 ];
             }
 
