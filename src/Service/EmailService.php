@@ -238,4 +238,131 @@ class EmailService
             </html>
         ";
     }
+
+    /**
+     * Send a backlog reminder email to a user
+     *
+     * @param string $recipientEmail The email address of the recipient
+     * @param string $recipientName The name of the recipient
+     * @param array $openActions Array of open actions or empty array if no open actions
+     * @return void
+     */
+    public function sendBacklogReminderEmail(string $recipientEmail, string $recipientName, array $openActions): void
+    {
+        if (count($openActions) > 0) {
+            $subject = 'Your DPCRM Open Actions Reminder';
+        } else {
+            $subject = 'Your DPCRM Backlog is Clear!';
+        }
+
+        $htmlContent = $this->renderBacklogReminderEmailTemplate($recipientName, $openActions);
+
+        $this->sendEmail($recipientEmail, $subject, $htmlContent);
+    }
+
+    /**
+     * Render the backlog reminder email template
+     *
+     * @param string $recipientName The name of the recipient
+     * @param array $openActions Array of open actions or empty array if no open actions
+     * @return string The HTML content of the email
+     */
+    private function renderBacklogReminderEmailTemplate(string $recipientName, array $openActions): string
+    {
+        $loginUrl = $this->appUrl . '/login';
+        $now = new \DateTime();
+
+        $tableRows = '';
+        if (count($openActions) > 0) {
+            foreach ($openActions as $action) {
+                $actionTitle = htmlspecialchars($action->getTitle());
+                $accountName = $action->getAccount() ? htmlspecialchars($action->getAccount()->getName()) : 'N/A';
+                $contactName = $action->getContact() ? htmlspecialchars($action->getContact()) : 'N/A';
+                $actionDate = $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : 'N/A';
+
+                // Determine cell color based on date (similar to UI logic)
+                $dateColor = '#ffffff'; // Default white
+                if ($action->getNextStepDate()) {
+                    $daysUntil = $now->diff($action->getNextStepDate())->days;
+                    $isPast = $now > $action->getNextStepDate();
+
+                    if ($isPast) {
+                        $dateColor = '#ffcccc'; // Light red for overdue
+                    } elseif ($daysUntil <= 2) {
+                        $dateColor = '#ffffcc'; // Light yellow for soon
+                    }
+                }
+
+                $tableRows .= "
+                    <tr>
+                        <td style='border: 1px solid #ddd; padding: 8px;'>$actionTitle</td>
+                        <td style='border: 1px solid #ddd; padding: 8px;'>$accountName</td>
+                        <td style='border: 1px solid #ddd; padding: 8px;'>$contactName</td>
+                        <td style='border: 1px solid #ddd; padding: 8px; background-color: $dateColor;'>$actionDate</td>
+                    </tr>
+                ";
+            }
+        }
+
+        $content = '';
+        if (count($openActions) > 0) {
+            $content = "
+                <p>Hello $recipientName,</p>
+                <p>Here is a reminder of your current open actions in DPCRM:</p>
+
+                <table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>
+                    <thead>
+                        <tr style='background-color: #f2f2f2;'>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Action Title</th>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Account Name</th>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Contact</th>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Action Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $tableRows
+                    </tbody>
+                </table>
+
+                <p>Please log in to the system to manage these actions:</p>
+            ";
+        } else {
+            $content = "
+                <p>Hello $recipientName,</p>
+                <p>Good news! You currently have no pending open actions in DPCRM.</p>
+                <p>You can log in to the system to create new actions if needed:</p>
+            ";
+        }
+
+        return "
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { text-align: center; margin-bottom: 20px; }
+                    .content { margin-bottom: 30px; }
+                    .button { display: inline-block; background-color: #4CAF50; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; }
+                    .footer { font-size: 12px; color: #777; margin-top: 30px; text-align: center; }
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>" . (count($openActions) > 0 ? "Your DPCRM Open Actions" : "Your DPCRM Backlog is Clear!") . "</h1>
+                    </div>
+                    <div class='content'>
+                        $content
+                        <p style='text-align: center;'>
+                            <a href='$loginUrl' class='button'>Access DPCRM</a>
+                        </p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated message, please do not reply.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        ";
+    }
 }
