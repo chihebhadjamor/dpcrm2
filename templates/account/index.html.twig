@@ -393,9 +393,30 @@
 </div>
 
 <!-- Action Close Confirmation Modal removed as per requirements -->
+
+<!-- Action History Modal -->
+<div class="modal fade" id="action-history-modal" tabindex="-1" aria-labelledby="action-history-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="action-history-modal-label">Action History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="action-history-modal-content">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading action history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
+    <script src="{{ asset('assets/js/action_history.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Panel expand/collapse functionality
@@ -1590,7 +1611,7 @@
             if (action.closed) {
                 // Closed actions - no Actions column
                 row.innerHTML = `
-                    <td>${action.id}</td>
+                    <td><a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a></td>
                     <td>${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
                         `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
                         action.contact || ''}
@@ -1615,8 +1636,8 @@
             } else {
                 // Open actions - include Actions column
                 row.innerHTML = `
-                    <td>${action.id}</td>
-                    <td class="action-contact-cell" data-action-id="${action.id}">
+                <td><a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a></td>
+                <td class="action-contact-cell" data-action-id="${action.id}">
                         ${action.contact && action.contact.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ?
                             `<a href="mailto:${action.contact}?subject=${encodeURIComponent(action.title)}" target="_blank" style="color: blue; text-decoration: underline;">${action.contact}</a>` :
                             `<span>${action.contact || ''}</span>`

@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Entity\Action;
 use App\Form\ChangePasswordType;
 use App\Form\TwoFactorAuthType;
+use App\Service\ActionHistoryService;
 use App\Service\AppSettingsService;
 use App\Service\EmailService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -818,7 +819,7 @@ class UserController extends AbstractWebController
     }
 
     #[Route('/user/backlog/update-action-field/{id}', name: 'app_user_backlog_update_action_field', methods: ['POST'])]
-    public function updateBacklogActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    public function updateBacklogActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Get the current user
         $currentUser = $this->getUser();
@@ -881,6 +882,12 @@ class UserController extends AbstractWebController
             }
 
             // Save to database
+            $entityManager->flush();
+
+            // Create history entry
+            $actionHistoryService->createHistoryEntry($action);
+
+            // Flush again to save the history entry
             $entityManager->flush();
 
             // Return the updated action data

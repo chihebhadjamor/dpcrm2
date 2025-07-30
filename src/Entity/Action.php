@@ -54,10 +54,14 @@ class Action
     #[ORM\OneToMany(mappedBy: 'action', targetEntity: History::class, cascade: ['persist', 'remove'])]
     private Collection $histories;
 
+    #[ORM\OneToMany(mappedBy: 'action', targetEntity: ActionHistory::class, cascade: ['persist', 'remove'])]
+    private Collection $actionHistories;
+
 
     public function __construct()
     {
         $this->histories = new ArrayCollection();
+        $this->actionHistories = new ArrayCollection();
         $this->createdAt = new \DateTime();
     }
 
@@ -153,6 +157,36 @@ class Action
             // set the owning side to null (unless already changed)
             if ($history->getAction() === $this) {
                 $history->setAction(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ActionHistory>
+     */
+    public function getActionHistories(): Collection
+    {
+        return $this->actionHistories;
+    }
+
+    public function addActionHistory(ActionHistory $actionHistory): static
+    {
+        if (!$this->actionHistories->contains($actionHistory)) {
+            $this->actionHistories->add($actionHistory);
+            $actionHistory->setAction($this);
+        }
+
+        return $this;
+    }
+
+    public function removeActionHistory(ActionHistory $actionHistory): static
+    {
+        if ($this->actionHistories->removeElement($actionHistory)) {
+            // set the owning side to null (unless already changed)
+            if ($actionHistory->getAction() === $this) {
+                $actionHistory->setAction(null);
             }
         }
 

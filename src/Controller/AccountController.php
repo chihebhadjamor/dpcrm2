@@ -6,6 +6,7 @@ use App\Entity\Account;
 use App\Entity\Action;
 use App\Entity\User;
 use App\Form\AccountType;
+use App\Service\ActionHistoryService;
 use App\Service\AppSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -682,7 +683,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/update-notes', name: 'app_action_update_notes', methods: ['POST'])]
-    public function updateActionNotes(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    public function updateActionNotes(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Get the current user
         $currentUser = $this->getUser();
@@ -721,6 +722,12 @@ class AccountController extends AbstractWebController
             // Save to database
             $entityManager->flush();
 
+            // Create history entry
+            $actionHistoryService->createHistoryEntry($action);
+
+            // Flush again to save the history entry
+            $entityManager->flush();
+
             // Return the updated action data
             return new JsonResponse([
                 'id' => $action->getId(),
@@ -748,7 +755,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/update-date', name: 'app_action_update_date', methods: ['POST'])]
-    public function updateActionDate(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    public function updateActionDate(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -782,6 +789,12 @@ class AccountController extends AbstractWebController
             // Save to database
             $entityManager->flush();
 
+            // Create history entry
+            $actionHistoryService->createHistoryEntry($action);
+
+            // Flush again to save the history entry
+            $entityManager->flush();
+
             // Return the updated action data
             return new JsonResponse([
                 'id' => $action->getId(),
@@ -809,7 +822,7 @@ class AccountController extends AbstractWebController
     }
 
     #[Route('/actions/{id}/update-field', name: 'app_action_update_field', methods: ['POST'])]
-    public function updateActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService): JsonResponse
+    public function updateActionField(int $id, Request $request, EntityManagerInterface $entityManager, AppSettingsService $appSettingsService, ActionHistoryService $actionHistoryService): JsonResponse
     {
         // Find the action
         $action = $entityManager->getRepository(Action::class)->find($id);
@@ -853,17 +866,29 @@ class AccountController extends AbstractWebController
                     $action->setTitle($newValue);
                     break;
                 case 'owner':
-                    $owner = $entityManager->getRepository(User::class)->find($newValue);
-                    if (!$owner) {
-                        return new JsonResponse(['error' => 'Owner not found'], 400);
+                    // Handle null, empty, or invalid owner values
+                    if (empty($newValue)) {
+                        // If owner is required by database schema, return an error
+                        return new JsonResponse(['error' => 'Owner is required'], 400);
+                    } else {
+                        $owner = $entityManager->getRepository(User::class)->find($newValue);
+                        if (!$owner) {
+                            return new JsonResponse(['error' => 'Owner not found'], 400);
+                        }
+                        $action->setOwner($owner);
                     }
-                    $action->setOwner($owner);
                     break;
                 default:
                     return new JsonResponse(['error' => 'Invalid field name'], 400);
             }
 
             // Save to database
+            $entityManager->flush();
+
+            // Create history entry
+            $actionHistoryService->createHistoryEntry($action);
+
+            // Flush again to save the history entry
             $entityManager->flush();
 
             // Return the updated action data

@@ -292,9 +292,30 @@
             </div>
         </div>
     </div>
+
+    <!-- Action History Modal -->
+    <div class="modal fade" id="action-history-modal" tabindex="-1" aria-labelledby="action-history-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="action-history-modal-label">Action History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="action-history-modal-content">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading action history...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block javascripts %}
+    <script src="{{ asset('assets/js/action_history.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Panel expand/collapse functionality
@@ -669,7 +690,7 @@
                 row.setAttribute('data-action-id', action.id);
 
                 row.innerHTML = `
-                <td>${action.id}</td>
+                <td><a href="#" class="action-history-link" data-action-id="${action.id}">${action.id}</a></td>
                 <td class="action-account-cell" data-action-id="${action.id}" data-account-id="${action.accountId || ''}" data-account-status="${action.accountStatus ? 'active' : 'disabled'}">
                     <span>${action.accountName || 'N/A'}</span>
                     ${!action.accountStatus ? '<i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>' : ''}
