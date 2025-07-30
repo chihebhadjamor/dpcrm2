@@ -252,8 +252,7 @@ class UserController extends AbstractWebController
     #[Route('/api/users', name: 'app_get_users', methods: ['GET'])]
     public function getUsers(EntityManagerInterface $entityManager): JsonResponse
     {
-        // Only allow administrators to access this endpoint
-        $this->denyAccessUnlessAdmin();
+        // Allow all authenticated users to access this endpoint
         // Only get active users (where disabled = false)
         $users = $entityManager->getRepository(User::class)->findBy(['disabled' => false]);
 
@@ -261,7 +260,8 @@ class UserController extends AbstractWebController
         foreach ($users as $user) {
             $usersData[] = [
                 'id' => $user->getId(),
-                'username' => $user->getUsername()
+                'username' => $user->getUsername(),
+                'name' => $user->getUsername() // Include name for compatibility with frontend
             ];
         }
 
@@ -834,10 +834,7 @@ class UserController extends AbstractWebController
             return new JsonResponse(['error' => 'Action not found'], 404);
         }
 
-        // Check if the action belongs to the current user or if the user is an admin
-        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
-            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
-        }
+        // All users can update any action (removed permission check)
 
         try {
             // Get field and value from request

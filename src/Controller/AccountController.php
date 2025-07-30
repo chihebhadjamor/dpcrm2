@@ -47,22 +47,7 @@ class AccountController extends AbstractWebController
             'form' => $form->createView(),
         ]);
     }
-    #[Route('/api/users', name: 'app_get_users', methods: ['GET'])]
-    public function getUsers(EntityManagerInterface $entityManager): JsonResponse
-    {
-        // Only get active users (where disabled = false)
-        $users = $entityManager->getRepository(User::class)->findBy(['disabled' => false]);
-
-        $usersData = [];
-        foreach ($users as $user) {
-            $usersData[] = [
-                'id' => $user->getId(),
-                'name' => $user->getUsername()
-            ];
-        }
-
-        return new JsonResponse($usersData);
-    }
+    // Removed duplicate route that conflicts with UserController::getUsers
     #[Route('/accounts/{id}/update', name: 'app_update_account', methods: ['POST'])]
     public function updateAccount(int $id, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -601,10 +586,7 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Action not found'], 404);
         }
 
-        // Check if the action belongs to the current user or if the user is an admin
-        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
-            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
-        }
+        // All users can update any action (removed permission check)
 
         // For disabled accounts, we only allow closing actions, not reopening them
         $account = $action->getAccount();
@@ -716,10 +698,7 @@ class AccountController extends AbstractWebController
             return new JsonResponse(['error' => 'Action not found'], 404);
         }
 
-        // Check if the action belongs to the current user or if the user is an admin
-        if ($action->getOwner()->getId() !== $currentUser->getId() && !$this->isGranted('ROLE_ADMIN')) {
-            return new JsonResponse(['error' => 'You do not have permission to update this action'], 403);
-        }
+        // All users can update any action (removed permission check)
 
         // Check if the action is closed
         if ($action->isClosed()) {
