@@ -63,6 +63,7 @@ class ActionController extends AbstractController
 
                 if ($history instanceof ActionHistory) {
                     $currentEntry = [
+                        'id' => $history->getId(),
                         'title' => $history->getTitle(),
                         'actionDate' => $history->getActionDate() ? $this->appSettingsService->formatDate($history->getActionDate()) : null,
                         'owner' => $history->getOwner() ? $history->getOwner()->getUsername() : 'N/A',
@@ -73,6 +74,7 @@ class ActionController extends AbstractController
                     ];
                 } elseif ($history instanceof History) {
                     $currentEntry = [
+                        'id' => $history->getId(),
                         'title' => $action->getTitle() . ' - ' . $history->getNote(), // Include note in title
                         'actionDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                         'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'N/A',
@@ -104,6 +106,7 @@ class ActionController extends AbstractController
             // If no history entries exist yet, add the current action state as the initial history
             if (empty($allHistories)) {
                 $historyData[] = [
+                    'id' => $action->getId(), // Use action ID for initial history
                     'title' => $action->getTitle(),
                     'actionDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
                     'owner' => $action->getOwner() ? $action->getOwner()->getUsername() : 'N/A',

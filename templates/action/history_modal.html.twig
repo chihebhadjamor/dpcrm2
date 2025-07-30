@@ -11,6 +11,7 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Action</th>
                         <th>Action Date</th>
                         <th>Owner</th>
@@ -23,6 +24,7 @@
                 <tbody>
                     {% for history in histories %}
                         <tr>
+                            <td>{{ history.id }}</td>
                             <td {% if 'title' in history.changedFields %}class="bg-warning"{% endif %}>{{ history.title }}</td>
                             <td {% if 'actionDate' in history.changedFields %}class="bg-warning"{% endif %}>{{ history.actionDate }}</td>
                             <td {% if 'owner' in history.changedFields %}class="bg-warning"{% endif %}>{{ history.owner }}</td>
