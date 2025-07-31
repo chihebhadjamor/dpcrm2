@@ -112,7 +112,7 @@ class SendBacklogRemindersCommand extends Command
     }
 
     /**
-     * Get open actions for a specific user
+     * Get open actions for a specific user, sorted by Action Date in ascending order
      */
     private function getOpenActionsForUser(User $user): array
     {
@@ -127,6 +127,20 @@ class SendBacklogRemindersCommand extends Command
                 $openActions[] = $action;
             }
         }
+
+        // Sort open actions by NextStepDate in ascending order
+        usort($openActions, function($a, $b) {
+            // Handle null dates (place them at the end)
+            if ($a->getNextStepDate() === null) {
+                return 1;
+            }
+            if ($b->getNextStepDate() === null) {
+                return -1;
+            }
+
+            // Compare dates (earliest first)
+            return $a->getNextStepDate() <=> $b->getNextStepDate();
+        });
 
         return $openActions;
     }

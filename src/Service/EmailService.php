@@ -295,10 +295,10 @@ class EmailService
 
                 $tableRows .= "
                     <tr>
-                        <td style='border: 1px solid #ddd; padding: 8px;'>$actionTitle</td>
                         <td style='border: 1px solid #ddd; padding: 8px;'>$accountName</td>
+                        <td style='border: 1px solid #ddd; padding: 8px; width: 40%;'>$actionTitle</td>
                         <td style='border: 1px solid #ddd; padding: 8px;'>$contactName</td>
-                        <td style='border: 1px solid #ddd; padding: 8px; background-color: $dateColor;'>$actionDate</td>
+                        <td style='border: 1px solid #ddd; padding: 8px; background-color: $dateColor; min-width: 100px;'>$actionDate</td>
                     </tr>
                 ";
             }
@@ -313,10 +313,10 @@ class EmailService
                 <table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>
                     <thead>
                         <tr style='background-color: #f2f2f2;'>
-                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Action Title</th>
                             <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Account Name</th>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left; width: 40%;'>Action Title</th>
                             <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Contact</th>
-                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Action Date</th>
+                            <th style='border: 1px solid #ddd; padding: 8px; text-align: left; min-width: 100px;'>Action Date</th>
                         </tr>
                     </thead>
                     <tbody>
