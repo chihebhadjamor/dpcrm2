@@ -30,6 +30,9 @@ class CronLog
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $message = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $output = null;
+
     public function __construct()
     {
         $this->executedAt = new \DateTime();
@@ -84,6 +87,18 @@ class CronLog
     public function setMessage(?string $message): static
     {
         $this->message = $message;
+
+        return $this;
+    }
+
+    public function getOutput(): ?string
+    {
+        return $this->output;
+    }
+
+    public function setOutput(?string $output): static
+    {
+        $this->output = $output;
 
         return $this;
     }

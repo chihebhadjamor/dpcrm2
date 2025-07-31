@@ -48,6 +48,7 @@ final class Version20250801000000 extends AbstractMigration
                 executed_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
                 status VARCHAR(50) NOT NULL,
                 message TEXT DEFAULT NULL,
+                output TEXT DEFAULT NULL,
                 PRIMARY KEY(id)
             )');
             $this->addSql('ALTER TABLE cron_log ALTER id SET DEFAULT nextval(\'cron_log_id_seq\')');

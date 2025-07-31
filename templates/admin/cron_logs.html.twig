@@ -33,6 +33,28 @@
             max-width: 500px;
             word-wrap: break-word;
         }
+
+        /* Log details icon styling */
+        .log-details-icon {
+            cursor: pointer;
+            color: #007bff;
+        }
+
+        .log-details-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Modal styling for log output */
+        .log-output {
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
     </style>
 {% endblock %}
 
@@ -63,12 +85,13 @@
                                         <th>Executed At</th>
                                         <th>Status</th>
                                         <th>Message</th>
+                                        <th>Details</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% if cronLogs is empty %}
                                         <tr>
-                                            <td colspan="5" class="text-center">No logs found</td>
+                                            <td colspan="6" class="text-center">No logs found</td>
                                         </tr>
                                     {% else %}
                                         {% for log in cronLogs %}
@@ -84,6 +107,16 @@
                                                     {% endif %}
                                                 </td>
                                                 <td class="message-column">{{ log.message }}</td>
+                                                <td>
+                                                    {% if log.output %}
+                                                        <i class="fas fa-file-alt log-details-icon"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#logDetailsModal"
+                                                           data-log-id="{{ log.id }}"
+                                                           data-log-command="{{ log.command }}"
+                                                           data-log-output="{{ log.output|e('html_attr') }}"></i>
+                                                    {% endif %}
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                     {% endif %}
@@ -95,4 +128,54 @@
             </div>
         </div>
     </div>
+
+    <!-- Log Details Modal -->
+    <div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logDetailsModalLabel">Log Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 id="logCommand" class="mb-3"></h6>
+                    <div id="logOutput" class="log-output"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the modal element
+        const logDetailsModal = document.getElementById('logDetailsModal');
+
+        // Add event listener to the modal
+        if (logDetailsModal) {
+            logDetailsModal.addEventListener('show.bs.modal', function(event) {
+                // Button that triggered the modal
+                const button = event.relatedTarget;
+
+                // Extract info from data attributes
+                const logId = button.getAttribute('data-log-id');
+                const logCommand = button.getAttribute('data-log-command');
+                const logOutput = button.getAttribute('data-log-output');
+
+                // Update the modal's content
+                const modalTitle = logDetailsModal.querySelector('.modal-title');
+                const modalCommand = document.getElementById('logCommand');
+                const modalOutput = document.getElementById('logOutput');
+
+                modalTitle.textContent = `Log Details - ID: ${logId}`;
+                modalCommand.textContent = `Command: ${logCommand}`;
+                modalOutput.textContent = logOutput;
+            });
+        }
+    });
+</script>
 {% endblock %}
