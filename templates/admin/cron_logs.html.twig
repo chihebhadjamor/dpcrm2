@@ -44,6 +44,14 @@
             color: #0056b3;
         }
 
+        .log-details-icon-failure {
+            color: #dc3545;
+        }
+
+        .log-details-icon-failure:hover {
+            color: #bd2130;
+        }
+
         /* Modal styling for log output */
         .log-output {
             white-space: pre-wrap;
@@ -109,7 +117,7 @@
                                                 <td class="message-column">{{ log.message }}</td>
                                                 <td>
                                                     {% if log.output %}
-                                                        <i class="fas fa-file-alt log-details-icon"
+                                                        <i class="fas fa-file-alt {% if log.isSuccess() %}log-details-icon{% else %}log-details-icon-failure{% endif %}"
                                                            data-bs-toggle="modal"
                                                            data-bs-target="#logDetailsModal"
                                                            data-log-id="{{ log.id }}"
