@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\User;
 use App\Entity\Action;
+use App\Entity\CronLog;
 use App\Service\EmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -34,6 +35,12 @@ class SendBacklogRemindersCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $io->title('Sending Backlog Reminder Emails to Active Users');
+
+        // Create a log entry for this command execution
+        $cronLog = new CronLog();
+        $cronLog->setCommand('app:send-backlog-reminders');
+        $cronLog->setStatus(CronLog::STATUS_SUCCESS); // Default to success, will update if there's an error
+        $this->entityManager->persist($cronLog);
 
         // Fetch all active users
         $userRepository = $this->entityManager->getRepository(User::class);
@@ -98,15 +105,27 @@ class SendBacklogRemindersCommand extends Command
 
         // Summary message
         if ($errorCount === 0) {
-            $io->success(sprintf('Successfully processed and sent status emails to all %d active users.', $successCount));
+            $successMessage = sprintf('Successfully processed and sent status emails to all %d active users.', $successCount);
+            $io->success($successMessage);
+
+            // Update log entry with success message
+            $cronLog->setMessage($successMessage);
         } else {
-            $io->warning(sprintf(
+            $warningMessage = sprintf(
                 'Processed %d users: %d successful, %d failed. Check logs for details.',
                 count($activeUsers),
                 $successCount,
                 $errorCount
-            ));
+            );
+            $io->warning($warningMessage);
+
+            // Update log entry with warning message and failure status
+            $cronLog->setStatus(CronLog::STATUS_FAILURE);
+            $cronLog->setMessage($warningMessage);
         }
+
+        // Save the log entry
+        $this->entityManager->flush();
 
         return Command::SUCCESS;
     }
