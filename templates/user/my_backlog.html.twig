@@ -278,6 +278,9 @@
             // --- DOM ELEMENTS ---
             const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
 
+            // Restore filters from localStorage
+            restoreFilters();
+
             // --- NOTIFICATION UTILITY ---
             function showNotification(message, type = 'success', duration = 3000) {
                 const container = document.getElementById('notification-container');
@@ -325,6 +328,9 @@
                 try {
                     const response = await fetch(`/actions/${actionId}/toggle-closed`, { method: 'POST' });
                     if (!response.ok) throw new Error('Status update failed.');
+
+                    // Save filters before redirecting
+                    saveFilters();
 
                     // Redirect to refresh the page with updated data
                     window.location.href = '{{ path('app_my_backlog') }}';
@@ -504,6 +510,9 @@
 
                         if (!response.ok) throw new Error('Network response was not ok');
 
+                        // Save filters before redirecting
+                        saveFilters();
+
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_my_backlog') }}';
                     } catch (error) {
@@ -615,6 +624,9 @@
                         });
 
                         if (!response.ok) throw new Error('Network response was not ok');
+
+                        // Save filters before redirecting
+                        saveFilters();
 
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_my_backlog') }}';
@@ -796,6 +808,9 @@
 
                         if (!response.ok) throw new Error('Network response was not ok');
 
+                        // Save filters before redirecting
+                        saveFilters();
+
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_my_backlog') }}';
                     } catch (error) {
@@ -823,6 +838,9 @@
                         body: formData
                     });
                     if (!response.ok) throw new Error('Failed to save notes.');
+
+                    // Save filters before redirecting
+                    saveFilters();
 
                     // Redirect to refresh the page with updated data
                     window.location.href = '{{ path('app_my_backlog') }}';
@@ -866,6 +884,69 @@
 
             // Get all filter inputs
             const filterInputs = document.querySelectorAll('.filter-input');
+
+            // Function to save filters to localStorage
+            function saveFilters() {
+                const openFilters = {};
+                const closedFilters = {};
+
+                document.querySelectorAll('.filter-input[data-table="open"]').forEach(input => {
+                    const column = input.dataset.column;
+                    const value = input.value.trim();
+                    if (value) {
+                        openFilters[column] = value;
+                    }
+                });
+
+                document.querySelectorAll('.filter-input[data-table="closed"]').forEach(input => {
+                    const column = input.dataset.column;
+                    const value = input.value.trim();
+                    if (value) {
+                        closedFilters[column] = value;
+                    }
+                });
+
+                if (Object.keys(openFilters).length > 0) {
+                    localStorage.setItem('myBacklogOpenFilters', JSON.stringify(openFilters));
+                } else {
+                    localStorage.removeItem('myBacklogOpenFilters');
+                }
+
+                if (Object.keys(closedFilters).length > 0) {
+                    localStorage.setItem('myBacklogClosedFilters', JSON.stringify(closedFilters));
+                } else {
+                    localStorage.removeItem('myBacklogClosedFilters');
+                }
+            }
+
+            // Function to restore filters from localStorage
+            function restoreFilters() {
+                const savedOpenFilters = localStorage.getItem('myBacklogOpenFilters');
+                if (savedOpenFilters) {
+                    const filters = JSON.parse(savedOpenFilters);
+                    document.querySelectorAll('.filter-input[data-table="open"]').forEach(input => {
+                        const column = input.dataset.column;
+                        if (filters[column]) {
+                            input.value = filters[column];
+                        }
+                    });
+                    // Apply the filters
+                    filterTable('open', filters);
+                }
+
+                const savedClosedFilters = localStorage.getItem('myBacklogClosedFilters');
+                if (savedClosedFilters) {
+                    const filters = JSON.parse(savedClosedFilters);
+                    document.querySelectorAll('.filter-input[data-table="closed"]').forEach(input => {
+                        const column = input.dataset.column;
+                        if (filters[column]) {
+                            input.value = filters[column];
+                        }
+                    });
+                    // Apply the filters
+                    filterTable('closed', filters);
+                }
+            }
 
             // Function to filter the table rows
             function filterTable(tableId, filters) {
@@ -976,24 +1057,49 @@
 
             // Add event listeners to filter inputs
             filterInputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    const table = this.dataset.table; // 'open' or 'closed'
-                    const column = this.dataset.column;
-                    const value = this.value.trim().toLowerCase();
+                if (input.type === 'date') {
+                    // For date inputs, filter on change
+                    input.addEventListener('change', function() {
+                        const table = this.dataset.table; // 'open' or 'closed'
 
-                    // Get all filters for this table
-                    const filters = {};
-                    document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
-                        const filterColumn = filterInput.dataset.column;
-                        const filterValue = filterInput.value.trim().toLowerCase();
-                        if (filterValue) {
-                            filters[filterColumn] = filterValue;
-                        }
+                        // Get all filters for this table
+                        const filters = {};
+                        document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
+                            const filterColumn = filterInput.dataset.column;
+                            const filterValue = filterInput.value.trim().toLowerCase();
+                            if (filterValue) {
+                                filters[filterColumn] = filterValue;
+                            }
+                        });
+
+                        // Apply filters to the table
+                        filterTable(table, filters);
+
+                        // Save filters to localStorage
+                        saveFilters();
                     });
+                } else {
+                    // For text inputs, filter as you type
+                    input.addEventListener('input', function() {
+                        const table = this.dataset.table; // 'open' or 'closed'
 
-                    // Apply filters to the table
-                    filterTable(table, filters);
-                });
+                        // Get all filters for this table
+                        const filters = {};
+                        document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
+                            const filterColumn = filterInput.dataset.column;
+                            const filterValue = filterInput.value.trim().toLowerCase();
+                            if (filterValue) {
+                                filters[filterColumn] = filterValue;
+                            }
+                        });
+
+                        // Apply filters to the table
+                        filterTable(table, filters);
+
+                        // Save filters to localStorage
+                        saveFilters();
+                    });
+                }
             });
 
             // We now add data-next-step-date-raw attribute directly to the rows when they are created
