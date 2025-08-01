@@ -524,6 +524,82 @@ class UserController extends AbstractWebController
         }
     }
 
+    #[Route('/open-actions', name: 'app_open_actions', methods: ['GET'])]
+    /**
+     * Display all open actions across all users (admin only)
+     */
+    public function openActions(EntityManagerInterface $entityManager): Response
+    {
+        try {
+            // Check if the user is an admin
+            if (!$this->isGranted('ROLE_ADMIN')) {
+                throw new AccessDeniedException('Access denied. Admin privileges required.');
+            }
+
+            // Get all actions from all users
+            $queryBuilder = $entityManager->createQueryBuilder();
+            $queryBuilder->select('a', 'acct', 'u') // Also select the account and user to ensure they're loaded
+                ->from(Action::class, 'a')
+                ->leftJoin('a.account', 'acct') // Use leftJoin to include actions without an account
+                ->leftJoin('a.owner', 'u'); // Join with the owner (user)
+
+            $actions = $queryBuilder->getQuery()->getResult();
+
+            // Filter to only include open actions
+            $openActions = [];
+            foreach ($actions as $action) {
+                if (!$action->isClosed()) {
+                    $openActions[] = $action;
+                }
+            }
+
+            // Sort open actions by nextStepDate ASC (earliest dates first)
+            usort($openActions, function($a, $b) {
+                $dateA = $a->getNextStepDate() ?: new \DateTime('9999-12-31');
+                $dateB = $b->getNextStepDate() ?: new \DateTime('9999-12-31');
+                return $dateA <=> $dateB;
+            });
+
+            // Prepare actions for the template
+            $allOpenActions = [];
+            foreach ($openActions as $action) {
+                $account = $action->getAccount();
+                $accountId = $account ? $account->getId() : null;
+                $owner = $action->getOwner();
+
+                // Check if the action has more than one history record
+                $historyCount = $action->getActionHistories()->count();
+                $hasHistory = $historyCount > 1;
+
+                $allOpenActions[] = [
+                    'id' => $action->getId(),
+                    'accountId' => $accountId,
+                    'accountName' => $account ? $account->getName() : 'N/A',
+                    'accountStatus' => $account ? $account->getStatus() : true, // Include account status (true = active, false = disabled)
+                    'lastAction' => $action->getTitle(),
+                    'title' => $action->getTitle(),
+                    'contact' => $action->getContact(),
+                    'nextStepDateFormatted' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'nextStepDateRaw' => $action->getNextStepDate() ? $action->getNextStepDate()->format('Y-m-d') : null,
+                    'nextStepDate' => $action->getNextStepDate() ? $this->appSettingsService->formatDate($action->getNextStepDate()) : null,
+                    'closed' => false, // These are all open actions
+                    'notes' => $action->getNotes(),
+                    'hasNotes' => !empty($action->getNotes()),
+                    'hasHistory' => $hasHistory,
+                    'ownerName' => $owner ? $owner->getUsername() : 'N/A' // Include the owner's name
+                ];
+            }
+
+            return $this->render('user/open_actions.html.twig', [
+                'userBacklogActions' => $allOpenActions,
+                'username' => 'All Users' // This is a global view
+            ]);
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'An error occurred while fetching open actions: ' . $e->getMessage());
+            return $this->redirectToRoute('app_home');
+        }
+    }
+
     #[Route('/users/{userId}/account-actions', name: 'app_user_account_actions', methods: ['GET'])]
     public function getUserAccountActions(int $userId, EntityManagerInterface $entityManager): JsonResponse
     {

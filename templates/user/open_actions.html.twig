@@ -1,0 +1,769 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Open Actions{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* General styles */
+        .backlog-container { width: 100%; }
+        .loading-spinner { display: none; text-align: center; padding: 20px; }
+        .loading-spinner i { font-size: 2rem; }
+
+        {% include 'partials/action_styles.html.twig' %}
+
+        /* Center align status column */
+        #backlog-table th:nth-child(6),
+        #backlog-table td:nth-child(6) { text-align: center; }
+
+        /* Notes badge styling */
+        #notes-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+            padding: 0;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="backlog-container" class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Open Actions</h4>
+                </div>
+                <div class="card-body">
+                    <div id="loading-spinner" class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading actions...</p>
+                    </div>
+                    <div id="backlog-content">
+                        <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                            <!-- Open Actions Table -->
+                            <h5>All Open Actions</h5>
+                            <table id="open-backlog-table" class="table table-striped mb-4">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Account</th>
+                                    <th>Action</th>
+                                    <th>Contact</th>
+                                    <th>Action Date</th>
+                                    <th>Owner</th>
+                                    <th>Status</th>
+                                    <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
+                                </tr>
+                                </thead>
+                                <tbody id="open-backlog-tbody">
+                                {% for action in userBacklogActions %}
+                                    <tr class="action-row {% if not action.accountStatus %}disabled-account-action{% endif %} {% if action.nextStepDateRaw %}
+                                        {% set today = 'now'|date('Y-m-d') %}
+                                        {% set actionDate = action.nextStepDateRaw %}
+                                        {% if actionDate < today %}action-overdue
+                                        {% elseif (actionDate|date_modify('+7 days'))|date('Y-m-d') >= today %}action-upcoming
+                                        {% endif %}
+                                        {% endif %}"
+                                        data-action-id="{{ action.id }}">
+                                        <td>
+                                            {% if action.hasHistory %}
+                                                <a href="#" class="action-history-link" data-action-id="{{ action.id }}">{{ action.id }}</a>
+                                            {% else %}
+                                                {{ action.id }}
+                                            {% endif %}
+                                        </td>
+                                        <td class="action-account-cell" data-action-id="{{ action.id }}" data-account-id="{{ action.accountId }}" data-account-status="{{ action.accountStatus ? 'active' : 'disabled' }}">
+                                            <span>{{ action.accountName }}</span>
+                                            {% if not action.accountStatus %}
+                                                <i class="fas fa-ban text-danger ms-1" data-bs-toggle="tooltip" title="The Account is disabled."></i>
+                                            {% endif %}
+                                        </td>
+                                        <td class="action-title-cell" data-action-id="{{ action.id }}">
+                                            <span>{{ action.title }}</span>
+                                            {% if action.accountStatus %}
+                                            <i class="fas fa-pencil-alt edit-title-btn ms-2" style="cursor: pointer;"
+                                                data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td class="action-contact-cell" data-action-id="{{ action.id }}">
+                                            {% if not action.closed and action.contact matches '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/' %}
+                                                <a href="mailto:{{ action.contact }}?subject={{ action.title|url_encode }}" target="_blank" style="color: blue; text-decoration: underline;">{{ action.contact }}</a>
+                                            {% else %}
+                                                <span>{{ action.contact }}</span>
+                                            {% endif %}
+                                            {% if action.accountStatus %}
+                                            <i class="fas fa-pencil-alt edit-contact-btn ms-2" style="cursor: pointer;"
+                                                data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td class="action-date-cell" data-action-id="{{ action.id }}">
+                                            <span>{{ action.nextStepDateFormatted }}</span>
+                                            {% if action.accountStatus %}
+                                            <i class="fas fa-pencil-alt edit-date-btn ms-2" style="cursor: pointer;"
+                                                data-action-id="{{ action.id }}"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ action.ownerName }}
+                                        </td>
+                                        <td>
+                                            <input class="form-check-input action-status-checkbox" type="checkbox"
+                                                data-action-id="{{ action.id }}" {% if action.closed %}checked{% endif %}
+                                                {% if action.closed and not action.accountStatus %}disabled style="opacity: 0.5;"{% endif %}
+                                                title="{% if action.closed and not action.accountStatus %}This action cannot be reopened because its account is disabled{% endif %}">
+                                        </td>
+                                        <td class="text-center">
+                                            <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; {% if action.hasNotes %}color: red;{% endif %}"
+                                            data-action-id="{{ action.id }}" data-notes="{{ action.notes }}"
+                                            data-account-id="{{ action.accountId }}"></i>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if userBacklogActions|length == 0 %}
+                        <div id="no-actions-message" class="text-center mt-3">
+                            <p>There are no open actions to display.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Action Notes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="notes-content" class="form-control" rows="5"></textarea>
+                    <input type="hidden" id="action-id-for-notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-notes-btn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action History Modal -->
+    <div class="modal fade" id="action-history-modal" tabindex="-1" aria-labelledby="action-history-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="action-history-modal-label">Action History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="action-history-modal-content">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading action history...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ asset('assets/js/action_history.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- DOM ELEMENTS ---
+            const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+
+            // --- NOTIFICATION UTILITY ---
+            function showNotification(message, type = 'success', duration = 3000) {
+                const container = document.getElementById('notification-container');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.role = 'alert';
+                alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                container.appendChild(alert);
+                setTimeout(() => new bootstrap.Alert(alert).close(), duration);
+            }
+
+            // --- EVENT LISTENERS ---
+
+            // 1. Action Status Toggle (using event delegation)
+            document.addEventListener('change', async (e) => {
+                if (!e.target.classList.contains('action-status-checkbox')) return;
+
+                const checkbox = e.target;
+                const actionId = checkbox.dataset.actionId;
+
+                // Find the row in either table
+                const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+                if (!row) {
+                    console.error('Row not found for action ID:', actionId);
+                    return;
+                }
+
+                // Check if this is a closed action for a disabled account
+                const isDisabledAccount = row.classList.contains('disabled-account-action');
+                const isClosed = checkbox.checked;
+
+                // If trying to reopen a closed action for a disabled account, prevent it
+                if (isDisabledAccount && !isClosed) {
+                    checkbox.checked = true; // Force the checkbox back to checked
+                    showNotification('Cannot reopen an action for a disabled account.', 'warning');
+                    return;
+                }
+
+                checkbox.disabled = true; // Prevent rapid clicks
+
+                // Add a visual indicator that the action is being processed
+                const originalOpacity = row.style.opacity || '1';
+                row.style.opacity = '0.7';
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/toggle-closed`, { method: 'POST' });
+                    if (!response.ok) throw new Error('Status update failed.');
+
+                    // Redirect to refresh the page with updated data
+                    window.location.href = '{{ path('app_open_actions') }}';
+                } catch (error) {
+                    console.error('Error toggling action status:', error);
+                    showNotification('Error updating status.', 'danger');
+                    checkbox.checked = !checkbox.checked; // Revert checkbox on failure
+
+                    // Restore opacity on error
+                    row.style.opacity = originalOpacity;
+                    checkbox.disabled = false;
+                }
+            });
+
+            // 2. Notes Modal Logic (using event delegation)
+            document.addEventListener('click', e => {
+                if (!e.target.classList.contains('notes-icon')) return;
+
+                const icon = e.target;
+                const actionId = icon.dataset.actionId;
+                const accountId = icon.dataset.accountId;
+                const notesContent = document.getElementById('notes-content');
+                const saveNotesBtn = document.getElementById('save-notes-btn');
+
+                document.getElementById('action-id-for-notes').value = actionId;
+                notesContent.value = icon.dataset.notes || '';
+
+                // Check if the action belongs to a disabled account
+                // First check if the action row has the disabled-account-action class
+                const actionRow = icon.closest('tr');
+                const isDisabledAction = actionRow && actionRow.classList.contains('disabled-account-action');
+
+                // If not, check the account status from the data attribute
+                const accountCell = actionRow.querySelector('.action-account-cell');
+                const accountStatus = accountCell ? accountCell.getAttribute('data-account-status') : 'active';
+                const isDisabledAccount = accountStatus === 'disabled';
+
+                // Check if the action is closed
+                const isActionClosed = actionRow && actionRow.classList.contains('action-closed');
+
+                // Make the text area read-only and hide the save button if the account is disabled or the action is closed
+                if (isDisabledAccount || isDisabledAction || isActionClosed) {
+                    notesContent.readOnly = true;
+                    saveNotesBtn.style.display = 'none';
+                } else {
+                    notesContent.readOnly = false;
+                    saveNotesBtn.style.display = 'block';
+                }
+
+                notesModal.show();
+            });
+
+            // 3. Edit Date Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-date-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-date-cell');
+
+                // Check if this action belongs to a disabled account
+                const actionRow = cell.closest('tr');
+                if (actionRow && actionRow.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
+                const dateSpan = cell.querySelector('span');
+                const currentDate = dateSpan.textContent.trim();
+
+                // Create a date input
+                const dateInput = document.createElement('input');
+                dateInput.type = 'date';
+                dateInput.className = 'form-control temp-date-picker';
+                dateInput.setAttribute('data-action-id', actionId);
+
+                // Try to convert the formatted date to YYYY-MM-DD for the input
+                try {
+                    // Parse the date correctly based on the displayed format (DD/MM/YYYY)
+                    const dateParts = currentDate.split('/');
+                    if (dateParts.length === 3) {
+                        // Assuming format is DD/MM/YYYY
+                        const day = dateParts[0];
+                        const month = dateParts[1];
+                        const year = dateParts[2];
+
+                        // Create ISO 8601 format (YYYY-MM-DD)
+                        const isoDate = `${year}-${month}-${day}`;
+                        dateInput.value = isoDate;
+                        dateInput.setAttribute('data-original-date', isoDate);
+                    } else {
+                        // Fallback for other formats
+                        const parsedDate = new Date(currentDate);
+                        if (!isNaN(parsedDate.getTime())) {
+                            const yyyy = parsedDate.getFullYear();
+                            const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                            const dd = String(parsedDate.getDate()).padStart(2, '0');
+                            const isoDate = `${yyyy}-${mm}-${dd}`;
+                            dateInput.value = isoDate;
+                            dateInput.setAttribute('data-original-date', isoDate);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing date:', e);
+                }
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                dateSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(dateInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the date input
+                dateInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    dateSpan.style.display = '';
+                    editBtn.style.display = '';
+                    dateInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newDate = dateInput.value;
+                    if (!newDate) {
+                        // If no date selected, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    dateInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        // Use the backlog update endpoint with the date field
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=date&newValue=${encodeURIComponent(newDate)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        // Redirect to refresh the page with updated data
+                        window.location.href = '{{ path('app_open_actions') }}';
+                    } catch (error) {
+                        console.error('Error updating action date:', error);
+                        showNotification('Error updating action date. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // 4. Edit Title Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-title-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-title-cell');
+
+                // Find the row and check if it's for a disabled account
+                const row = cell.closest('tr');
+                if (row && row.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
+                const titleSpan = cell.querySelector('span');
+                const currentTitle = titleSpan.textContent.trim();
+
+                // Create a text input
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.className = 'form-control';
+                titleInput.value = currentTitle;
+                titleInput.setAttribute('data-action-id', actionId);
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                titleSpan.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(titleInput);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the input
+                titleInput.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    titleSpan.style.display = '';
+                    editBtn.style.display = '';
+                    titleInput.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newTitle = titleInput.value;
+                    if (!newTitle) {
+                        // If no title entered, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the input and buttons while processing
+                    titleInput.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=action&newValue=${encodeURIComponent(newTitle)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        // Redirect to refresh the page with updated data
+                        window.location.href = '{{ path('app_open_actions') }}';
+                    } catch (error) {
+                        console.error('Error updating action:', error);
+                        showNotification('Error updating action. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // 5. Edit Contact Button Click
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-contact-btn');
+                if (!editBtn) return;
+
+                const actionId = editBtn.getAttribute('data-action-id');
+                const cell = editBtn.closest('.action-contact-cell');
+
+                // Check if this action belongs to a disabled account
+                const actionRow = cell.closest('tr');
+                if (actionRow && actionRow.classList.contains('disabled-account-action')) {
+                    // Don't allow editing for disabled accounts
+                    return;
+                }
+
+                // Look for either a span or an anchor tag
+                const contactElement = cell.querySelector('span') || cell.querySelector('a');
+                const currentContact = contactElement ? contactElement.textContent.trim() : '';
+
+                // Create a dropdown for contacts
+                const contactSelect = document.createElement('select');
+                contactSelect.className = 'form-control';
+                contactSelect.setAttribute('data-action-id', actionId);
+
+                // Add a loading option
+                const loadingOption = document.createElement('option');
+                loadingOption.textContent = 'Loading contacts...';
+                contactSelect.appendChild(loadingOption);
+
+                // Get the account ID from the action
+                const row = document.querySelector(`tr[data-action-id="${actionId}"]`);
+                const accountId = row.querySelector('.action-account-cell').getAttribute('data-account-id');
+
+                if (accountId && accountId !== 'null') {
+                    // Fetch contacts for this account
+                    fetch(`/accounts/${accountId}/contacts`)
+                        .then(response => response.json())
+                        .then(contacts => {
+                            // Clear the loading option
+                            contactSelect.innerHTML = '';
+
+                            // Add an empty option
+                            const emptyOption = document.createElement('option');
+                            emptyOption.value = '';
+                            emptyOption.textContent = 'Select Contact';
+                            contactSelect.appendChild(emptyOption);
+
+                            // Add options for each contact
+                            if (contacts && contacts.length > 0) {
+                                // Check if the current contact is in the list
+                                let currentContactInList = false;
+
+                                contacts.forEach(contact => {
+                                    const option = document.createElement('option');
+                                    option.value = contact;
+                                    option.textContent = contact;
+                                    // Pre-select the current contact
+                                    if (contact === currentContact) {
+                                        option.selected = true;
+                                        currentContactInList = true;
+                                    }
+                                    contactSelect.appendChild(option);
+                                });
+
+                                // If the current contact is not in the list but exists, add it
+                                if (!currentContactInList && currentContact) {
+                                    const option = document.createElement('option');
+                                    option.value = currentContact;
+                                    option.textContent = currentContact + " (removed from account)";
+                                    option.selected = true;
+                                    contactSelect.appendChild(option);
+                                }
+                            }
+
+                            // Always add "No contacts available" option
+                            const noContactOption = document.createElement('option');
+                            noContactOption.value = "No contacts available";
+                            noContactOption.textContent = "No contacts available";
+                            contactSelect.appendChild(noContactOption);
+                        })
+                        .catch(error => {
+                            console.error('Error fetching contacts:', error);
+                            contactSelect.innerHTML = '<option>Error loading contacts</option>';
+                        });
+                } else {
+                    // If no account ID, just show a message
+                    contactSelect.innerHTML = '<option value="">No account selected</option>';
+                }
+
+                // Create save and cancel buttons
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-sm btn-success ms-2';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                // Hide the current elements
+                if (contactElement) {
+                    contactElement.style.display = 'none';
+                }
+                editBtn.style.display = 'none';
+
+                // Add the new elements
+                cell.appendChild(contactSelect);
+                cell.appendChild(saveBtn);
+                cell.appendChild(cancelBtn);
+
+                // Focus the dropdown
+                contactSelect.focus();
+
+                // Function to reset the cell to its original state
+                const resetCell = () => {
+                    if (contactElement) {
+                        contactElement.style.display = '';
+                    }
+                    editBtn.style.display = '';
+                    contactSelect.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                };
+
+                // Handle cancel button click
+                cancelBtn.addEventListener('click', resetCell);
+
+                // Handle save button click
+                saveBtn.addEventListener('click', async () => {
+                    const newContact = contactSelect.value;
+                    if (!newContact) {
+                        // If no contact selected, just cancel
+                        resetCell();
+                        return;
+                    }
+
+                    // Find the row
+                    const row = cell.closest('tr');
+                    if (!row) {
+                        console.error('Row not found for action ID:', actionId);
+                        resetCell();
+                        return;
+                    }
+
+                    // Add a visual indicator that the action is being processed
+                    const originalOpacity = row.style.opacity || '1';
+                    row.style.opacity = '0.7';
+
+                    // Disable the dropdown and buttons while processing
+                    contactSelect.disabled = true;
+                    saveBtn.disabled = true;
+                    cancelBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/user/backlog/update-action-field/${actionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `fieldName=contact&newValue=${encodeURIComponent(newContact)}`
+                        });
+
+                        if (!response.ok) throw new Error('Network response was not ok');
+
+                        // Redirect to refresh the page with updated data
+                        window.location.href = '{{ path('app_open_actions') }}';
+                    } catch (error) {
+                        console.error('Error updating contact:', error);
+                        showNotification('Error updating contact. Please try again.', 'danger');
+
+                        // Reset the cell
+                        resetCell();
+
+                        // Restore opacity
+                        row.style.opacity = originalOpacity;
+                    }
+                });
+            });
+
+            // 6. Save Notes Button Click
+            document.getElementById('save-notes-btn').addEventListener('click', async () => {
+                const actionId = document.getElementById('action-id-for-notes').value;
+                const notes = document.getElementById('notes-content').value;
+                const formData = new URLSearchParams({ notes });
+
+                try {
+                    const response = await fetch(`/actions/${actionId}/update-notes`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) throw new Error('Failed to save notes.');
+
+                    // Redirect to refresh the page with updated data
+                    window.location.href = '{{ path('app_open_actions') }}';
+                } catch (error) {
+                    console.error('Error saving notes:', error);
+                    showNotification('Could not save notes.', 'danger');
+                }
+            });
+
+            // Calculate and display notes badges
+            function updateNotesBadges() {
+                // Count notes for open actions
+                const openNotesCount = document.querySelectorAll('#open-backlog-tbody .notes-icon[style*="color: red"]').length;
+                const openNotesBadge = document.getElementById('open-notes-badge');
+                if (openNotesCount > 0) {
+                    openNotesBadge.textContent = openNotesCount;
+                    openNotesBadge.style.display = 'inline-block';
+                } else {
+                    openNotesBadge.style.display = 'none';
+                }
+            }
+
+            // Update notes badges on page load
+            updateNotesBadges();
+
+            // Initialize tooltips
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        });
+    </script>
+{% endblock %}
