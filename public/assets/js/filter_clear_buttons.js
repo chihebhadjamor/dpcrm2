@@ -4,6 +4,9 @@
  * This script adds a clear button (x icon) to filter input fields
  * that appears when the field has content and allows users to clear
  * the filter with a single click.
+ *
+ * It also adds an Escape key shortcut to clear the filter when the
+ * input is focused and the Escape key is pressed.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -54,11 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial state
         toggleClearButton();
 
-        // Add event listeners
-        input.addEventListener('input', toggleClearButton);
-
-        // Clear the input when the button is clicked
-        clearButton.addEventListener('click', function() {
+        // Function to clear the input and update the table
+        function clearInput() {
             input.value = '';
             clearButton.style.display = 'none';
 
@@ -72,8 +72,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.dispatchEvent(changeEvent);
             }
 
-            // Focus back on the input
-            input.focus();
+            // Blur the input (lose focus) as per requirements
+            input.blur();
+        }
+
+        // Add event listeners
+        input.addEventListener('input', toggleClearButton);
+
+        // Clear the input when the button is clicked
+        clearButton.addEventListener('click', clearInput);
+
+        // Add Escape key functionality
+        input.addEventListener('keydown', function(e) {
+            // Check if the Escape key was pressed
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                // Only clear if there's content
+                if (input.value.trim() !== '') {
+                    clearInput();
+                    // Prevent default Escape behavior
+                    e.preventDefault();
+                }
+            }
         });
     });
 });
