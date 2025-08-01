@@ -85,7 +85,8 @@
                                         {% elseif (actionDate|date_modify('+7 days'))|date('Y-m-d') >= today %}action-upcoming
                                         {% endif %}
                                         {% endif %}"
-                                        data-action-id="{{ action.id }}">
+                                        data-action-id="{{ action.id }}"
+                                        data-next-step-date-raw="{{ action.nextStepDateRaw }}">
                                         <td>
                                             {% if action.hasHistory %}
                                                 <a href="#" class="action-history-link" data-action-id="{{ action.id }}">{{ action.id }}</a>
@@ -170,7 +171,7 @@
                                 <tbody id="closed-backlog-tbody">
                                 {% for action in userBacklogActions %}
                                     {% if action.closed %}
-                                    <tr class="action-row action-closed {% if not action.accountStatus %}disabled-account-action{% endif %}" data-action-id="{{ action.id }}">
+                                    <tr class="action-row action-closed {% if not action.accountStatus %}disabled-account-action{% endif %}" data-action-id="{{ action.id }}" data-next-step-date-raw="{{ action.nextStepDateRaw }}">
                                         <td>
                                             {% if action.hasHistory %}
                                                 <a href="#" class="action-history-link" data-action-id="{{ action.id }}">{{ action.id }}</a>
@@ -908,15 +909,16 @@
                                 break;
                             case 'date':
                                 // For date, we need to get the raw date value
-                                const dateCell = row.querySelector('.action-date-cell');
-                                if (dateCell) {
-                                    // Try to parse the displayed date to match the filter format
-                                    const displayedDate = dateCell.querySelector('span').textContent.trim();
+                                // Always use the data-next-step-date-raw attribute if available
+                                if (row.hasAttribute('data-next-step-date-raw') && row.getAttribute('data-next-step-date-raw')) {
+                                    cellValue = row.getAttribute('data-next-step-date-raw');
+                                } else {
+                                    // Fallback to parsing the displayed date
+                                    const dateCell = row.querySelector('.action-date-cell');
+                                    if (dateCell) {
+                                        // Try to parse the displayed date to match the filter format
+                                        const displayedDate = dateCell.querySelector('span').textContent.trim();
 
-                                    // Check if the action has a nextStepDateRaw attribute
-                                    if (row.hasAttribute('data-next-step-date-raw')) {
-                                        cellValue = row.getAttribute('data-next-step-date-raw');
-                                    } else {
                                         // Try to parse the displayed date (assuming format is DD/MM/YYYY)
                                         const dateParts = displayedDate.split('/');
                                         if (dateParts.length === 3) {
@@ -953,6 +955,8 @@
 
                         // For date columns, do exact match
                         if (column === 'date' || column === 'closed-at') {
+                            // Debug log to help troubleshoot
+                            console.log(`Row ${row.dataset.actionId} - Cell value: "${cellValue}", Filter value: "${filterValue}"`);
                             if (cellValue !== filterValue) {
                                 showRow = false;
                                 break;
@@ -992,28 +996,8 @@
                 });
             });
 
-            // Add data attributes to rows for date filtering
-            document.querySelectorAll('.action-row').forEach(row => {
-                if (row.hasAttribute('data-next-step-date-raw')) {
-                    // Already has the attribute
-                    return;
-                }
-
-                const dateCell = row.querySelector('.action-date-cell');
-                if (dateCell) {
-                    const dateSpan = dateCell.querySelector('span');
-                    if (dateSpan) {
-                        const displayedDate = dateSpan.textContent.trim();
-                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
-                        const dateParts = displayedDate.split('/');
-                        if (dateParts.length === 3) {
-                            // Convert to YYYY-MM-DD for data attribute
-                            const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                            row.setAttribute('data-next-step-date-raw', isoDate);
-                        }
-                    }
-                }
-            });
+            // We now add data-next-step-date-raw attribute directly to the rows when they are created
+            // No need to add it here
         });
     </script>
 {% endblock %}
