@@ -251,7 +251,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- DOM ELEMENTS ---
-            const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+            const notesModalElement = document.getElementById('notesModal');
+            const notesModal = notesModalElement ? new bootstrap.Modal(notesModalElement) : null;
 
             // Restore filters from localStorage
             restoreFilters();
@@ -259,6 +260,8 @@
             // --- NOTIFICATION UTILITY ---
             function showNotification(message, type = 'success', duration = 3000) {
                 const container = document.getElementById('notification-container');
+                if (!container) return;
+
                 const alert = document.createElement('div');
                 alert.className = `alert alert-${type} alert-dismissible fade show`;
                 alert.role = 'alert';
@@ -329,9 +332,15 @@
                 const accountId = icon.dataset.accountId;
                 const notesContent = document.getElementById('notes-content');
                 const saveNotesBtn = document.getElementById('save-notes-btn');
+                const actionIdForNotes = document.getElementById('action-id-for-notes');
 
-                document.getElementById('action-id-for-notes').value = actionId;
-                notesContent.value = icon.dataset.notes || '';
+                if (actionIdForNotes) {
+                    actionIdForNotes.value = actionId;
+                }
+
+                if (notesContent) {
+                    notesContent.value = icon.dataset.notes || '';
+                }
 
                 // Check if the action belongs to a disabled account
                 // First check if the action row has the disabled-account-action class
@@ -355,7 +364,9 @@
                     saveNotesBtn.style.display = 'block';
                 }
 
-                notesModal.show();
+                if (notesModal) {
+                    notesModal.show();
+                }
             });
 
             // 3. Edit Date Button Click
@@ -835,34 +846,48 @@
             });
 
             // 6. Save Notes Button Click
-            document.getElementById('save-notes-btn').addEventListener('click', async () => {
-                const actionId = document.getElementById('action-id-for-notes').value;
-                const notes = document.getElementById('notes-content').value;
-                const formData = new URLSearchParams({ notes });
+            const saveNotesBtn = document.getElementById('save-notes-btn');
+            if (saveNotesBtn) {
+                saveNotesBtn.addEventListener('click', async () => {
+                    const actionIdElement = document.getElementById('action-id-for-notes');
+                    const notesContentElement = document.getElementById('notes-content');
 
-                try {
-                    const response = await fetch(`/actions/${actionId}/update-notes`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (!response.ok) throw new Error('Failed to save notes.');
+                    if (!actionIdElement || !notesContentElement) {
+                        console.error('Required elements not found');
+                        return;
+                    }
 
-                    // Save filters before redirecting
-                    saveFilters();
+                    const actionId = actionIdElement.value;
+                    const notes = notesContentElement.value;
+                    const formData = new URLSearchParams({ notes });
 
-                    // Redirect to refresh the page with updated data
-                    window.location.href = '{{ path('app_open_actions') }}';
-                } catch (error) {
-                    console.error('Error saving notes:', error);
-                    showNotification('Could not save notes.', 'danger');
-                }
-            });
+                    try {
+                        const response = await fetch(`/actions/${actionId}/update-notes`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (!response.ok) throw new Error('Failed to save notes.');
+
+                        // Save filters before redirecting
+                        saveFilters();
+
+                        // Redirect to refresh the page with updated data
+                        window.location.href = '{{ path('app_open_actions') }}';
+                    } catch (error) {
+                        console.error('Error saving notes:', error);
+                        showNotification('Could not save notes.', 'danger');
+                    }
+                });
+            }
 
             // Calculate and display notes badges
             function updateNotesBadges() {
                 // Count notes for open actions
                 const openNotesCount = document.querySelectorAll('#open-backlog-tbody .notes-icon[style*="color: blue"]').length;
                 const openNotesBadge = document.getElementById('open-notes-badge');
+
+                if (!openNotesBadge) return;
+
                 if (openNotesCount > 0) {
                     openNotesBadge.textContent = openNotesCount;
                     openNotesBadge.style.display = 'inline-block';
@@ -876,7 +901,9 @@
 
             // Initialize tooltips
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            if (tooltipTriggerList.length > 0) {
+                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            }
 
             // --- LIVE FILTERING FUNCTIONALITY ---
 
