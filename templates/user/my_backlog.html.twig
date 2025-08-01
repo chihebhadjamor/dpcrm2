@@ -64,6 +64,16 @@
                                     <th>Status</th>
                                     <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                 </tr>
+                                <!-- Filter row -->
+                                <tr id="open-filter-row">
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="open" data-column="id" placeholder="Filter ID..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="open" data-column="account" placeholder="Filter Account..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="open" data-column="action" placeholder="Filter Action..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="open" data-column="contact" placeholder="Filter Contact..."></th>
+                                    <th><input type="date" class="form-control form-control-sm filter-input" data-table="open" data-column="date" placeholder="Filter Date..."></th>
+                                    <th><!-- No filter for Status --></th>
+                                    <th><!-- No filter for Notes --></th>
+                                </tr>
                                 </thead>
                                 <tbody id="open-backlog-tbody">
                                 {% for action in userBacklogActions %}
@@ -144,6 +154,17 @@
                                     <th>Status</th>
                                     <th>Closed At</th>
                                     <th>Notes <span id="closed-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
+                                </tr>
+                                <!-- Filter row -->
+                                <tr id="closed-filter-row">
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed" data-column="id" placeholder="Filter ID..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed" data-column="account" placeholder="Filter Account..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed" data-column="action" placeholder="Filter Action..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed" data-column="contact" placeholder="Filter Contact..."></th>
+                                    <th><input type="date" class="form-control form-control-sm filter-input" data-table="closed" data-column="date" placeholder="Filter Date..."></th>
+                                    <th><!-- No filter for Status --></th>
+                                    <th><input type="date" class="form-control form-control-sm filter-input" data-table="closed" data-column="closed-at" placeholder="Filter Closed At..."></th>
+                                    <th><!-- No filter for Notes --></th>
                                 </tr>
                                 </thead>
                                 <tbody id="closed-backlog-tbody">
@@ -839,6 +860,160 @@
             // Initialize tooltips
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+            // --- LIVE FILTERING FUNCTIONALITY ---
+
+            // Get all filter inputs
+            const filterInputs = document.querySelectorAll('.filter-input');
+
+            // Function to filter the table rows
+            function filterTable(tableId, filters) {
+                // Get all rows in the table body
+                const rows = document.querySelectorAll(`#${tableId}-backlog-tbody tr`);
+
+                // If no filters, show all rows
+                if (Object.keys(filters).length === 0) {
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    return;
+                }
+
+                // Loop through each row and check if it matches all filters
+                rows.forEach(row => {
+                    let showRow = true;
+
+                    // Check each filter
+                    for (const [column, filterValue] of Object.entries(filters)) {
+                        let cellValue = '';
+                        let cellElement = null;
+
+                        // Get the cell value based on the column
+                        switch (column) {
+                            case 'id':
+                                cellElement = row.querySelector('td:nth-child(1)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'account':
+                                cellElement = row.querySelector('td:nth-child(2)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'action':
+                                cellElement = row.querySelector('td:nth-child(3)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'contact':
+                                cellElement = row.querySelector('td:nth-child(4)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'date':
+                                // For date, we need to get the raw date value
+                                const dateCell = row.querySelector('.action-date-cell');
+                                if (dateCell) {
+                                    // Try to parse the displayed date to match the filter format
+                                    const displayedDate = dateCell.querySelector('span').textContent.trim();
+
+                                    // Check if the action has a nextStepDateRaw attribute
+                                    if (row.hasAttribute('data-next-step-date-raw')) {
+                                        cellValue = row.getAttribute('data-next-step-date-raw');
+                                    } else {
+                                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                                        const dateParts = displayedDate.split('/');
+                                        if (dateParts.length === 3) {
+                                            // Convert to YYYY-MM-DD for comparison
+                                            cellValue = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                                        }
+                                    }
+                                }
+                                break;
+                            case 'closed-at':
+                                cellElement = row.querySelector('td:nth-child(7)');
+                                if (cellElement) {
+                                    const displayedDate = cellElement.textContent.trim();
+                                    if (displayedDate) {
+                                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                                        const dateParts = displayedDate.split('/');
+                                        if (dateParts.length === 3) {
+                                            // Convert to YYYY-MM-DD for comparison
+                                            cellValue = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                                        } else {
+                                            // Try to parse as a date object
+                                            const parsedDate = new Date(displayedDate);
+                                            if (!isNaN(parsedDate.getTime())) {
+                                                const yyyy = parsedDate.getFullYear();
+                                                const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                                                const dd = String(parsedDate.getDate()).padStart(2, '0');
+                                                cellValue = `${yyyy}-${mm}-${dd}`;
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+
+                        // For date columns, do exact match
+                        if (column === 'date' || column === 'closed-at') {
+                            if (cellValue !== filterValue) {
+                                showRow = false;
+                                break;
+                            }
+                        }
+                        // For other columns, do contains match
+                        else if (!cellValue.includes(filterValue)) {
+                            showRow = false;
+                            break;
+                        }
+                    }
+
+                    // Show or hide the row based on the filter result
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+
+            // Add event listeners to filter inputs
+            filterInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const table = this.dataset.table; // 'open' or 'closed'
+                    const column = this.dataset.column;
+                    const value = this.value.trim().toLowerCase();
+
+                    // Get all filters for this table
+                    const filters = {};
+                    document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
+                        const filterColumn = filterInput.dataset.column;
+                        const filterValue = filterInput.value.trim().toLowerCase();
+                        if (filterValue) {
+                            filters[filterColumn] = filterValue;
+                        }
+                    });
+
+                    // Apply filters to the table
+                    filterTable(table, filters);
+                });
+            });
+
+            // Add data attributes to rows for date filtering
+            document.querySelectorAll('.action-row').forEach(row => {
+                if (row.hasAttribute('data-next-step-date-raw')) {
+                    // Already has the attribute
+                    return;
+                }
+
+                const dateCell = row.querySelector('.action-date-cell');
+                if (dateCell) {
+                    const dateSpan = dateCell.querySelector('span');
+                    if (dateSpan) {
+                        const displayedDate = dateSpan.textContent.trim();
+                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                        const dateParts = displayedDate.split('/');
+                        if (dateParts.length === 3) {
+                            // Convert to YYYY-MM-DD for data attribute
+                            const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                            row.setAttribute('data-next-step-date-raw', isoDate);
+                        }
+                    }
+                }
+            });
         });
     </script>
 {% endblock %}

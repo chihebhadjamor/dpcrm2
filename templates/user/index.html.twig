@@ -122,6 +122,12 @@
                                     <th>User</th>
                                     <th>Actions</th>
                                 </tr>
+                                <!-- Filter row -->
+                                <tr id="enabled-users-filter-row">
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="enabled-users" data-column="id" placeholder="Filter ID..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="enabled-users" data-column="user" placeholder="Filter User..."></th>
+                                    <th><!-- No filter for Actions --></th>
+                                </tr>
                                 </thead>
                                 <tbody>
                                 <!-- Form row for creating new user -->
@@ -185,6 +191,12 @@
                                     <th>User</th>
                                     <th>Actions</th>
                                 </tr>
+                                <!-- Filter row -->
+                                <tr id="disabled-users-filter-row">
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="disabled-users" data-column="id" placeholder="Filter ID..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-table="disabled-users" data-column="user" placeholder="Filter User..."></th>
+                                    <th><!-- No filter for Actions --></th>
+                                </tr>
                                 </thead>
                                 <tbody>
                                 {% for user in users %}
@@ -240,6 +252,16 @@
                                         <th>Status</th>
                                         <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                     </tr>
+                                    <!-- Filter row -->
+                                    <tr id="open-actions-filter-row">
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="open-actions" data-column="id" placeholder="Filter ID..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="open-actions" data-column="account" placeholder="Filter Account..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="open-actions" data-column="action" placeholder="Filter Action..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="open-actions" data-column="contact" placeholder="Filter Contact..."></th>
+                                        <th><input type="date" class="form-control form-control-sm filter-input" data-table="open-actions" data-column="date" placeholder="Filter Date..."></th>
+                                        <th><!-- No filter for Status --></th>
+                                        <th><!-- No filter for Notes --></th>
+                                    </tr>
                                     </thead>
                                     <tbody id="open-backlog-tbody">
                                     </tbody>
@@ -258,6 +280,17 @@
                                         <th>Status</th>
                                         <th>Closed At</th>
                                         <th>Notes <span id="closed-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
+                                    </tr>
+                                    <!-- Filter row -->
+                                    <tr id="closed-actions-filter-row">
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="id" placeholder="Filter ID..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="account" placeholder="Filter Account..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="action" placeholder="Filter Action..."></th>
+                                        <th><input type="text" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="contact" placeholder="Filter Contact..."></th>
+                                        <th><input type="date" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="date" placeholder="Filter Date..."></th>
+                                        <th><!-- No filter for Status --></th>
+                                        <th><input type="date" class="form-control form-control-sm filter-input" data-table="closed-actions" data-column="closed-at" placeholder="Filter Closed At..."></th>
+                                        <th><!-- No filter for Notes --></th>
                                     </tr>
                                     </thead>
                                     <tbody id="closed-backlog-tbody">
@@ -1639,6 +1672,234 @@
                 } catch (error) {
                     console.error('Error saving notes:', error);
                     showNotification('Could not save notes.', 'danger');
+                }
+            });
+
+            // --- LIVE FILTERING FUNCTIONALITY ---
+
+            // Get all filter inputs
+            const filterInputs = document.querySelectorAll('.filter-input');
+
+            // Function to filter the users tables
+            function filterUsersTable(tableId, filters) {
+                // Determine which tbody to target based on the table ID
+                let tbody;
+                if (tableId === 'enabled-users') {
+                    // For enabled users, we need to select all rows with user.disabled = false
+                    tbody = document.querySelector('.user-list-column .card.mb-3 tbody');
+                } else if (tableId === 'disabled-users') {
+                    // For disabled users, we need to select all rows with user.disabled = true
+                    tbody = document.querySelector('.user-list-column .card:not(.mb-3) tbody');
+                }
+
+                if (!tbody) return;
+
+                // Get all user rows in the table body (excluding the form row)
+                const rows = Array.from(tbody.querySelectorAll('tr.user-row'));
+
+                // If no filters, show all rows
+                if (Object.keys(filters).length === 0) {
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    return;
+                }
+
+                // Loop through each row and check if it matches all filters
+                rows.forEach(row => {
+                    let showRow = true;
+
+                    // Check each filter
+                    for (const [column, filterValue] of Object.entries(filters)) {
+                        let cellValue = '';
+                        let cellElement = null;
+
+                        // Get the cell value based on the column
+                        switch (column) {
+                            case 'id':
+                                cellElement = row.querySelector('td:nth-child(1)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'user':
+                                cellElement = row.querySelector('td:nth-child(2)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                        }
+
+                        // Do contains match for all columns
+                        if (!cellValue.includes(filterValue)) {
+                            showRow = false;
+                            break;
+                        }
+                    }
+
+                    // Show or hide the row based on the filter result
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+
+            // Function to filter the actions tables
+            function filterActionsTable(tableId, filters) {
+                // Get all rows in the table body
+                const tbody = document.getElementById(`${tableId.replace('actions', 'backlog')}-tbody`);
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                // If no filters, show all rows
+                if (Object.keys(filters).length === 0) {
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    return;
+                }
+
+                // Loop through each row and check if it matches all filters
+                rows.forEach(row => {
+                    let showRow = true;
+
+                    // Check each filter
+                    for (const [column, filterValue] of Object.entries(filters)) {
+                        let cellValue = '';
+                        let cellElement = null;
+
+                        // Get the cell value based on the column
+                        switch (column) {
+                            case 'id':
+                                cellElement = row.querySelector('td:nth-child(1)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'account':
+                                cellElement = row.querySelector('td:nth-child(2)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'action':
+                                cellElement = row.querySelector('td:nth-child(3)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'contact':
+                                cellElement = row.querySelector('td:nth-child(4)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'date':
+                                cellElement = row.querySelector('td:nth-child(5)');
+                                if (cellElement) {
+                                    const displayedDate = cellElement.textContent.trim();
+                                    if (displayedDate) {
+                                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                                        const dateParts = displayedDate.split('/');
+                                        if (dateParts.length === 3) {
+                                            // Convert to YYYY-MM-DD for comparison
+                                            cellValue = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                                        } else {
+                                            // Try to parse as a date object
+                                            const parsedDate = new Date(displayedDate);
+                                            if (!isNaN(parsedDate.getTime())) {
+                                                const yyyy = parsedDate.getFullYear();
+                                                const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                                                const dd = String(parsedDate.getDate()).padStart(2, '0');
+                                                cellValue = `${yyyy}-${mm}-${dd}`;
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            case 'closed-at':
+                                if (tableId === 'closed-actions') {
+                                    cellElement = row.querySelector('td:nth-child(7)');
+                                    if (cellElement) {
+                                        const displayedDate = cellElement.textContent.trim();
+                                        if (displayedDate) {
+                                            // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                                            const dateParts = displayedDate.split('/');
+                                            if (dateParts.length === 3) {
+                                                // Convert to YYYY-MM-DD for comparison
+                                                cellValue = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                                            } else {
+                                                // Try to parse as a date object
+                                                const parsedDate = new Date(displayedDate);
+                                                if (!isNaN(parsedDate.getTime())) {
+                                                    const yyyy = parsedDate.getFullYear();
+                                                    const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                                                    const dd = String(parsedDate.getDate()).padStart(2, '0');
+                                                    cellValue = `${yyyy}-${mm}-${dd}`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+
+                        // For date columns, do exact match
+                        if (column === 'date' || column === 'closed-at') {
+                            if (cellValue !== filterValue) {
+                                showRow = false;
+                                break;
+                            }
+                        }
+                        // For other columns, do contains match
+                        else if (!cellValue.includes(filterValue)) {
+                            showRow = false;
+                            break;
+                        }
+                    }
+
+                    // Show or hide the row based on the filter result
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+
+            // Add event listeners to filter inputs
+            filterInputs.forEach(input => {
+                if (input.type === 'date') {
+                    // For date inputs, filter on change
+                    input.addEventListener('change', function() {
+                        const table = this.dataset.table;
+                        const column = this.dataset.column;
+                        const value = this.value.trim().toLowerCase();
+
+                        // Get all filters for this table
+                        const filters = {};
+                        document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
+                            const filterColumn = filterInput.dataset.column;
+                            const filterValue = filterInput.value.trim().toLowerCase();
+                            if (filterValue) {
+                                filters[filterColumn] = filterValue;
+                            }
+                        });
+
+                        // Apply filters to the appropriate table
+                        if (table === 'enabled-users' || table === 'disabled-users') {
+                            filterUsersTable(table, filters);
+                        } else if (table === 'open-actions' || table === 'closed-actions') {
+                            filterActionsTable(table, filters);
+                        }
+                    });
+                } else {
+                    // For text inputs, filter as you type
+                    input.addEventListener('input', function() {
+                        const table = this.dataset.table;
+                        const column = this.dataset.column;
+                        const value = this.value.trim().toLowerCase();
+
+                        // Get all filters for this table
+                        const filters = {};
+                        document.querySelectorAll(`.filter-input[data-table="${table}"]`).forEach(filterInput => {
+                            const filterColumn = filterInput.dataset.column;
+                            const filterValue = filterInput.value.trim().toLowerCase();
+                            if (filterValue) {
+                                filters[filterColumn] = filterValue;
+                            }
+                        });
+
+                        // Apply filters to the appropriate table
+                        if (table === 'enabled-users' || table === 'disabled-users') {
+                            filterUsersTable(table, filters);
+                        } else if (table === 'open-actions' || table === 'closed-actions') {
+                            filterActionsTable(table, filters);
+                        }
+                    });
                 }
             });
         });
