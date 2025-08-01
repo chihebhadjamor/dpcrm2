@@ -578,6 +578,15 @@
                 const openActions = userBacklogActions.filter(action => !action.closed);
                 const closedActions = userBacklogActions.filter(action => action.closed);
 
+                // Update the backlog header with open actions count
+                const openCount = openActions.length;
+                const username = backlogHeader.textContent.split('(')[0].trim().replace('Backlog of ', '');
+                if (openCount > 0) {
+                    backlogHeader.textContent = `Backlog of ${username} (${openCount} Open)`;
+                } else {
+                    backlogHeader.textContent = `Backlog of ${username} (No action expected)`;
+                }
+
                 // Sort open actions by date in ascending order (soonest first)
                 openActions.sort((a, b) => {
                     const dateA = a.nextStepDate ? new Date(a.nextStepDate) : new Date(9999, 11, 31);
