@@ -56,12 +56,62 @@
                             <table id="open-backlog-table" class="table table-striped mb-4">
                                 <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Account</th>
-                                    <th>Action</th>
+                                    <th>
+                                        <a href="{{ path('app_open_actions', {
+                                            'sort': 'id',
+                                            'direction': sortField == 'id' and sortDirection == 'asc' ? 'desc' : 'asc'
+                                        }) }}" class="text-decoration-none text-dark">
+                                            ID
+                                            {% if sortField == 'id' %}
+                                                <i class="fas fa-sort-{{ sortDirection == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ path('app_open_actions', {
+                                            'sort': 'accountName',
+                                            'direction': sortField == 'accountName' and sortDirection == 'asc' ? 'desc' : 'asc'
+                                        }) }}" class="text-decoration-none text-dark">
+                                            Account
+                                            {% if sortField == 'accountName' %}
+                                                <i class="fas fa-sort-{{ sortDirection == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ path('app_open_actions', {
+                                            'sort': 'title',
+                                            'direction': sortField == 'title' and sortDirection == 'asc' ? 'desc' : 'asc'
+                                        }) }}" class="text-decoration-none text-dark">
+                                            Action
+                                            {% if sortField == 'title' %}
+                                                <i class="fas fa-sort-{{ sortDirection == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
                                     <th>Contact</th>
-                                    <th>Action Date</th>
-                                    <th>Owner</th>
+                                    <th>
+                                        <a href="{{ path('app_open_actions', {
+                                            'sort': 'nextStepDateRaw',
+                                            'direction': sortField == 'nextStepDateRaw' and sortDirection == 'asc' ? 'desc' : 'asc'
+                                        }) }}" class="text-decoration-none text-dark">
+                                            Action Date
+                                            {% if sortField == 'nextStepDateRaw' %}
+                                                <i class="fas fa-sort-{{ sortDirection == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ path('app_open_actions', {
+                                            'sort': 'ownerName',
+                                            'direction': sortField == 'ownerName' and sortDirection == 'asc' ? 'desc' : 'asc'
+                                        }) }}" class="text-decoration-none text-dark">
+                                            Owner
+                                            {% if sortField == 'ownerName' %}
+                                                <i class="fas fa-sort-{{ sortDirection == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
                                     <th>Status</th>
                                     <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                 </tr>

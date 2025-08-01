@@ -281,37 +281,40 @@
             </div>
             <div class="offcanvas-body">
                 <div class="list-group">
+                    {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_setup') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-cog"></i> Setup
+                    </a>
+                    {% endif %}
                     {% if app.user %}
                     <a href="{{ path('app_profile') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-user-cog"></i> My Profile
-                    </a>
-                    <a href="{{ path('app_my_backlog') }}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tasks"></i> My Backlog
                     </a>
                     {% endif %}
                     {% if is_granted('ROLE_ADMIN') %}
                     <a href="{{ path('app_users') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-users"></i> Users
                     </a>
-                    <a href="{{ path('app_open_actions') }}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tasks"></i> Open Actions
-                    </a>
                     {% endif %}
                     <a href="{{ path('app_accounts') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-building"></i> Accounts
                     </a>
+                    {% if app.user %}
+                    <a href="{{ path('app_my_backlog') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tasks"></i> My Backlog
+                    </a>
+                    {% endif %}
                     {% if is_granted('ROLE_ADMIN') %}
-                    <a href="{{ path('app_setup') }}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-cog"></i> Setup
+                    <a href="{{ path('app_open_actions') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tasks"></i> Open Actions
                     </a>
                     <a href="{{ path('app_admin_cron_logs') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-history"></i> Cron Logs
                     </a>
                     {% endif %}
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ path('app_logout') }}" class="btn btn-danger w-100">Logout</a>
+                    <a href="{{ path('app_logout') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
                 </div>
             </div>
         </div>

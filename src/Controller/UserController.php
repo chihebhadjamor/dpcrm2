@@ -528,13 +528,17 @@ class UserController extends AbstractWebController
     /**
      * Display all open actions across all users (admin only)
      */
-    public function openActions(EntityManagerInterface $entityManager): Response
+    public function openActions(Request $request, EntityManagerInterface $entityManager): Response
     {
         try {
             // Check if the user is an admin
             if (!$this->isGranted('ROLE_ADMIN')) {
                 throw new AccessDeniedException('Access denied. Admin privileges required.');
             }
+
+            // Get sort parameters from the request
+            $sortField = $request->query->get('sort', 'nextStepDate');
+            $sortDirection = $request->query->get('direction', 'asc');
 
             // Get all actions from all users
             $queryBuilder = $entityManager->createQueryBuilder();
@@ -552,13 +556,6 @@ class UserController extends AbstractWebController
                     $openActions[] = $action;
                 }
             }
-
-            // Sort open actions by nextStepDate ASC (earliest dates first)
-            usort($openActions, function($a, $b) {
-                $dateA = $a->getNextStepDate() ?: new \DateTime('9999-12-31');
-                $dateB = $b->getNextStepDate() ?: new \DateTime('9999-12-31');
-                return $dateA <=> $dateB;
-            });
 
             // Prepare actions for the template
             $allOpenActions = [];
@@ -590,9 +587,30 @@ class UserController extends AbstractWebController
                 ];
             }
 
+            // Sort the actions based on the requested field and direction
+            usort($allOpenActions, function($a, $b) use ($sortField, $sortDirection) {
+                $valueA = $a[$sortField] ?? '';
+                $valueB = $b[$sortField] ?? '';
+
+                // Special handling for date fields
+                if ($sortField === 'nextStepDateRaw') {
+                    $valueA = $valueA ?: '9999-12-31'; // Default for empty dates
+                    $valueB = $valueB ?: '9999-12-31';
+                }
+
+                // Determine comparison direction
+                $result = is_numeric($valueA) && is_numeric($valueB)
+                    ? $valueA <=> $valueB
+                    : strcasecmp((string)$valueA, (string)$valueB);
+
+                return $sortDirection === 'asc' ? $result : -$result;
+            });
+
             return $this->render('user/open_actions.html.twig', [
                 'userBacklogActions' => $allOpenActions,
-                'username' => 'All Users' // This is a global view
+                'username' => 'All Users', // This is a global view
+                'sortField' => $sortField,
+                'sortDirection' => $sortDirection
             ]);
         } catch (\Exception $e) {
             $this->addFlash('error', 'An error occurred while fetching open actions: ' . $e->getMessage());
