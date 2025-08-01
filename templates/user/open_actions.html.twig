@@ -253,6 +253,9 @@
             // --- DOM ELEMENTS ---
             const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
 
+            // Restore filters from localStorage
+            restoreFilters();
+
             // --- NOTIFICATION UTILITY ---
             function showNotification(message, type = 'success', duration = 3000) {
                 const container = document.getElementById('notification-container');
@@ -300,6 +303,9 @@
                 try {
                     const response = await fetch(`/actions/${actionId}/toggle-closed`, { method: 'POST' });
                     if (!response.ok) throw new Error('Status update failed.');
+
+                    // Save filters before redirecting
+                    saveFilters();
 
                     // Redirect to refresh the page with updated data
                     window.location.href = '{{ path('app_open_actions') }}';
@@ -479,6 +485,9 @@
 
                         if (!response.ok) throw new Error('Network response was not ok');
 
+                        // Save filters before redirecting
+                        saveFilters();
+
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_open_actions') }}';
                     } catch (error) {
@@ -590,6 +599,9 @@
                         });
 
                         if (!response.ok) throw new Error('Network response was not ok');
+
+                        // Save filters before redirecting
+                        saveFilters();
 
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_open_actions') }}';
@@ -771,6 +783,9 @@
 
                         if (!response.ok) throw new Error('Network response was not ok');
 
+                        // Save filters before redirecting
+                        saveFilters();
+
                         // Redirect to refresh the page with updated data
                         window.location.href = '{{ path('app_open_actions') }}';
                     } catch (error) {
@@ -798,6 +813,9 @@
                         body: formData
                     });
                     if (!response.ok) throw new Error('Failed to save notes.');
+
+                    // Save filters before redirecting
+                    saveFilters();
 
                     // Redirect to refresh the page with updated data
                     window.location.href = '{{ path('app_open_actions') }}';
@@ -832,6 +850,40 @@
             // Get all filter inputs
             const filterInputs = document.querySelectorAll('.filter-input');
 
+            // Function to save filters to localStorage
+            function saveFilters() {
+                const filters = {};
+                filterInputs.forEach(input => {
+                    const column = input.dataset.column;
+                    const value = input.value.trim();
+                    if (value) {
+                        filters[column] = value;
+                    }
+                });
+
+                if (Object.keys(filters).length > 0) {
+                    localStorage.setItem('openActionsFilters', JSON.stringify(filters));
+                } else {
+                    localStorage.removeItem('openActionsFilters');
+                }
+            }
+
+            // Function to restore filters from localStorage
+            function restoreFilters() {
+                const savedFilters = localStorage.getItem('openActionsFilters');
+                if (savedFilters) {
+                    const filters = JSON.parse(savedFilters);
+                    filterInputs.forEach(input => {
+                        const column = input.dataset.column;
+                        if (filters[column]) {
+                            input.value = filters[column];
+                        }
+                    });
+                    // Apply the filters
+                    filterTable();
+                }
+            }
+
             // Function to filter the table rows
             function filterTable() {
                 // Get all filter values
@@ -843,6 +895,9 @@
                         filters[column] = value;
                     }
                 });
+
+                // Save filters to localStorage
+                saveFilters();
 
                 // Get all rows in the table body
                 const rows = document.querySelectorAll('#open-backlog-tbody tr');
