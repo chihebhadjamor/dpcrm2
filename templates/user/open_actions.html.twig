@@ -435,6 +435,17 @@
                 // Focus the date input
                 dateInput.focus();
 
+                // Add keyboard event listeners for Enter and Escape keys
+                dateInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        // Trigger the save button click
+                        saveBtn.click();
+                    } else if (e.key === 'Escape') {
+                        // Trigger the cancel button click
+                        cancelBtn.click();
+                    }
+                });
+
                 // Function to reset the cell to its original state
                 const resetCell = () => {
                     dateSpan.style.display = '';
@@ -550,6 +561,17 @@
 
                 // Focus the input
                 titleInput.focus();
+
+                // Add keyboard event listeners for Enter and Escape keys
+                titleInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        // Trigger the save button click
+                        saveBtn.click();
+                    } else if (e.key === 'Escape') {
+                        // Trigger the cancel button click
+                        cancelBtn.click();
+                    }
+                });
 
                 // Function to reset the cell to its original state
                 const resetCell = () => {
@@ -731,6 +753,17 @@
 
                 // Focus the dropdown
                 contactSelect.focus();
+
+                // Add keyboard event listeners for Enter and Escape keys
+                contactSelect.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        // Trigger the save button click
+                        saveBtn.click();
+                    } else if (e.key === 'Escape') {
+                        // Trigger the cancel button click
+                        cancelBtn.click();
+                    }
+                });
 
                 // Function to reset the cell to its original state
                 const resetCell = () => {
