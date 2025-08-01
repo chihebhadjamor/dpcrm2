@@ -115,6 +115,17 @@
                                     <th>Status</th>
                                     <th>Notes <span id="open-notes-badge" class="badge rounded-circle bg-danger" style="display: none;"></span></th>
                                 </tr>
+                                <!-- Filter row -->
+                                <tr id="filter-row">
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-column="id" placeholder="Filter ID..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-column="account" placeholder="Filter Account..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-column="action" placeholder="Filter Action..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-column="contact" placeholder="Filter Contact..."></th>
+                                    <th><input type="date" class="form-control form-control-sm filter-input" data-column="date" placeholder="Filter Date..."></th>
+                                    <th><input type="text" class="form-control form-control-sm filter-input" data-column="owner" placeholder="Filter Owner..."></th>
+                                    <th><!-- No filter for Status --></th>
+                                    <th><!-- No filter for Notes --></th>
+                                </tr>
                                 </thead>
                                 <tbody id="open-backlog-tbody">
                                 {% for action in userBacklogActions %}
@@ -125,7 +136,8 @@
                                         {% elseif (actionDate|date_modify('+7 days'))|date('Y-m-d') >= today %}action-upcoming
                                         {% endif %}
                                         {% endif %}"
-                                        data-action-id="{{ action.id }}">
+                                        data-action-id="{{ action.id }}"
+                                        data-next-step-date-raw="{{ action.nextStepDateRaw }}">
                                         <td>
                                             {% if action.hasHistory %}
                                                 <a href="#" class="action-history-link" data-action-id="{{ action.id }}">{{ action.id }}</a>
@@ -814,6 +826,128 @@
             // Initialize tooltips
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+            // --- LIVE FILTERING FUNCTIONALITY ---
+
+            // Get all filter inputs
+            const filterInputs = document.querySelectorAll('.filter-input');
+
+            // Function to filter the table rows
+            function filterTable() {
+                // Get all filter values
+                const filters = {};
+                filterInputs.forEach(input => {
+                    const column = input.dataset.column;
+                    const value = input.value.trim().toLowerCase();
+                    if (value) {
+                        filters[column] = value;
+                    }
+                });
+
+                // Get all rows in the table body
+                const rows = document.querySelectorAll('#open-backlog-tbody tr');
+
+                // If no filters, show all rows
+                if (Object.keys(filters).length === 0) {
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    return;
+                }
+
+                // Loop through each row and check if it matches all filters
+                rows.forEach(row => {
+                    let showRow = true;
+
+                    // Check each filter
+                    for (const [column, filterValue] of Object.entries(filters)) {
+                        let cellValue = '';
+                        let cellElement = null;
+
+                        // Get the cell value based on the column
+                        switch (column) {
+                            case 'id':
+                                cellElement = row.querySelector('td:nth-child(1)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'account':
+                                cellElement = row.querySelector('td:nth-child(2)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'action':
+                                cellElement = row.querySelector('td:nth-child(3)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'contact':
+                                cellElement = row.querySelector('td:nth-child(4)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                            case 'date':
+                                cellElement = row.querySelector('td:nth-child(5)');
+                                // For date, we need to get the raw date value
+                                const dateCell = row.querySelector('.action-date-cell');
+                                if (dateCell) {
+                                    // Try to parse the displayed date to match the filter format
+                                    const displayedDate = dateCell.querySelector('span').textContent.trim();
+
+                                    // Check if the action has a nextStepDateRaw attribute
+                                    if (row.hasAttribute('data-next-step-date-raw')) {
+                                        cellValue = row.getAttribute('data-next-step-date-raw');
+                                    } else {
+                                        // Try to parse the displayed date (assuming format is DD/MM/YYYY)
+                                        const dateParts = displayedDate.split('/');
+                                        if (dateParts.length === 3) {
+                                            // Convert to YYYY-MM-DD for comparison
+                                            cellValue = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                                        }
+                                    }
+                                }
+                                break;
+                            case 'owner':
+                                cellElement = row.querySelector('td:nth-child(6)');
+                                cellValue = cellElement ? cellElement.textContent.trim().toLowerCase() : '';
+                                break;
+                        }
+
+                        // For date column, do exact match
+                        if (column === 'date') {
+                            if (cellValue !== filterValue) {
+                                showRow = false;
+                                break;
+                            }
+                        }
+                        // For other columns, do contains match
+                        else if (!cellValue.includes(filterValue)) {
+                            showRow = false;
+                            break;
+                        }
+                    }
+
+                    // Show or hide the row based on the filter result
+                    row.style.display = showRow ? '' : 'none';
+                });
+
+                // Update the "no actions" message visibility
+                const noActionsMessage = document.getElementById('no-actions-message');
+                if (noActionsMessage) {
+                    const visibleRows = document.querySelectorAll('#open-backlog-tbody tr[style=""]').length;
+                    noActionsMessage.style.display = visibleRows === 0 ? 'block' : 'none';
+                }
+            }
+
+            // Add event listeners to filter inputs
+            filterInputs.forEach(input => {
+                if (input.type === 'date') {
+                    // For date inputs, filter on change
+                    input.addEventListener('change', filterTable);
+                } else {
+                    // For text inputs, filter as you type
+                    input.addEventListener('input', filterTable);
+                }
+            });
+
+            // No need to add data attributes to rows for date filtering
+            // as they are now added directly in the Twig template
         });
     </script>
 {% endblock %}
