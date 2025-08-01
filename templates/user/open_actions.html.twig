@@ -174,7 +174,7 @@
                                                 title="{% if action.closed and not action.accountStatus %}This action cannot be reopened because its account is disabled{% endif %}">
                                         </td>
                                         <td class="text-center">
-                                            <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; {% if action.hasNotes %}color: red;{% endif %}"
+                                            <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; {% if action.hasNotes %}color: blue;{% else %}color: gray;{% endif %}"
                                             data-action-id="{{ action.id }}" data-notes="{{ action.notes }}"
                                             data-account-id="{{ action.accountId }}"></i>
                                         </td>
@@ -798,7 +798,7 @@
             // Calculate and display notes badges
             function updateNotesBadges() {
                 // Count notes for open actions
-                const openNotesCount = document.querySelectorAll('#open-backlog-tbody .notes-icon[style*="color: red"]').length;
+                const openNotesCount = document.querySelectorAll('#open-backlog-tbody .notes-icon[style*="color: blue"]').length;
                 const openNotesBadge = document.getElementById('open-notes-badge');
                 if (openNotesCount > 0) {
                     openNotesBadge.textContent = openNotesCount;

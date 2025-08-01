@@ -730,7 +730,7 @@
                 </td>
                 <td>${action.closed && action.dateClosed ? action.dateClosed : ''}</td>
                 <td class="text-center">
-                    <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: red;' : ''}"
+                    <i class="fas fa-sticky-note notes-icon" style="cursor: pointer; ${action.hasNotes ? 'color: blue;' : 'color: gray;'}"
                        data-action-id="${action.id}" data-notes="${action.notes ? action.notes.replace(/"/g, '&quot;') : ''}"
                        data-account-id="${action.accountId}"></i>
                 </td>
